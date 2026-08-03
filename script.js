@@ -842,9 +842,13 @@ function switchTab(tabName) {
   const btnAdd = document.getElementById('btn-add-record');
   const btnEmptyTrash = document.getElementById('btn-empty-trash');
   const btnAddQuincena = document.getElementById('btn-add-quincena');
+  const totalBadge = document.getElementById('salary-grand-total-badge');
 
   if (btnAddQuincena) {
     btnAddQuincena.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
+  }
+  if (totalBadge) {
+    totalBadge.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
 
   if (tabName === 'dtr') {
@@ -920,6 +924,22 @@ function updateCountsAndStats() {
   document.getElementById('stat-trash-count').textContent = trashCount;
   document.getElementById('stat-contacts-count').textContent = contactsCount;
   document.getElementById('stat-active-count').textContent = currentDatasetLength;
+
+  // Calculate Grand Total Paid Disbursed across all GIP Salary Records
+  let grandTotalPaid = 0;
+  (appState.data.salaryRecords || []).forEach(record => {
+    const p = record.periods || {};
+    Object.values(p).forEach(item => {
+      if (item && item.status === 'received' && item.amount > 0) {
+        grandTotalPaid += Number(item.amount);
+      }
+    });
+  });
+
+  const grandTotalValElem = document.getElementById('salary-grand-total-val');
+  if (grandTotalValElem) {
+    grandTotalValElem.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 }
 
 /**
