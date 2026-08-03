@@ -199,33 +199,81 @@ async function fetchRecordsFromSupabase() {
 
     if (trnErr) throw trnErr;
 
-    appState.data.dtrRecords = (dtrData || []).map(r => ({
-      id: r.id,
-      gipName: (r.gip_name || '').toUpperCase(),
-      month: r.month,
-      quincena: (r.quincena || '').toUpperCase(),
-      dtrArDateReceived: r.dtr_ar_date_received,
-      remarks: (r.remarks || '').toUpperCase(),
-      createdAt: r.created_at,
-      updatedAt: r.updated_at
-    }));
+    const hasRemoteData = (dtrData && dtrData.length > 0) || (trnData && trnData.length > 0);
+    const hasLocalData = (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) || 
+                         (appState.data.transmittalRecords && appState.data.transmittalRecords.length > 0);
 
-    appState.data.transmittalRecords = (trnData || []).map(r => ({
-      id: r.id,
-      particulars: (r.particulars || '').toUpperCase(),
-      preparedBy: (r.prepared_by || '').toUpperCase(),
-      dateTransmitted: r.date_transmitted,
-      regionalDateReceived: r.regional_date_received,
-      remarks: (r.remarks || '').toUpperCase(),
-      createdAt: r.created_at,
-      updatedAt: r.updated_at
-    }));
+    if (hasRemoteData) {
+      appState.data.dtrRecords = (dtrData || []).map(r => ({
+        id: r.id,
+        gipName: (r.gip_name || '').toUpperCase(),
+        month: r.month,
+        quincena: (r.quincena || '').toUpperCase(),
+        dtrArDateReceived: r.dtr_ar_date_received,
+        remarks: (r.remarks || '').toUpperCase(),
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
 
-    saveToLocalStorage();
-    renderApp();
+      appState.data.transmittalRecords = (trnData || []).map(r => ({
+        id: r.id,
+        particulars: (r.particulars || '').toUpperCase(),
+        preparedBy: (r.prepared_by || '').toUpperCase(),
+        dateTransmitted: r.date_transmitted,
+        regionalDateReceived: r.regional_date_received,
+        remarks: (r.remarks || '').toUpperCase(),
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
+
+      saveToLocalStorage();
+      renderApp();
+    } else if (hasLocalData) {
+      // Remote DB is empty, automatically seed remote DB with existing local data
+      await pushLocalDataToSupabase();
+    }
   } catch (err) {
-    console.error('Error fetching data from Supabase:', err.message);
-    showToast('CLOUD DATABASE SYNC ERROR: ' + err.message.toUpperCase(), 'danger');
+    console.error('Cloud database sync notice:', err.message);
+    showToast('WORKING IN LOCAL BACKUP MODE (SUPABASE SYNC NOTE)', 'info');
+  }
+}
+
+/**
+ * Auto-sync Local Records to Supabase Cloud Database
+ */
+async function pushLocalDataToSupabase() {
+  if (!isSupabaseConnected || !supabaseClient) return;
+
+  try {
+    if (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) {
+      const dtrPayload = appState.data.dtrRecords.map(r => ({
+        id: r.id,
+        gip_name: r.gipName,
+        month: r.month,
+        quincena: r.quincena,
+        dtr_ar_date_received: r.dtrArDateReceived,
+        remarks: r.remarks,
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_dtr_ar_records').upsert(dtrPayload);
+    }
+
+    if (appState.data.transmittalRecords && appState.data.transmittalRecords.length > 0) {
+      const trnPayload = appState.data.transmittalRecords.map(r => ({
+        id: r.id,
+        particulars: r.particulars,
+        prepared_by: r.preparedBy,
+        date_transmitted: r.dateTransmitted,
+        regional_date_received: r.regionalDateReceived,
+        remarks: r.remarks,
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('transmittal_records').upsert(trnPayload);
+    }
+  } catch (err) {
+    console.warn('Auto-push local data note:', err.message);
   }
 }
 
@@ -740,14 +788,16 @@ async function handleFormSubmit(e) {
       }
 
       if (isSupabaseConnected && supabaseClient) {
-        await supabaseClient.from('gip_dtr_ar_records').update({
+        const { error: sbErr } = await supabaseClient.from('gip_dtr_ar_records').upsert({
+          id: recordId,
           gip_name: gipName,
           month,
           quincena,
           dtr_ar_date_received: dtrArDateReceived,
           remarks,
           updated_at: nowISO
-        }).eq('id', recordId);
+        });
+        if (sbErr) console.warn('Supabase update note:', sbErr.message);
       }
 
       showToast('GIP RECORD UPDATED SUCCESSFULLY!', 'success');
@@ -757,7 +807,7 @@ async function handleFormSubmit(e) {
       appState.data.dtrRecords.unshift(newRecord);
 
       if (isSupabaseConnected && supabaseClient) {
-        await supabaseClient.from('gip_dtr_ar_records').insert([{
+        const { error: sbErr } = await supabaseClient.from('gip_dtr_ar_records').upsert({
           id: newId,
           gip_name: gipName,
           month,
@@ -766,7 +816,8 @@ async function handleFormSubmit(e) {
           remarks,
           created_at: nowISO,
           updated_at: nowISO
-        }]);
+        });
+        if (sbErr) console.warn('Supabase insert note:', sbErr.message);
       }
 
       showToast('NEW GIP RECORD ADDED SUCCESSFULLY!', 'success');
@@ -802,14 +853,16 @@ async function handleFormSubmit(e) {
       }
 
       if (isSupabaseConnected && supabaseClient) {
-        await supabaseClient.from('transmittal_records').update({
+        const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
+          id: recordId,
           particulars,
           prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
           regional_date_received: regionalDateReceived,
           remarks,
           updated_at: nowISO
-        }).eq('id', recordId);
+        });
+        if (sbErr) console.warn('Supabase update note:', sbErr.message);
       }
 
       showToast('TRANSMITTAL RECORD UPDATED SUCCESSFULLY!', 'success');
@@ -819,7 +872,7 @@ async function handleFormSubmit(e) {
       appState.data.transmittalRecords.unshift(newRecord);
 
       if (isSupabaseConnected && supabaseClient) {
-        await supabaseClient.from('transmittal_records').insert([{
+        const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
           id: newId,
           particulars,
           prepared_by: preparedBy,
@@ -828,7 +881,8 @@ async function handleFormSubmit(e) {
           remarks,
           created_at: nowISO,
           updated_at: nowISO
-        }]);
+        });
+        if (sbErr) console.warn('Supabase insert note:', sbErr.message);
       }
 
       showToast('NEW TRANSMITTAL RECORD ADDED SUCCESSFULLY!', 'success');
