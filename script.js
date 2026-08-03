@@ -843,12 +843,16 @@ function switchTab(tabName) {
   const btnEmptyTrash = document.getElementById('btn-empty-trash');
   const btnAddQuincena = document.getElementById('btn-add-quincena');
   const totalBadge = document.getElementById('salary-grand-total-badge');
+  const headerTotalBadge = document.getElementById('header-salary-total-badge');
 
   if (btnAddQuincena) {
     btnAddQuincena.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
   if (totalBadge) {
     totalBadge.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
+  }
+  if (headerTotalBadge) {
+    headerTotalBadge.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
 
   if (tabName === 'dtr') {
@@ -939,6 +943,11 @@ function updateCountsAndStats() {
   const grandTotalValElem = document.getElementById('salary-grand-total-val');
   if (grandTotalValElem) {
     grandTotalValElem.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  const headerValElem = document.getElementById('header-salary-total-val');
+  if (headerValElem) {
+    headerValElem.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 }
 

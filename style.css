@@ -408,20 +408,20 @@ textarea {
   pointer-events: none;
 }
 
-/* Inline Salary Grand Total Disbursed Badge */
-.salary-grand-total-badge {
+/* Header Title Salary Total Badge */
+.header-total-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 14px;
+  padding: 6px 14px;
   background-color: #e0f2fe;
   color: #0369a1;
   border: 1px solid #7dd3fc;
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 700;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.12);
 }
 
 /* Buttons */
