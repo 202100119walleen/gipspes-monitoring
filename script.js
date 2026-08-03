@@ -1100,35 +1100,31 @@ function renderTable() {
 
       return `
         <div class="salary-card">
-          <div>
-            <div class="salary-card-header">
-              <div class="salary-card-name">
-                <i data-lucide="user-check" style="width: 15px; height: 15px; vertical-align: middle; color: var(--brand-accent); margin-right: 4px;"></i>
-                ${escapeHtml(record.gipName)}
-              </div>
-              <div class="salary-card-total" title="Total Received Salary">
-                ₱${rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
+          <div class="salary-card-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="user-check" style="width: 16px; height: 16px; color: var(--brand-accent);"></i>
+              <span class="salary-card-name">${escapeHtml(record.gipName)}</span>
             </div>
-
-            <div class="salary-card-periods">
-              ${periodBoxes}
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <div class="salary-card-total" title="Total Paid Salary Disbursed">
+                TOTAL PAID: ₱${rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <div class="action-buttons">
+                <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Salary Record">
+                  <i data-lucide="edit-3"></i> Edit
+                </button>
+                <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Salary Record">
+                  <i data-lucide="trash-2"></i> Delete
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="salary-card-footer">
-            <div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600;">
-              ${record.remarks ? `<i data-lucide="info" style="width: 12px; height: 12px; vertical-align: middle;"></i> ${escapeHtml(record.remarks.substring(0, 30))}` : ''}
-            </div>
-            <div class="action-buttons">
-              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Salary Record">
-                <i data-lucide="edit-3"></i> Edit
-              </button>
-              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Salary Record">
-                <i data-lucide="trash-2"></i> Delete
-              </button>
-            </div>
+          <div class="salary-card-periods">
+            ${periodBoxes}
           </div>
+
+          ${record.remarks ? `<div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600; padding-top: 6px; border-top: 1px dashed var(--border-light);"><i data-lucide="info" style="width: 12px; height: 12px; vertical-align: middle;"></i> REMARKS: ${escapeHtml(record.remarks)}</div>` : ''}
         </div>
       `;
     }).join('');
