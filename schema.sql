@@ -48,11 +48,12 @@ CREATE TABLE IF NOT EXISTS gip_contacts (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Create GIP Salary & Payroll Monitoring Table
+-- 5. Create GIP Salary & Payroll Tracking Table
 CREATE TABLE IF NOT EXISTS gip_salary_records (
   id TEXT PRIMARY KEY,
   gip_name TEXT NOT NULL,
   periods JSONB,
+  remarks TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -77,6 +78,7 @@ ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS remarks TEXT;
 
 ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
 ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS periods JSONB;
+ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS remarks TEXT;
 
 -- 7. Enable Row Level Security (RLS)
 ALTER TABLE gip_dtr_ar_records ENABLE ROW LEVEL SECURITY;
