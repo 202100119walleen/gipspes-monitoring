@@ -426,6 +426,23 @@ function bindEvents() {
   const particularsTextarea = document.getElementById('particulars');
   particularsTextarea.addEventListener('input', handleParticularsLivePreview);
 
+  // Set Today Date Quick Buttons
+  document.querySelectorAll('.btn-today').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetId = btn.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (input) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        input.value = `${yyyy}-${mm}-${dd}`;
+        showToast('DATE SET TO TODAY', 'info');
+      }
+    });
+  });
+
   // Header Action Buttons
   document.getElementById('btn-add-record').addEventListener('click', () => openRecordModal());
 

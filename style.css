@@ -687,6 +687,27 @@ button, input, select, textarea {
   background-color: #dc2626 !important;
 }
 
+.btn-today {
+  margin-top: 6px;
+  padding: 4px 10px;
+  font-size: 0.775rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #0284c7;
+  background-color: #e0f2fe;
+  border: 1px solid #7dd3fc;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-today:hover {
+  background-color: #bae6fd;
+  border-color: #0284c7;
+}
+
 /* Empty State */
 .empty-state {
   text-align: center;
