@@ -843,16 +843,12 @@ function switchTab(tabName) {
   const btnEmptyTrash = document.getElementById('btn-empty-trash');
   const btnAddQuincena = document.getElementById('btn-add-quincena');
   const totalBadge = document.getElementById('salary-grand-total-badge');
-  const headerTotalBadge = document.getElementById('header-salary-total-badge');
 
   if (btnAddQuincena) {
     btnAddQuincena.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
   if (totalBadge) {
     totalBadge.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
-  }
-  if (headerTotalBadge) {
-    headerTotalBadge.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
 
   if (tabName === 'dtr') {
@@ -953,11 +949,6 @@ function updateCountsAndStats() {
   const grandTotalValElem = document.getElementById('salary-grand-total-val');
   if (grandTotalValElem) {
     grandTotalValElem.textContent = formattedTotal;
-  }
-
-  const headerValElem = document.getElementById('header-salary-total-val');
-  if (headerValElem) {
-    headerValElem.textContent = formattedTotal;
   }
 }
 
@@ -2308,15 +2299,17 @@ function openExcelExportModal() {
 
   const chkDtr = document.getElementById('export-chk-dtr');
   const chkTrn = document.getElementById('export-chk-trn');
+  const chkSalary = document.getElementById('export-chk-salary');
   const chkCnt = document.getElementById('export-chk-cnt');
   const chkTrash = document.getElementById('export-chk-trash');
   const pwdInput = document.getElementById('export-password-input');
   const preparedBySelect = document.getElementById('export-select-prepared-by');
 
-  if (chkDtr) chkDtr.checked = true;
-  if (chkTrn) chkTrn.checked = true;
-  if (chkCnt) chkCnt.checked = authenticatedModules.contacts;
-  if (chkTrash) chkTrash.checked = authenticatedModules.trash;
+  if (chkDtr) chkDtr.checked = (appState.activeTab === 'dtr');
+  if (chkTrn) chkTrn.checked = (appState.activeTab === 'transmittal');
+  if (chkSalary) chkSalary.checked = (appState.activeTab === 'salary' || appState.activeTab === 'dtr');
+  if (chkCnt) chkCnt.checked = (appState.activeTab === 'contacts');
+  if (chkTrash) chkTrash.checked = (appState.activeTab === 'trash');
   if (pwdInput) pwdInput.value = '';
 
   // Dynamically populate "Prepared By" dropdown from existing transmittals
@@ -2370,10 +2363,11 @@ function handleExcelExportFormSubmit(e) {
 
   const chkDtr = document.getElementById('export-chk-dtr')?.checked;
   const chkTrn = document.getElementById('export-chk-trn')?.checked;
+  const chkSalary = document.getElementById('export-chk-salary')?.checked;
   const chkCnt = document.getElementById('export-chk-cnt')?.checked;
   const chkTrash = document.getElementById('export-chk-trash')?.checked;
 
-  if (!chkDtr && !chkTrn && !chkCnt && !chkTrash) {
+  if (!chkDtr && !chkTrn && !chkSalary && !chkCnt && !chkTrash) {
     showToast('PLEASE SELECT AT LEAST ONE SHEET TO EXPORT', 'warning');
     return;
   }
