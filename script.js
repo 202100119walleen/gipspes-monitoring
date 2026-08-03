@@ -334,19 +334,15 @@ async function fetchRecordsFromSupabase() {
   if (!isSupabaseConnected || !supabaseClient) return;
 
   try {
-    const { data: dtrData, error: dtrErr } = await supabaseClient
+    const { data: dtrData } = await supabaseClient
       .from('gip_dtr_ar_records')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (dtrErr) throw dtrErr;
-
-    const { data: trnData, error: trnErr } = await supabaseClient
+    const { data: trnData } = await supabaseClient
       .from('transmittal_records')
       .select('*')
       .order('created_at', { ascending: false });
-
-    if (trnErr) throw trnErr;
 
     const { data: recData } = await supabaseClient
       .from('recycled_records')
@@ -358,18 +354,9 @@ async function fetchRecordsFromSupabase() {
       .select('*')
       .order('gip_name', { ascending: true });
 
-    const hasRemoteData = (dtrData && dtrData.length > 0) || 
-                          (trnData && trnData.length > 0) || 
-                          (recData && recData.length > 0) ||
-                          (cntData && cntData.length > 0);
-
-    const hasLocalData = (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) || 
-                         (appState.data.transmittalRecords && appState.data.transmittalRecords.length > 0) ||
-                         (appState.data.recycledRecords && appState.data.recycledRecords.length > 0) ||
-                         (appState.data.contactsRecords && appState.data.contactsRecords.length > 0);
-
-    if (hasRemoteData) {
-      appState.data.dtrRecords = (dtrData || []).map(r => ({
+    // 1. Process DTR Records
+    if (dtrData && dtrData.length > 0) {
+      appState.data.dtrRecords = dtrData.map(r => ({
         id: r.id,
         gipName: formatEtAl(r.gip_name),
         month: r.month,
@@ -379,8 +366,26 @@ async function fetchRecordsFromSupabase() {
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
+    } else {
+      if (!appState.data.dtrRecords || appState.data.dtrRecords.length === 0) {
+        appState.data.dtrRecords = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA.dtrRecords));
+      }
+      const dtrPayload = appState.data.dtrRecords.map(r => ({
+        id: r.id,
+        gip_name: r.gipName,
+        month: r.month,
+        quincena: r.quincena,
+        dtr_ar_date_received: r.dtrArDateReceived,
+        remarks: r.remarks,
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_dtr_ar_records').upsert(dtrPayload);
+    }
 
-      appState.data.transmittalRecords = (trnData || []).map(r => ({
+    // 2. Process Transmittal Records
+    if (trnData && trnData.length > 0) {
+      appState.data.transmittalRecords = trnData.map(r => ({
         id: r.id,
         particulars: formatEtAl(r.particulars),
         preparedBy: formatEtAl(r.prepared_by),
@@ -390,38 +395,64 @@ async function fetchRecordsFromSupabase() {
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
+    } else {
+      if (!appState.data.transmittalRecords || appState.data.transmittalRecords.length === 0) {
+        appState.data.transmittalRecords = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA.transmittalRecords));
+      }
+      const trnPayload = appState.data.transmittalRecords.map(r => ({
+        id: r.id,
+        particulars: r.particulars,
+        prepared_by: r.preparedBy,
+        date_transmitted: r.dateTransmitted,
+        regional_date_received: r.regionalDateReceived,
+        remarks: r.remarks,
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('transmittal_records').upsert(trnPayload);
+    }
 
-      appState.data.recycledRecords = (recData || []).map(r => ({
+    // 3. Process Contacts Records
+    if (cntData && cntData.length > 0) {
+      appState.data.contactsRecords = cntData.map(r => ({
+        id: r.id,
+        gipName: formatEtAl(r.gip_name),
+        assignment: (r.assignment || '').toUpperCase(),
+        contactNumber: r.contact_number,
+        remarks: formatEtAl(r.remarks),
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
+    } else {
+      if (!appState.data.contactsRecords || appState.data.contactsRecords.length === 0) {
+        appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
+      }
+      const cntPayload = appState.data.contactsRecords.map(r => ({
+        id: r.id,
+        gip_name: r.gipName,
+        assignment: r.assignment || 'LDNPFO',
+        contact_number: r.contactNumber,
+        remarks: r.remarks || '',
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_contacts').upsert(cntPayload);
+    }
+
+    // 4. Process Recycled Records
+    if (recData) {
+      appState.data.recycledRecords = recData.map(r => ({
         id: r.id,
         type: r.type,
         originalId: r.original_id,
         originalRecord: r.original_record,
         deletedAt: r.deleted_at
       }));
-
-      if (cntData && cntData.length > 0) {
-        appState.data.contactsRecords = cntData.map(r => ({
-          id: r.id,
-          gipName: formatEtAl(r.gip_name),
-          assignment: (r.assignment || '').toUpperCase(),
-          contactNumber: r.contact_number,
-          remarks: formatEtAl(r.remarks),
-          createdAt: r.created_at,
-          updatedAt: r.updated_at
-        }));
-      } else {
-        if (!appState.data.contactsRecords || appState.data.contactsRecords.length === 0) {
-          appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
-        }
-        await pushLocalContactsToSupabase();
-      }
-
-      purgeExpiredRecycledRecords();
-      saveToLocalStorage();
-      renderApp();
-    } else if (hasLocalData) {
-      await pushLocalDataToSupabase();
     }
+
+    purgeExpiredRecycledRecords();
+    saveToLocalStorage();
+    renderApp();
   } catch (err) {
     console.error('Cloud database sync notice:', err.message);
     showToast('WORKING IN LOCAL BACKUP MODE (SUPABASE SYNC NOTE)', 'info');
@@ -464,29 +495,19 @@ async function pushLocalDataToSupabase() {
     }
 
     if (appState.data.contactsRecords && appState.data.contactsRecords.length > 0) {
-      await pushLocalContactsToSupabase();
+      const cntPayload = appState.data.contactsRecords.map(r => ({
+        id: r.id,
+        gip_name: r.gipName,
+        assignment: r.assignment,
+        contact_number: r.contactNumber,
+        remarks: r.remarks,
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_contacts').upsert(cntPayload);
     }
   } catch (err) {
     console.warn('Auto-push local data note:', err.message);
-  }
-}
-
-async function pushLocalContactsToSupabase() {
-  if (!isSupabaseConnected || !supabaseClient) return;
-  try {
-    const contacts = appState.data.contactsRecords || DEFAULT_CONTACTS_SEED;
-    const payload = contacts.map(r => ({
-      id: r.id,
-      gip_name: r.gipName,
-      assignment: r.assignment || 'LDNPFO',
-      contact_number: r.contactNumber,
-      remarks: r.remarks || '',
-      created_at: r.createdAt || new Date().toISOString(),
-      updated_at: r.updatedAt || new Date().toISOString()
-    }));
-    await supabaseClient.from('gip_contacts').upsert(payload);
-  } catch (err) {
-    console.warn('Push contacts note:', err.message);
   }
 }
 
