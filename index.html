@@ -582,20 +582,33 @@
     </div>
   </div>
 
-  <!-- Add New Quincena Period Modal -->
+  <!-- Manage & Add Quincena Period Modal -->
   <div class="modal-backdrop" id="add-quincena-modal">
-    <div class="modal-container" style="max-width: 480px;">
+    <div class="modal-container" style="max-width: 520px;">
       <div class="modal-header">
         <h2 style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="plus-circle" style="width: 18px; height: 18px; color: var(--brand-accent);"></i> Add New Quincena Column
+          <i data-lucide="calendar" style="width: 18px; height: 18px; color: var(--brand-accent);"></i> Manage Quincena Columns
         </h2>
         <button class="modal-close" id="quincena-modal-close">&times;</button>
       </div>
-      <form id="add-quincena-form">
-        <div class="modal-body">
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
-            Add a new payroll quincena column to your Salary & Payroll Tracking Matrix table.
-          </p>
+      <div class="modal-body">
+        <!-- Active Quincenas List with Delete Option -->
+        <div style="margin-bottom: 18px;">
+          <label style="font-size: 0.85rem; font-weight: 700; color: var(--primary-navy); display: block; margin-bottom: 8px;">
+            Current Active Quincenas (<span id="active-quincena-count">0</span>)
+          </label>
+          <div id="active-quincenas-list" style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 160px; overflow-y: auto; padding: 10px; background: var(--bg-page); border: 1px solid var(--border-light); border-radius: var(--radius-sm);">
+            <!-- Populated dynamically in script.js -->
+          </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px dashed var(--border-light); margin: 16px 0;">
+
+        <!-- Add New Quincena Form -->
+        <form id="add-quincena-form">
+          <h4 style="font-size: 0.875rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="plus-circle" style="width: 15px; height: 15px; color: var(--brand-accent);"></i> Add New Quincena Column
+          </h4>
 
           <div class="form-group">
             <label for="new-quincena-name">Quincena Period Name <span class="required">*</span></label>
@@ -617,15 +630,13 @@
               <option value="na">N/A (Not Applicable)</option>
             </select>
           </div>
-        </div>
 
-        <div class="modal-footer" style="justify-content: space-between;">
-          <button type="button" class="btn btn-secondary" id="quincena-modal-cancel">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            <i data-lucide="plus"></i> Add Quincena Column
-          </button>
-        </div>
-      </form>
+          <div class="modal-footer" style="padding: 14px 0 0 0; background: transparent; border-top: none; justify-content: space-between;">
+            <button type="button" class="btn btn-secondary" id="quincena-modal-cancel">Close</button>
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="plus-circle"></i> Add Column
+            </button>
+          </div>
     </div>
   </div>
 
