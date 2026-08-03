@@ -37,7 +37,18 @@ CREATE TABLE IF NOT EXISTS recycled_records (
   deleted_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. Ensure all columns exist (Migration fix for existing tables)
+-- 4. Create GIP Contacts Directory Table
+CREATE TABLE IF NOT EXISTS gip_contacts (
+  id TEXT PRIMARY KEY,
+  gip_name TEXT NOT NULL,
+  assignment TEXT,
+  contact_number TEXT,
+  remarks TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. Ensure all columns exist (Migration fix for existing tables)
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS prepared_by TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS particulars TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS date_transmitted TEXT;
@@ -50,12 +61,18 @@ ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS quincena TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS dtr_ar_date_received TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS remarks TEXT;
 
--- 5. Enable Row Level Security (RLS)
+ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS gip_name TEXT;
+ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS assignment TEXT;
+ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS contact_number TEXT;
+ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS remarks TEXT;
+
+-- 6. Enable Row Level Security (RLS)
 ALTER TABLE gip_dtr_ar_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recycled_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gip_contacts ENABLE ROW LEVEL SECURITY;
 
--- 6. Enable Public Read & Write Access Policies
+-- 7. Enable Public Read & Write Access Policies
 DROP POLICY IF EXISTS "Public full access on gip_dtr_ar_records" ON gip_dtr_ar_records;
 CREATE POLICY "Public full access on gip_dtr_ar_records" 
   ON gip_dtr_ar_records FOR ALL 
@@ -71,8 +88,13 @@ CREATE POLICY "Public full access on recycled_records"
   ON recycled_records FOR ALL 
   USING (true) WITH CHECK (true);
 
--- 7. Enable Realtime Publications for Realtime Multi-device Sync
+DROP POLICY IF EXISTS "Public full access on gip_contacts" ON gip_contacts;
+CREATE POLICY "Public full access on gip_contacts" 
+  ON gip_contacts FOR ALL 
+  USING (true) WITH CHECK (true);
+
+-- 8. Enable Realtime Publications for Realtime Multi-device Sync
 BEGIN;
   DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records;
+  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts;
 COMMIT;

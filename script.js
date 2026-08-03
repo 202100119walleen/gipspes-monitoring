@@ -79,9 +79,87 @@ const DEFAULT_SEED_DATA = {
   ]
 };
 
+// Initial GIP Contacts Directory Seed Data from CSV
+const DEFAULT_CONTACTS_SEED = [
+  { id: "cnt-1", gipName: "ABBAS, EXSAN S.", assignment: "LDNPFO", contactNumber: "09094708118", remarks: "" },
+  { id: "cnt-2", gipName: "ABDUL, NURKEYMAR C.", assignment: "LDNPFO", contactNumber: "09915305586", remarks: "" },
+  { id: "cnt-3", gipName: "ABUTON, DAVIE C.", assignment: "NLRC", contactNumber: "09752615467", remarks: "" },
+  { id: "cnt-4", gipName: "AGBALOG, JOAN T.", assignment: "BOT", contactNumber: "09654523868", remarks: "" },
+  { id: "cnt-5", gipName: "AGBONA, FRELYN L.", assignment: "PESO BAROY", contactNumber: "09566804858", remarks: "" },
+  { id: "cnt-6", gipName: "ALEGA, ANGELYN A.", assignment: "LDNPFO", contactNumber: "09276513005", remarks: "" },
+  { id: "cnt-7", gipName: "ALFORQUE, JULIANA B.", assignment: "SSS", contactNumber: "09816714955", remarks: "" },
+  { id: "cnt-8", gipName: "ALI, NOR-AIN D.", assignment: "PESO TAGOLOAN", contactNumber: "09973687914", remarks: "" },
+  { id: "cnt-9", gipName: "ALIP, ALYANAH A.", assignment: "PESO BALO-I", contactNumber: "09700824607", remarks: "" },
+  { id: "cnt-10", gipName: "AMER, RAINISA C.", assignment: "PESO POONA PIAGAPO", contactNumber: "09074694092", remarks: "" },
+  { id: "cnt-11", gipName: "AMEROL, SOHAIB M.", assignment: "DICT", contactNumber: "09924843428", remarks: "" },
+  { id: "cnt-12", gipName: "ARNOCO, KAYLA JOY V.", assignment: "PESO SND", contactNumber: "09948202331", remarks: "" },
+  { id: "cnt-13", gipName: "ATES, WALLEEN V.", assignment: "LDNPFO", contactNumber: "09913092069", remarks: "" },
+  { id: "cnt-14", gipName: "BALANG, RACMA B.", assignment: "PESO SAPAD", contactNumber: "09261716851", remarks: "" },
+  { id: "cnt-15", gipName: "BALANGHIG, SHENDY LIANE T.", assignment: "PESO SAPAD", contactNumber: "09098133047", remarks: "" },
+  { id: "cnt-16", gipName: "BALUYOS, DIANNE LANE B.", assignment: "SSS", contactNumber: "09465315908", remarks: "" },
+  { id: "cnt-17", gipName: "BANGUIS, JERLYN C.", assignment: "PESO BALO-I", contactNumber: "09123846371", remarks: "" },
+  { id: "cnt-18", gipName: "BEDOL, ZAIRA MAE L.", assignment: "PESO BALO-I", contactNumber: "09631137213", remarks: "" },
+  { id: "cnt-19", gipName: "COLALO, JAMAIDA P.", assignment: "PESO SALVADOR", contactNumber: "09754816800", remarks: "" },
+  { id: "cnt-20", gipName: "CONCILIADO, CONSTANTINO LUIS C.", assignment: "PRC", contactNumber: "09456930902", remarks: "" },
+  { id: "cnt-21", gipName: "CORDERO, MAYA NIÑA D.", assignment: "PESO KAUSWAGAN", contactNumber: "09129145507", remarks: "" },
+  { id: "cnt-22", gipName: "DATU, JOHANIE H. SERAD", assignment: "PESO PANTAR", contactNumber: "09951937972", remarks: "" },
+  { id: "cnt-23", gipName: "DATU, RAIHANIE H. SERAD", assignment: "PESO PANTAR", contactNumber: "09709302207", remarks: "" },
+  { id: "cnt-24", gipName: "DAYGAM, JOHN ALJHON C.", assignment: "PGLDN", contactNumber: "09277706255", remarks: "" },
+  { id: "cnt-25", gipName: "DIMAPORO, NORLIN B.", assignment: "PESO TANGCAL", contactNumber: "09816190177", remarks: "" },
+  { id: "cnt-26", gipName: "DOMAGAY, ABDUL HASSAN B.", assignment: "PESO TANGCAL", contactNumber: "09530476472", remarks: "" },
+  { id: "cnt-27", gipName: "DUMAPIAS, JOVELLE A.", assignment: "PRC", contactNumber: "09948168199", remarks: "" },
+  { id: "cnt-28", gipName: "ELLA VIA, LUNA C.", assignment: "BOT", contactNumber: "09074966903", remarks: "" },
+  { id: "cnt-29", gipName: "FALCESO, DAVE B.", assignment: "NLRC", contactNumber: "09652008745", remarks: "" },
+  { id: "cnt-30", gipName: "GELLICA, MARK LLOYD V.", assignment: "LDNPFO", contactNumber: "09659061218", remarks: "" },
+  { id: "cnt-31", gipName: "GENON, RHEA THERESS A.", assignment: "PESO LINAMON", contactNumber: "09518876802", remarks: "" },
+  { id: "cnt-32", gipName: "GUMAMA, ADEL YASSIN G.", assignment: "LDNPFO", contactNumber: "09635858618", remarks: "" },
+  { id: "cnt-33", gipName: "H. ABBAS, JUNAISAH H.", assignment: "LDNPFO", contactNumber: "09664160715", remarks: "" },
+  { id: "cnt-34", gipName: "HERMOSO, MYCEL JOY J.", assignment: "PGLDN", contactNumber: "09661888512", remarks: "" },
+  { id: "cnt-35", gipName: "HERNANDEZ, FRANCIS CLARK C.", assignment: "NLRC", contactNumber: "09679144968", remarks: "" },
+  { id: "cnt-36", gipName: "IBRAHIM, PRINCESS JIHAN SHAIRA M.", assignment: "NLRC", contactNumber: "09852839070", remarks: "" },
+  { id: "cnt-37", gipName: "JACINTO, LAICAH O.", assignment: "NLRC", contactNumber: "09925401101", remarks: "" },
+  { id: "cnt-38", gipName: "JAICTEN, FRANZELLE VIE B.", assignment: "LDNPFO", contactNumber: "09559555997", remarks: "" },
+  { id: "cnt-39", gipName: "JUMALON, JEVI R.", assignment: "PESO ILIGAN", contactNumber: "09169330786", remarks: "" },
+  { id: "cnt-40", gipName: "LACABA, LEO JAY B.", assignment: "PESO-MAIGO", contactNumber: "09658359201", remarks: "" },
+  { id: "cnt-41", gipName: "LAGRECA, NAOMIE B.", assignment: "PESO KOLAMBUGAN", contactNumber: "09652633583", remarks: "" },
+  { id: "cnt-42", gipName: "LAPECIROS, JELORD A.", assignment: "PRC", contactNumber: "09914999103", remarks: "" },
+  { id: "cnt-43", gipName: "LEONG, CHLEO DENISE C.", assignment: "PESO LINAMON", contactNumber: "09668018545", remarks: "" },
+  { id: "cnt-44", gipName: "LIPANTAS, AISAH O.", assignment: "PESO MAGSAYSAY", contactNumber: "09534196555", remarks: "" },
+  { id: "cnt-45", gipName: "MABANING, JOHANNA P.", assignment: "PESO PANTAO RAGAT", contactNumber: "09552657386", remarks: "" },
+  { id: "cnt-46", gipName: "MACACUNA, FARHAN B.", assignment: "PESO PANTAO RAGAT", contactNumber: "09638183436", remarks: "" },
+  { id: "cnt-47", gipName: "MAMANGCONI, ALYANA-HAMRA M.", assignment: "PESO MATUNGAO", contactNumber: "09392741207", remarks: "" },
+  { id: "cnt-48", gipName: "MAMANGCONI, NUR-HASNA M.", assignment: "PESO MATUNGAO", contactNumber: "09622547316", remarks: "" },
+  { id: "cnt-49", gipName: "MANOS, ESTHOR EMMANUEL A.", assignment: "PESO TUBOD", contactNumber: "09952971195", remarks: "" },
+  { id: "cnt-50", gipName: "MEJORADA, ELIZABETH M.", assignment: "PGLDN", contactNumber: "09268344551", remarks: "" },
+  { id: "cnt-51", gipName: "MONSANTO, HIZEL G.", assignment: "LDNPFO", contactNumber: "09617678670", remarks: "" },
+  { id: "cnt-52", gipName: "NATIVIDAD, JUDIEL C.", assignment: "PESO KAUSWAGAN", contactNumber: "09973681741", remarks: "" },
+  { id: "cnt-53", gipName: "NICDAO, ANN MARIE Y.", assignment: "PESO ILIGAN", contactNumber: "09368933490", remarks: "" },
+  { id: "cnt-54", gipName: "OMAR, ABDUL JAME A.", assignment: "PESO MAGSAYSAY", contactNumber: "09382197634", remarks: "" },
+  { id: "cnt-55", gipName: "OYOG, LOVELY GRACE L.", assignment: "PGLDN", contactNumber: "09981744371", remarks: "" },
+  { id: "cnt-56", gipName: "PADILLA, THERESE MAE C.", assignment: "PCUP", contactNumber: "09368446320", remarks: "" },
+  { id: "cnt-57", gipName: "PATAD, ANALYN M.", assignment: "PESO NUNUNGAN", contactNumber: "09810802508", remarks: "" },
+  { id: "cnt-58", gipName: "PENDANG, JOHN LLOYD D.", assignment: "PESO ILIGAN", contactNumber: "09161960849", remarks: "" },
+  { id: "cnt-59", gipName: "PETILUNA, QUEENIE LYN E.", assignment: "PESO TUBOD", contactNumber: "09944112115", remarks: "" },
+  { id: "cnt-60", gipName: "PINDOLONAN, SAMAILA D.", assignment: "PESO NUNUNGAN", contactNumber: "09100874975", remarks: "" },
+  { id: "cnt-61", gipName: "POLOYAPOY, JUNDY MAE R.", assignment: "PESO KOLAMBUGAN", contactNumber: "09361781814", remarks: "" },
+  { id: "cnt-62", gipName: "RABANES, NELSON A. JR.", assignment: "NLRC", contactNumber: "09757157511", remarks: "" },
+  { id: "cnt-63", gipName: "RATUNIL, DAVE EDWARD R.", assignment: "LDNPFO", contactNumber: "09656121944", remarks: "" },
+  { id: "cnt-64", gipName: "RETES, DAISY LOU J.", assignment: "PESO SALVADOR", contactNumber: "09979857883", remarks: "" },
+  { id: "cnt-65", gipName: "RIVERA, JHOPAY JANE D.", assignment: "PESO BACOLOD", contactNumber: "09283312116", remarks: "" },
+  { id: "cnt-66", gipName: "SARIP, NORJANAH M.", assignment: "PESO TAGOLOAN", contactNumber: "09090838855", remarks: "" },
+  { id: "cnt-67", gipName: "SEBIAL, MARY CRIS C.", assignment: "PESO SND", contactNumber: "09816253116", remarks: "" },
+  { id: "cnt-68", gipName: "SINGSON, CLYDENE FRANZ M.", assignment: "PESO BALO-I", contactNumber: "09929608922", remarks: "" },
+  { id: "cnt-69", gipName: "TABAO, JOHANISA D.", assignment: "LDNPFO", contactNumber: "09383867362", remarks: "" },
+  { id: "cnt-70", gipName: "TANGHIYAN, ERNIE JEAN D.", assignment: "LDNPFO", contactNumber: "09469004955", remarks: "" },
+  { id: "cnt-71", gipName: "TEMPLADO, KATHY M.", assignment: "PESO BAROY", contactNumber: "09700384717", remarks: "" },
+  { id: "cnt-72", gipName: "UGTONG, MARK JORDAN C.", assignment: "LDNPFO", contactNumber: "09911468591", remarks: "" },
+  { id: "cnt-73", gipName: "UNDA, PRINCESS JEHAN P.", assignment: "LDNPFO", contactNumber: "09169307200", remarks: "" },
+  { id: "cnt-74", gipName: "CABILANDO, SUSAN RECENTES", assignment: "LDNPFO", contactNumber: "09530526247", remarks: "" }
+];
+
 // Application State Object
 let appState = {
-  activeTab: 'dtr', // 'dtr' | 'transmittal'
+  activeTab: 'dtr', // 'dtr' | 'transmittal' | 'trash' | 'contacts'
   searchQuery: '',
   sortColumn: 'createdAt',
   sortDirection: 'desc',
@@ -90,7 +168,8 @@ let appState = {
   data: {
     dtrRecords: [],
     transmittalRecords: [],
-    recycledRecords: []
+    recycledRecords: [],
+    contactsRecords: []
   }
 };
 
@@ -220,18 +299,23 @@ function loadLocalStorageData() {
       if (!parsed.recycledRecords) {
         parsed.recycledRecords = [];
       }
+      if (!parsed.contactsRecords || parsed.contactsRecords.length === 0) {
+        parsed.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
+      }
       appState.data = parsed;
       purgeExpiredRecycledRecords();
       saveToLocalStorage();
     } else {
       appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
       appState.data.recycledRecords = [];
+      appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
       saveToLocalStorage();
     }
   } catch (err) {
     console.error('Failed to load local storage:', err);
     appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
     appState.data.recycledRecords = [];
+    appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
   }
 }
 
@@ -269,13 +353,20 @@ async function fetchRecordsFromSupabase() {
       .select('*')
       .order('deleted_at', { ascending: false });
 
+    const { data: cntData } = await supabaseClient
+      .from('gip_contacts')
+      .select('*')
+      .order('gip_name', { ascending: true });
+
     const hasRemoteData = (dtrData && dtrData.length > 0) || 
                           (trnData && trnData.length > 0) || 
-                          (recData && recData.length > 0);
+                          (recData && recData.length > 0) ||
+                          (cntData && cntData.length > 0);
 
     const hasLocalData = (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) || 
                          (appState.data.transmittalRecords && appState.data.transmittalRecords.length > 0) ||
-                         (appState.data.recycledRecords && appState.data.recycledRecords.length > 0);
+                         (appState.data.recycledRecords && appState.data.recycledRecords.length > 0) ||
+                         (appState.data.contactsRecords && appState.data.contactsRecords.length > 0);
 
     if (hasRemoteData) {
       appState.data.dtrRecords = (dtrData || []).map(r => ({
@@ -306,6 +397,16 @@ async function fetchRecordsFromSupabase() {
         originalId: r.original_id,
         originalRecord: r.original_record,
         deletedAt: r.deleted_at
+      }));
+
+      appState.data.contactsRecords = (cntData || []).map(r => ({
+        id: r.id,
+        gipName: formatEtAl(r.gip_name),
+        assignment: (r.assignment || '').toUpperCase(),
+        contactNumber: r.contact_number,
+        remarks: formatEtAl(r.remarks),
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
       }));
 
       purgeExpiredRecycledRecords();
@@ -354,6 +455,19 @@ async function pushLocalDataToSupabase() {
       }));
       await supabaseClient.from('transmittal_records').upsert(trnPayload);
     }
+
+    if (appState.data.contactsRecords && appState.data.contactsRecords.length > 0) {
+      const cntPayload = appState.data.contactsRecords.map(r => ({
+        id: r.id,
+        gip_name: r.gipName,
+        assignment: r.assignment,
+        contact_number: r.contactNumber,
+        remarks: r.remarks,
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_contacts').upsert(cntPayload);
+    }
   } catch (err) {
     console.warn('Auto-push local data note:', err.message);
   }
@@ -384,6 +498,7 @@ function bindEvents() {
   // Sidebar Navigation Items
   document.getElementById('side-nav-dtr').addEventListener('click', () => switchTab('dtr'));
   document.getElementById('side-nav-transmittal').addEventListener('click', () => switchTab('transmittal'));
+  document.getElementById('side-nav-contacts').addEventListener('click', () => switchTab('contacts'));
   document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
   document.getElementById('side-nav-excel').addEventListener('click', handleExportExcel);
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
@@ -496,6 +611,11 @@ function switchTab(tabName) {
     viewSubtitle.textContent = 'DOCUMENT TRANSMITTALS SENT TO REGIONAL OFFICE';
     btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
+  } else if (tabName === 'contacts') {
+    viewTitle.textContent = 'GIP CONTACTS DIRECTORY';
+    viewSubtitle.textContent = 'OFFICIAL MOBILE CONTACT NUMBERS & OFFICE ASSIGNMENTS DIRECTORY';
+    btnAdd.style.display = 'inline-flex';
+    btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'trash') {
     viewTitle.textContent = 'RECYCLE BIN';
     viewSubtitle.textContent = 'DELETED RECORDS STORED FOR 30 DAYS BEFORE AUTOMATIC PERMANENT DELETION';
@@ -527,19 +647,23 @@ function updateCountsAndStats() {
   const dtrCount = appState.data.dtrRecords.length;
   const trnCount = appState.data.transmittalRecords.length;
   const trashCount = (appState.data.recycledRecords || []).length;
+  const contactsCount = (appState.data.contactsRecords || []).length;
 
   document.getElementById('side-count-dtr').textContent = dtrCount;
   document.getElementById('side-count-transmittal').textContent = trnCount;
   document.getElementById('side-count-trash').textContent = trashCount;
+  document.getElementById('side-count-contacts').textContent = contactsCount;
 
   let currentDatasetLength = 0;
   if (appState.activeTab === 'dtr') currentDatasetLength = dtrCount;
   else if (appState.activeTab === 'transmittal') currentDatasetLength = trnCount;
+  else if (appState.activeTab === 'contacts') currentDatasetLength = contactsCount;
   else if (appState.activeTab === 'trash') currentDatasetLength = trashCount;
 
   document.getElementById('stat-dtr-count').textContent = dtrCount;
   document.getElementById('stat-trn-count').textContent = trnCount;
   document.getElementById('stat-trash-count').textContent = trashCount;
+  document.getElementById('stat-contacts-count').textContent = contactsCount;
   document.getElementById('stat-active-count').textContent = currentDatasetLength;
 }
 
@@ -563,6 +687,30 @@ function getFilteredAndSortedRecords() {
     records.sort((a, b) => {
       let valA = a[appState.sortColumn] || a.deletedAt || '';
       let valB = b[appState.sortColumn] || b.deletedAt || '';
+
+      if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return records;
+  }
+
+  if (appState.activeTab === 'contacts') {
+    let records = appState.data.contactsRecords ? [...appState.data.contactsRecords] : [];
+    if (appState.searchQuery) {
+      const q = appState.searchQuery;
+      records = records.filter(r => {
+        return (r.gipName || '').toLowerCase().includes(q) ||
+               (r.assignment || '').toLowerCase().includes(q) ||
+               (r.contactNumber || '').toLowerCase().includes(q) ||
+               (r.remarks || '').toLowerCase().includes(q);
+      });
+    }
+
+    records.sort((a, b) => {
+      let valA = a[appState.sortColumn] || a.gipName || '';
+      let valB = b[appState.sortColumn] || b.gipName || '';
 
       if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
       if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
@@ -674,6 +822,76 @@ function renderTable() {
               </button>
               <button class="btn-action delete" onclick="deletePermanently('${item.id}')" title="Delete Permanently">
                 <i data-lucide="trash-2"></i> Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  if (appState.activeTab === 'contacts') {
+    tableHead.innerHTML = `
+      <tr>
+        <th onclick="handleSort('gipName')">
+          <div class="th-content">GIP FULL NAME ${getSortIcon('gipName')}</div>
+        </th>
+        <th onclick="handleSort('assignment')">
+          <div class="th-content">ASSIGNMENT / OFFICE ${getSortIcon('assignment')}</div>
+        </th>
+        <th onclick="handleSort('contactNumber')">
+          <div class="th-content">CONTACT NUMBER ${getSortIcon('contactNumber')}</div>
+        </th>
+        <th>
+          <div class="th-content">REMARKS</div>
+        </th>
+        <th style="text-align: right;">ACTIONS</th>
+      </tr>
+    `;
+
+    const records = getFilteredAndSortedRecords();
+
+    if (records.length === 0) {
+      tableBody.innerHTML = '';
+      emptyState.style.display = 'block';
+      if (emptyMsg) emptyMsg.textContent = 'No GIP contacts found. Add a new contact.';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tableBody.innerHTML = records.map(record => {
+      const formattedPhone = formatPhoneNumber(record.contactNumber);
+      return `
+        <tr>
+          <td style="font-weight: 600; font-size: 0.95rem; color: var(--primary-navy);">${escapeHtml(record.gipName)}</td>
+          <td>
+            <span class="quincena-pill quincena-q1">
+              <i data-lucide="building-2" style="width: 12px; height: 12px;"></i>
+              ${escapeHtml(record.assignment || 'LDNPFO')}
+            </span>
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <a href="tel:${escapeHtml(record.contactNumber)}" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: var(--brand-accent); text-decoration: none;" title="Click to Call/SMS">
+                <i data-lucide="phone" style="width: 13px; height: 13px; vertical-align: middle;"></i> ${formattedPhone}
+              </a>
+              <button class="btn-action edit" onclick="copyContactNumber('${escapeHtml(record.contactNumber)}')" title="Copy Phone Number">
+                <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+              </button>
+            </div>
+          </td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(record.remarks || '-')}</td>
+          <td style="text-align: right;">
+            <div class="action-buttons" style="justify-content: flex-end;">
+              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Contact">
+                <i data-lucide="edit-3"></i>
+              </button>
+              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Contact">
+                <i data-lucide="trash-2"></i>
               </button>
             </div>
           </td>
@@ -898,11 +1116,13 @@ function getSortIcon(colName) {
  */
 function openRecordModal(id = null) {
   const isDtr = appState.activeTab === 'dtr';
+  const isContacts = appState.activeTab === 'contacts';
   appState.editingRecordId = id;
 
   const modalTitle = document.getElementById('modal-title');
   const dtrFields = document.getElementById('fields-dtr');
   const trnFields = document.getElementById('fields-transmittal');
+  const cntFields = document.getElementById('fields-contacts');
   const form = document.getElementById('record-form');
 
   form.reset();
@@ -917,24 +1137,50 @@ function openRecordModal(id = null) {
   if (isDtr) {
     dtrFields.style.display = 'block';
     trnFields.style.display = 'none';
+    cntFields.style.display = 'none';
     document.getElementById('gip-name').required = true;
     document.getElementById('record-month').required = true;
     document.getElementById('record-quincena').required = true;
     document.getElementById('particulars').required = false;
     document.getElementById('prepared-by-trn').required = false;
+    document.getElementById('contact-gip-name').required = false;
+    document.getElementById('contact-assignment').required = false;
+    document.getElementById('contact-number').required = false;
+  } else if (isContacts) {
+    dtrFields.style.display = 'none';
+    trnFields.style.display = 'none';
+    cntFields.style.display = 'block';
+    document.getElementById('gip-name').required = false;
+    document.getElementById('record-month').required = false;
+    document.getElementById('record-quincena').required = false;
+    document.getElementById('particulars').required = false;
+    document.getElementById('prepared-by-trn').required = false;
+    document.getElementById('contact-gip-name').required = true;
+    document.getElementById('contact-assignment').required = true;
+    document.getElementById('contact-number').required = true;
   } else {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'block';
+    cntFields.style.display = 'none';
     document.getElementById('gip-name').required = false;
     document.getElementById('record-month').required = false;
     document.getElementById('record-quincena').required = false;
     document.getElementById('particulars').required = true;
     document.getElementById('prepared-by-trn').required = true;
+    document.getElementById('contact-gip-name').required = false;
+    document.getElementById('contact-assignment').required = false;
+    document.getElementById('contact-number').required = false;
   }
 
   if (id) {
-    modalTitle.textContent = isDtr ? 'EDIT GIP DTR & AR RECORD' : 'EDIT TRANSMITTAL RECORD';
-    const dataset = isDtr ? appState.data.dtrRecords : appState.data.transmittalRecords;
+    if (isDtr) modalTitle.textContent = 'EDIT GIP DTR & AR RECORD';
+    else if (isContacts) modalTitle.textContent = 'EDIT GIP CONTACT RECORD';
+    else modalTitle.textContent = 'EDIT TRANSMITTAL RECORD';
+
+    let dataset = appState.data.dtrRecords;
+    if (isContacts) dataset = appState.data.contactsRecords;
+    else if (!isDtr) dataset = appState.data.transmittalRecords;
+
     const record = dataset.find(r => r.id === id);
 
     if (record) {
@@ -946,6 +1192,10 @@ function openRecordModal(id = null) {
         document.getElementById('record-month').value = record.month || currentMonthStr;
         document.getElementById('record-quincena').value = record.quincena || '1st Quincena (1-15)';
         document.getElementById('dtr-ar-date-received').value = record.dtrArDateReceived || '';
+      } else if (isContacts) {
+        document.getElementById('contact-gip-name').value = (record.gipName || '').toUpperCase();
+        document.getElementById('contact-assignment').value = (record.assignment || '').toUpperCase();
+        document.getElementById('contact-number').value = record.contactNumber || '';
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         document.getElementById('prepared-by-trn').value = (record.preparedBy || '').toUpperCase();
@@ -955,7 +1205,10 @@ function openRecordModal(id = null) {
       }
     }
   } else {
-    modalTitle.textContent = isDtr ? 'ADD NEW GIP DTR & AR RECORD' : 'ADD NEW TRANSMITTAL RECORD';
+    if (isDtr) modalTitle.textContent = 'ADD NEW GIP DTR & AR RECORD';
+    else if (isContacts) modalTitle.textContent = 'ADD NEW GIP CONTACT RECORD';
+    else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
+
     document.getElementById('form-record-id').value = '';
   }
 
@@ -970,12 +1223,68 @@ function closeRecordModal() {
 async function handleFormSubmit(e) {
   e.preventDefault();
   const isDtr = appState.activeTab === 'dtr';
+  const isContacts = appState.activeTab === 'contacts';
   const recordId = document.getElementById('form-record-id').value;
   const remarks = formatEtAl(document.getElementById('record-remarks').value.trim().toUpperCase());
 
   const nowISO = new Date().toISOString();
 
-  if (isDtr) {
+  if (isContacts) {
+    const gipName = formatEtAl(document.getElementById('contact-gip-name').value.trim().toUpperCase());
+    const assignment = document.getElementById('contact-assignment').value.trim().toUpperCase();
+    const contactNumber = document.getElementById('contact-number').value.trim();
+
+    if (!gipName) {
+      showToast('GIP NAME IS REQUIRED', 'danger');
+      return;
+    }
+
+    const payload = {
+      gipName,
+      assignment,
+      contactNumber,
+      remarks,
+      updatedAt: nowISO
+    };
+
+    if (recordId) {
+      const index = appState.data.contactsRecords.findIndex(r => r.id === recordId);
+      if (index !== -1) {
+        appState.data.contactsRecords[index] = { ...appState.data.contactsRecords[index], ...payload };
+      }
+
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_contacts').upsert({
+          id: recordId,
+          gip_name: gipName,
+          assignment,
+          contact_number: contactNumber,
+          remarks,
+          updated_at: nowISO
+        });
+      }
+
+      showToast('GIP CONTACT UPDATED SUCCESSFULLY!', 'success');
+    } else {
+      const newId = 'cnt-' + Date.now();
+      const newRecord = { id: newId, ...payload, createdAt: nowISO };
+      appState.data.contactsRecords.unshift(newRecord);
+
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_contacts').upsert({
+          id: newId,
+          gip_name: gipName,
+          assignment,
+          contact_number: contactNumber,
+          remarks,
+          created_at: nowISO,
+          updated_at: nowISO
+        });
+      }
+
+      showToast('NEW GIP CONTACT ADDED SUCCESSFULLY!', 'success');
+    }
+  } else if (isDtr) {
     const gipName = formatEtAl(document.getElementById('gip-name').value.trim().toUpperCase());
     const month = document.getElementById('record-month').value;
     const quincena = document.getElementById('record-quincena').value.toUpperCase();
@@ -1113,16 +1422,21 @@ async function handleFormSubmit(e) {
  */
 function openDeleteModal(id) {
   const isDtr = appState.activeTab === 'dtr';
+  const isContacts = appState.activeTab === 'contacts';
   appState.deletingRecordId = id;
 
-  const dataset = isDtr ? appState.data.dtrRecords : appState.data.transmittalRecords;
+  let dataset = appState.data.dtrRecords;
+  if (isContacts) dataset = appState.data.contactsRecords;
+  else if (!isDtr) dataset = appState.data.transmittalRecords;
+
   const record = dataset.find(r => r.id === id);
 
   if (!record) return;
 
-  const summary = isDtr 
-    ? `GIP NAME: ${record.gipName} (${formatMonth(record.month)} - ${record.quincena || '1ST QUINCENA'})` 
-    : `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
+  let summary = '';
+  if (isDtr) summary = `GIP NAME: ${record.gipName} (${formatMonth(record.month)})`;
+  else if (isContacts) summary = `GIP CONTACT: ${record.gipName} (${record.assignment})`;
+  else summary = `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
 
   document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
   document.getElementById('delete-modal').classList.add('active');
@@ -1138,6 +1452,20 @@ async function confirmDeleteRecord() {
   if (!id) return;
 
   const isDtr = appState.activeTab === 'dtr';
+  const isContacts = appState.activeTab === 'contacts';
+
+  if (isContacts) {
+    appState.data.contactsRecords = appState.data.contactsRecords.filter(r => r.id !== id);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_contacts').delete().eq('id', id);
+    }
+    saveToLocalStorage();
+    closeDeleteModal();
+    renderApp();
+    showToast('GIP CONTACT DELETED SUCCESSFULLY', 'info');
+    return;
+  }
+
   const dataset = isDtr ? appState.data.dtrRecords : appState.data.transmittalRecords;
   const targetRecord = dataset.find(r => r.id === id);
 
@@ -1312,6 +1640,16 @@ function handleExportExcel() {
 
     const wsTrn = XLSX.utils.json_to_sheet(trnDataFormatted);
     XLSX.utils.book_append_sheet(wb, wsTrn, 'TRANSMITTALS');
+
+    const cntDataFormatted = (appState.data.contactsRecords || []).map(r => ({
+      'GIP FULL NAME': (r.gipName || '').toUpperCase(),
+      'ASSIGNMENT / OFFICE': (r.assignment || 'LDNPFO').toUpperCase(),
+      'CONTACT NUMBER': r.contactNumber || 'N/A',
+      'REMARKS': (r.remarks || '').toUpperCase()
+    }));
+
+    const wsCnt = XLSX.utils.json_to_sheet(cntDataFormatted);
+    XLSX.utils.book_append_sheet(wb, wsCnt, 'GIP CONTACTS');
 
     const today = new Date().toISOString().split('T')[0];
     const fileName = `DOLE_LDNPFO_GIP_MONITORING_${today}.xlsx`;
@@ -1653,4 +1991,32 @@ function initOCRHandler() {
       fileInput.value = '';
     }
   });
+}
+
+/**
+ * Copy Phone Number to Clipboard Helper
+ */
+function copyContactNumber(number) {
+  if (!number) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(number).then(() => {
+      showToast(`COPIED PHONE (${number}) TO CLIPBOARD!`, 'success');
+    }).catch(() => {
+      showToast(`CONTACT NUMBER: ${number}`, 'info');
+    });
+  } else {
+    showToast(`CONTACT NUMBER: ${number}`, 'info');
+  }
+}
+
+function formatPhoneNumber(numStr) {
+  if (!numStr) return '-';
+  let digits = String(numStr).replace(/\D/g, '');
+  if (digits.length === 10 && digits.startsWith('9')) {
+    digits = '0' + digits;
+  }
+  if (digits.length === 11) {
+    return `${digits.substring(0, 4)} ${digits.substring(4, 7)} ${digits.substring(7)}`;
+  }
+  return numStr;
 }

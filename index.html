@@ -64,6 +64,14 @@
           <span class="sidebar-badge" id="side-count-transmittal">0</span>
         </button>
 
+        <button class="sidebar-item" id="side-nav-contacts" data-tab="contacts">
+          <div class="sidebar-item-content">
+            <i data-lucide="phone-call"></i>
+            <span>GIP Contacts Directory</span>
+          </div>
+          <span class="sidebar-badge" id="side-count-contacts">0</span>
+        </button>
+
         <button class="sidebar-item" id="side-nav-trash" data-tab="trash">
           <div class="sidebar-item-content">
             <i data-lucide="trash-2"></i>
@@ -119,11 +127,20 @@
       <section class="stats-grid">
         <div class="stat-card">
           <div class="stat-info">
-            <div class="stat-label">GIP DTR & AR Records</div>
-            <div class="stat-value" id="stat-dtr-count">0</div>
+            <div class="stat-label">Recycle Bin (30-Day Auto Purge)</div>
+            <div class="stat-value" id="stat-trash-count">0</div>
           </div>
-          <div class="stat-icon total">
-            <i data-lucide="users"></i>
+          <div class="stat-icon alert">
+            <i data-lucide="trash-2"></i>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">GIP Contacts Directory</div>
+            <div class="stat-value" id="stat-contacts-count">0</div>
+          </div>
+          <div class="stat-icon pending">
+            <i data-lucide="phone-call"></i>
           </div>
         </div>
         <div class="stat-card">
@@ -292,6 +309,24 @@
                 <button type="button" class="btn btn-secondary btn-today" data-target="regional-date-received-trn">
                   <i data-lucide="calendar-check" style="width: 13px; height: 13px;"></i> Set Today
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fields for GIP Contacts Module -->
+          <div id="fields-contacts" class="module-fields" style="display: none;">
+            <div class="form-group">
+              <label for="contact-gip-name">GIP Full Name <span class="required">*</span></label>
+              <input type="text" id="contact-gip-name" class="form-control" placeholder="e.g. ABBAS, EXSAN S.">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="contact-assignment">Assignment / Office <span class="required">*</span></label>
+                <input type="text" id="contact-assignment" class="form-control" placeholder="e.g. LDNPFO, NLRC, PESO BAROY">
+              </div>
+              <div class="form-group">
+                <label for="contact-number">Contact / Mobile Number <span class="required">*</span></label>
+                <input type="tel" id="contact-number" class="form-control" placeholder="e.g. 09094708118">
               </div>
             </div>
           </div>
