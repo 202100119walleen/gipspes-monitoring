@@ -542,6 +542,17 @@ function bindEvents() {
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
   document.getElementById('btn-empty-trash').addEventListener('click', handleEmptyTrash);
 
+  // Dashboard Stat Cards Quick Jump
+  const statCardDtr = document.querySelector('#stat-dtr-count')?.closest('.stat-card');
+  const statCardTrn = document.querySelector('#stat-trn-count')?.closest('.stat-card');
+  const statCardCnt = document.querySelector('#stat-contacts-count')?.closest('.stat-card');
+  const statCardTrash = document.querySelector('#stat-trash-count')?.closest('.stat-card');
+
+  if (statCardDtr) { statCardDtr.style.cursor = 'pointer'; statCardDtr.addEventListener('click', () => switchTab('dtr')); }
+  if (statCardTrn) { statCardTrn.style.cursor = 'pointer'; statCardTrn.addEventListener('click', () => switchTab('transmittal')); }
+  if (statCardCnt) { statCardCnt.style.cursor = 'pointer'; statCardCnt.addEventListener('click', () => switchTab('contacts')); }
+  if (statCardTrash) { statCardTrash.style.cursor = 'pointer'; statCardTrash.addEventListener('click', () => switchTab('trash')); }
+
   // Mobile Menu Toggle
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
   const sidebarOverlay = document.getElementById('sidebar-overlay');
@@ -619,12 +630,77 @@ function bindEvents() {
   document.getElementById('delete-modal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeDeleteModal();
   });
+
+  // Security Password Auth Form Listeners
+  document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
+  document.getElementById('auth-modal-close-btn').addEventListener('click', closeAuthModal);
+  document.getElementById('auth-modal-cancel-btn').addEventListener('click', closeAuthModal);
+  document.getElementById('auth-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeAuthModal();
+  });
+}
+
+const SYSTEM_MODULE_PASSWORD = 'dolegip2026';
+let authenticatedModules = {
+  trash: false,
+  contacts: false
+};
+let pendingTabName = null;
+
+function openAuthModal(targetTab) {
+  pendingTabName = targetTab;
+  const titleElem = document.getElementById('auth-module-title');
+  const moduleLabel = targetTab === 'trash' ? 'RECYCLE BIN' : 'GIP CONTACTS DIRECTORY';
+  if (titleElem) {
+    titleElem.textContent = `PROTECTED ACCESS: ${moduleLabel}`;
+  }
+  document.getElementById('auth-password-input').value = '';
+  document.getElementById('auth-modal').classList.add('active');
+  setTimeout(() => {
+    const input = document.getElementById('auth-password-input');
+    if (input) input.focus();
+  }, 100);
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal').classList.remove('active');
+  pendingTabName = null;
+}
+
+function handleAuthSubmit(e) {
+  e.preventDefault();
+  const passwordInput = document.getElementById('auth-password-input').value.trim();
+  if (passwordInput === SYSTEM_MODULE_PASSWORD) {
+    if (pendingTabName) {
+      authenticatedModules[pendingTabName] = true;
+      const unlockedTab = pendingTabName;
+      closeAuthModal();
+      switchTab(unlockedTab);
+      showToast(`ACCESS GRANTED TO ${unlockedTab === 'trash' ? 'RECYCLE BIN' : 'GIP CONTACTS'}!`, 'success');
+    }
+  } else {
+    showToast('INCORRECT PASSWORD! ACCESS DENIED.', 'danger');
+    const inputElem = document.getElementById('auth-password-input');
+    if (inputElem) {
+      inputElem.style.borderColor = '#ef4444';
+      inputElem.select();
+      setTimeout(() => {
+        inputElem.style.borderColor = '';
+      }, 2000);
+    }
+  }
 }
 
 /**
  * Switch Active View Tab
  */
 function switchTab(tabName) {
+  // Password Protection for Recycle Bin ('trash') and GIP Contacts ('contacts')
+  if ((tabName === 'trash' || tabName === 'contacts') && !authenticatedModules[tabName]) {
+    openAuthModal(tabName);
+    return;
+  }
+
   if (appState.activeTab === tabName) return;
   appState.activeTab = tabName;
 
