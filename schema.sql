@@ -1,6 +1,7 @@
 -- =========================================================================
 -- DOLE LDNPFO GIP DOCUMENT MONITORING SYSTEM - SUPABASE SQL SETUP SCRIPT
--- Paste this script into your Supabase SQL Editor and click "Run".
+-- Copy and paste this complete script into your Supabase SQL Editor and click "Run".
+-- Project URL: https://gprkzegwymkufrbmzakd.supabase.co
 -- =========================================================================
 
 -- 1. Create GIP DTR & AR Table
@@ -27,13 +28,23 @@ CREATE TABLE IF NOT EXISTS transmittal_records (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Enable Row Level Security & Public Access Policies
+-- 3. Enable Row Level Security (RLS)
 ALTER TABLE gip_dtr_ar_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
+
+-- 4. Enable Public Read & Write Access Policies
+DROP POLICY IF EXISTS "Public full access on gip_dtr_ar_records" ON gip_dtr_ar_records;
 CREATE POLICY "Public full access on gip_dtr_ar_records" 
   ON gip_dtr_ar_records FOR ALL 
   USING (true) WITH CHECK (true);
 
-ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public full access on transmittal_records" ON transmittal_records;
 CREATE POLICY "Public full access on transmittal_records" 
   ON transmittal_records FOR ALL 
   USING (true) WITH CHECK (true);
+
+-- 5. Enable Realtime Publications for Realtime Multi-device Sync
+BEGIN;
+  DROP PUBLICATION IF EXISTS supabase_realtime;
+  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records;
+COMMIT;
