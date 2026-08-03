@@ -760,10 +760,10 @@ function bindEvents() {
   if (chkTrash) chkTrash.addEventListener('change', updateExportAuthVisibility);
 }
 
-const SYSTEM_MODULE_PASSWORD = 'dolegip2026';
+const SYSTEM_MODULE_PASSWORD = '010826';
 let authenticatedModules = {
-  trash: false,
-  contacts: false
+  trash: true,
+  contacts: true
 };
 let pendingTabName = null;
 
@@ -815,19 +815,6 @@ function handleAuthSubmit(e) {
  * Switch Active View Tab
  */
 function switchTab(tabName) {
-  // Password Protection for Recycle Bin ('trash') and GIP Contacts ('contacts')
-  if ((tabName === 'trash' || tabName === 'contacts') && !authenticatedModules[tabName]) {
-    openAuthModal(tabName);
-    return;
-  }
-
-  // Reset authentication when leaving a protected tab so it requires password again on return
-  if (appState.activeTab !== tabName) {
-    if (appState.activeTab === 'trash' || appState.activeTab === 'contacts') {
-      authenticatedModules[appState.activeTab] = false;
-    }
-  }
-
   if (appState.activeTab === tabName) return;
   appState.activeTab = tabName;
 
@@ -1929,11 +1916,13 @@ function openDeleteModal(id) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
+  const isTrash = appState.activeTab === 'trash';
   appState.deletingRecordId = id;
 
   let dataset = appState.data.dtrRecords;
   if (isContacts) dataset = appState.data.contactsRecords;
   else if (isSalary) dataset = appState.data.salaryRecords;
+  else if (isTrash) dataset = appState.data.recycledRecords;
   else dataset = appState.data.transmittalRecords;
 
   const record = dataset.find(r => r.id === id);
@@ -1944,7 +1933,19 @@ function openDeleteModal(id) {
   if (isDtr) summary = `GIP NAME: ${record.gipName} (${formatMonth(record.month)})`;
   else if (isContacts) summary = `GIP CONTACT: ${record.gipName} (${record.assignment})`;
   else if (isSalary) summary = `SALARY RECORD: ${record.gipName}`;
+  else if (isTrash) {
+    const orig = record.originalRecord || {};
+    summary = `RECYCLE BIN ITEM: ${orig.gipName || orig.particulars?.substring(0, 40) || record.id}`;
+  }
   else summary = `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
+
+  const authContainer = document.getElementById('delete-auth-container');
+  const pwdInput = document.getElementById('delete-password-input');
+  if (pwdInput) pwdInput.value = '';
+
+  if (authContainer) {
+    authContainer.style.display = (isContacts || isTrash) ? 'block' : 'none';
+  }
 
   document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
   document.getElementById('delete-modal').classList.add('active');
@@ -1962,6 +1963,28 @@ async function confirmDeleteRecord() {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
+  const isTrash = appState.activeTab === 'trash';
+
+  // Password verification for protected deletions (Contacts Directory & Recycle Bin)
+  if (isContacts || isTrash) {
+    const pwdInput = document.getElementById('delete-password-input');
+    const pwdVal = pwdInput ? pwdInput.value.trim() : '';
+    if (pwdVal !== SYSTEM_MODULE_PASSWORD) {
+      showToast('INCORRECT PASSWORD! DELETE DENIED.', 'danger');
+      if (pwdInput) {
+        pwdInput.style.borderColor = '#ef4444';
+        pwdInput.focus();
+        setTimeout(() => { pwdInput.style.borderColor = ''; }, 2000);
+      }
+      return;
+    }
+  }
+
+  if (isTrash) {
+    await deletePermanently(id);
+    closeDeleteModal();
+    return;
+  }
   const type = isDtr ? 'dtr' : isContacts ? 'contacts' : isSalary ? 'salary' : 'transmittal';
 
   let dataset = appState.data.dtrRecords;
@@ -2178,6 +2201,12 @@ async function deletePermanently(trashId) {
 async function handleEmptyTrash() {
   if (!appState.data.recycledRecords || appState.data.recycledRecords.length === 0) {
     showToast('RECYCLE BIN IS ALREADY EMPTY', 'info');
+    return;
+  }
+
+  const pwdPrompt = prompt('SECURITY CHECK: Enter password (010826) to permanently empty the Recycle Bin:');
+  if (pwdPrompt !== SYSTEM_MODULE_PASSWORD) {
+    if (pwdPrompt !== null) showToast('INCORRECT PASSWORD! EMPTY RECYCLE BIN CANCELLED.', 'danger');
     return;
   }
 
