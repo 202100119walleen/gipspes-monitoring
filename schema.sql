@@ -28,11 +28,24 @@ CREATE TABLE IF NOT EXISTS transmittal_records (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Enable Row Level Security (RLS)
+-- 3. Ensure all columns exist (Migration fix for existing tables)
+ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS prepared_by TEXT;
+ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS particulars TEXT;
+ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS date_transmitted TEXT;
+ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS regional_date_received TEXT;
+ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS remarks TEXT;
+
+ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
+ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS month TEXT;
+ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS quincena TEXT;
+ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS dtr_ar_date_received TEXT;
+ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS remarks TEXT;
+
+-- 4. Enable Row Level Security (RLS)
 ALTER TABLE gip_dtr_ar_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
 
--- 4. Enable Public Read & Write Access Policies
+-- 5. Enable Public Read & Write Access Policies
 DROP POLICY IF EXISTS "Public full access on gip_dtr_ar_records" ON gip_dtr_ar_records;
 CREATE POLICY "Public full access on gip_dtr_ar_records" 
   ON gip_dtr_ar_records FOR ALL 
@@ -43,7 +56,7 @@ CREATE POLICY "Public full access on transmittal_records"
   ON transmittal_records FOR ALL 
   USING (true) WITH CHECK (true);
 
--- 5. Enable Realtime Publications for Realtime Multi-device Sync
+-- 6. Enable Realtime Publications for Realtime Multi-device Sync
 BEGIN;
   DROP PUBLICATION IF EXISTS supabase_realtime;
   CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records;
