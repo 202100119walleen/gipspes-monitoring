@@ -401,6 +401,90 @@
     </div>
   </div>
 
+  <!-- Excel Export Options Modal -->
+  <div class="modal-backdrop" id="excel-export-modal">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="file-spreadsheet" style="width: 20px; height: 20px; color: #10b981;"></i> Select Sheets to Export
+        </h2>
+        <button class="modal-close" id="excel-modal-close-btn">&times;</button>
+      </div>
+      <form id="excel-export-form">
+        <div class="modal-body" style="padding: 16px 20px;">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+            Choose which worksheets to include in your Excel (.xlsx) file download. Protected tabs require password access.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="export-chk-dtr" checked style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">GIP DTR & AR Records</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Daily Time Records & Accomplishment Reports</div>
+                </div>
+              </div>
+              <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
+            </label>
+
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="export-chk-trn" checked style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Transmittal Records</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Regional Office Document Transmittals</div>
+                </div>
+              </div>
+              <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
+            </label>
+
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="export-chk-cnt" style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">GIP Contacts Directory</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Official Mobile Contacts Directory</div>
+                </div>
+              </div>
+              <span class="quincena-pill quincena-q2" style="font-size: 0.7rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                <i data-lucide="lock" style="width: 10px; height: 10px;"></i> PROTECTED
+              </span>
+            </label>
+
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="export-chk-trash" style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Recycle Bin Records</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Deleted Records (30-Day Retention)</div>
+                </div>
+              </div>
+              <span class="quincena-pill quincena-q2" style="font-size: 0.7rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                <i data-lucide="lock" style="width: 10px; height: 10px;"></i> PROTECTED
+              </span>
+            </label>
+          </div>
+
+          <!-- Password Prompt for Protected Sheet Exports -->
+          <div id="export-auth-container" style="display: none; margin-top: 16px; padding: 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px;">
+            <label for="export-password-input" style="font-size: 0.8rem; font-weight: 700; color: #ef4444; display: block; margin-bottom: 6px;">
+              <i data-lucide="lock" style="width: 12px; height: 12px; vertical-align: middle;"></i> ENTER PASSWORD FOR PROTECTED SHEETS
+            </label>
+            <input type="password" id="export-password-input" class="form-control" placeholder="Enter password (dolegip2026)..." autocomplete="off">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: space-between;">
+          <button type="button" class="btn btn-secondary" id="excel-modal-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background: #10b981; border-color: #059669;">
+            <i data-lucide="download"></i> Download Excel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 

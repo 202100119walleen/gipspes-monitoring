@@ -538,7 +538,7 @@ function bindEvents() {
   document.getElementById('side-nav-transmittal').addEventListener('click', () => switchTab('transmittal'));
   document.getElementById('side-nav-contacts').addEventListener('click', () => switchTab('contacts'));
   document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
-  document.getElementById('side-nav-excel').addEventListener('click', handleExportExcel);
+  document.getElementById('side-nav-excel').addEventListener('click', openExcelExportModal);
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
   document.getElementById('btn-empty-trash').addEventListener('click', handleEmptyTrash);
 
@@ -638,6 +638,29 @@ function bindEvents() {
   document.getElementById('auth-modal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeAuthModal();
   });
+
+  // Excel Export Modal Listeners
+  const excelForm = document.getElementById('excel-export-form');
+  if (excelForm) excelForm.addEventListener('submit', handleExcelExportFormSubmit);
+
+  const excelCloseBtn = document.getElementById('excel-modal-close-btn');
+  if (excelCloseBtn) excelCloseBtn.addEventListener('click', closeExcelExportModal);
+
+  const excelCancelBtn = document.getElementById('excel-modal-cancel-btn');
+  if (excelCancelBtn) excelCancelBtn.addEventListener('click', closeExcelExportModal);
+
+  const excelModal = document.getElementById('excel-export-modal');
+  if (excelModal) {
+    excelModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeExcelExportModal();
+    });
+  }
+
+  const chkCnt = document.getElementById('export-chk-cnt');
+  if (chkCnt) chkCnt.addEventListener('change', updateExportAuthVisibility);
+
+  const chkTrash = document.getElementById('export-chk-trash');
+  if (chkTrash) chkTrash.addEventListener('change', updateExportAuthVisibility);
 }
 
 const SYSTEM_MODULE_PASSWORD = 'dolegip2026';
@@ -1734,48 +1757,150 @@ async function handleEmptyTrash() {
 
 
 /**
- * Excel Export Handler using SheetJS (XLSX)
+ * Excel Export Selection Modal & Handlers
  */
-function handleExportExcel() {
+function openExcelExportModal() {
+  const modal = document.getElementById('excel-export-modal');
+  if (!modal) {
+    handleExportExcelDirect();
+    return;
+  }
+
+  const chkDtr = document.getElementById('export-chk-dtr');
+  const chkTrn = document.getElementById('export-chk-trn');
+  const chkCnt = document.getElementById('export-chk-cnt');
+  const chkTrash = document.getElementById('export-chk-trash');
+  const pwdInput = document.getElementById('export-password-input');
+
+  if (chkDtr) chkDtr.checked = true;
+  if (chkTrn) chkTrn.checked = true;
+  if (chkCnt) chkCnt.checked = authenticatedModules.contacts;
+  if (chkTrash) chkTrash.checked = authenticatedModules.trash;
+  if (pwdInput) pwdInput.value = '';
+
+  updateExportAuthVisibility();
+  modal.classList.add('active');
+}
+
+function closeExcelExportModal() {
+  const modal = document.getElementById('excel-export-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function updateExportAuthVisibility() {
+  const chkCnt = document.getElementById('export-chk-cnt');
+  const chkTrash = document.getElementById('export-chk-trash');
+  const authContainer = document.getElementById('export-auth-container');
+
+  const requiresCntAuth = chkCnt && chkCnt.checked && !authenticatedModules.contacts;
+  const requiresTrashAuth = chkTrash && chkTrash.checked && !authenticatedModules.trash;
+
+  if (authContainer) {
+    if (requiresCntAuth || requiresTrashAuth) {
+      authContainer.style.display = 'block';
+    } else {
+      authContainer.style.display = 'none';
+    }
+  }
+}
+
+function handleExcelExportFormSubmit(e) {
+  e.preventDefault();
+
+  const chkDtr = document.getElementById('export-chk-dtr')?.checked;
+  const chkTrn = document.getElementById('export-chk-trn')?.checked;
+  const chkCnt = document.getElementById('export-chk-cnt')?.checked;
+  const chkTrash = document.getElementById('export-chk-trash')?.checked;
+
+  if (!chkDtr && !chkTrn && !chkCnt && !chkTrash) {
+    showToast('PLEASE SELECT AT LEAST ONE SHEET TO EXPORT', 'warning');
+    return;
+  }
+
+  // Verify password if protected sheets are selected and not authenticated
+  const requiresCntAuth = chkCnt && !authenticatedModules.contacts;
+  const requiresTrashAuth = chkTrash && !authenticatedModules.trash;
+
+  if (requiresCntAuth || requiresTrashAuth) {
+    const pwdInput = document.getElementById('export-password-input');
+    const pwd = pwdInput ? pwdInput.value.trim() : '';
+
+    if (pwd !== SYSTEM_MODULE_PASSWORD) {
+      showToast('INCORRECT PASSWORD FOR PROTECTED SHEETS! EXPORT CANCELLED.', 'danger');
+      if (pwdInput) {
+        pwdInput.style.borderColor = '#ef4444';
+        pwdInput.select();
+        setTimeout(() => pwdInput.style.borderColor = '', 2000);
+      }
+      return;
+    }
+
+    if (chkCnt) authenticatedModules.contacts = true;
+    if (chkTrash) authenticatedModules.trash = true;
+  }
+
+  // Generate Excel workbook
   try {
     const wb = XLSX.utils.book_new();
 
-    const dtrDataFormatted = appState.data.dtrRecords.map(r => ({
-      'GIP NAME': (r.gipName || '').toUpperCase(),
-      'MONTH / YEAR': formatMonth(r.month).toUpperCase(),
-      'QUINCENA (PAYROLL PERIOD)': (r.quincena || '1ST QUINCENA (1-15)').toUpperCase(),
-      'DTR & AR DATE RECEIVED (LDNPFO)': r.dtrArDateReceived || 'N/A',
-      'REMARKS': (r.remarks || '').toUpperCase()
-    }));
+    if (chkDtr) {
+      const dtrDataFormatted = appState.data.dtrRecords.map(r => ({
+        'GIP NAME': (r.gipName || '').toUpperCase(),
+        'MONTH / YEAR': formatMonth(r.month).toUpperCase(),
+        'QUINCENA (PAYROLL PERIOD)': (r.quincena || '1ST QUINCENA (1-15)').toUpperCase(),
+        'DTR & AR DATE RECEIVED (LDNPFO)': r.dtrArDateReceived || 'N/A',
+        'REMARKS': (r.remarks || '').toUpperCase()
+      }));
+      const wsDtr = XLSX.utils.json_to_sheet(dtrDataFormatted);
+      XLSX.utils.book_append_sheet(wb, wsDtr, 'GIP DTR & AR');
+    }
 
-    const wsDtr = XLSX.utils.json_to_sheet(dtrDataFormatted);
-    XLSX.utils.book_append_sheet(wb, wsDtr, 'GIP DTR & AR');
+    if (chkTrn) {
+      const trnDataFormatted = appState.data.transmittalRecords.map(r => ({
+        'PARTICULARS (TRANSMITTED DOCUMENTS)': (r.particulars || '').replace(/\r?\n/g, ' ').toUpperCase(),
+        'PREPARED BY': (r.preparedBy || 'N/A').toUpperCase(),
+        'DATE TRANSMITTED': r.dateTransmitted || 'N/A',
+        'DATE RECEIVED (REGIONAL OFFICE)': r.regionalDateReceived || 'N/A',
+        'REMARKS': (r.remarks || '').toUpperCase()
+      }));
+      const wsTrn = XLSX.utils.json_to_sheet(trnDataFormatted);
+      XLSX.utils.book_append_sheet(wb, wsTrn, 'TRANSMITTALS');
+    }
 
-    const trnDataFormatted = appState.data.transmittalRecords.map(r => ({
-      'PARTICULARS (TRANSMITTED DOCUMENTS)': (r.particulars || '').replace(/\r?\n/g, ' ').toUpperCase(),
-      'PREPARED BY': (r.preparedBy || 'N/A').toUpperCase(),
-      'DATE TRANSMITTED': r.dateTransmitted || 'N/A',
-      'DATE RECEIVED (REGIONAL OFFICE)': r.regionalDateReceived || 'N/A',
-      'REMARKS': (r.remarks || '').toUpperCase()
-    }));
+    if (chkCnt) {
+      const cntDataFormatted = (appState.data.contactsRecords || []).map(r => ({
+        'GIP FULL NAME': (r.gipName || '').toUpperCase(),
+        'ASSIGNMENT / OFFICE': (r.assignment || 'LDNPFO').toUpperCase(),
+        'CONTACT NUMBER': r.contactNumber || 'N/A',
+        'REMARKS': (r.remarks || '').toUpperCase()
+      }));
+      const wsCnt = XLSX.utils.json_to_sheet(cntDataFormatted);
+      XLSX.utils.book_append_sheet(wb, wsCnt, 'GIP CONTACTS');
+    }
 
-    const wsTrn = XLSX.utils.json_to_sheet(trnDataFormatted);
-    XLSX.utils.book_append_sheet(wb, wsTrn, 'TRANSMITTALS');
-
-    const cntDataFormatted = (appState.data.contactsRecords || []).map(r => ({
-      'GIP FULL NAME': (r.gipName || '').toUpperCase(),
-      'ASSIGNMENT / OFFICE': (r.assignment || 'LDNPFO').toUpperCase(),
-      'CONTACT NUMBER': r.contactNumber || 'N/A',
-      'REMARKS': (r.remarks || '').toUpperCase()
-    }));
-
-    const wsCnt = XLSX.utils.json_to_sheet(cntDataFormatted);
-    XLSX.utils.book_append_sheet(wb, wsCnt, 'GIP CONTACTS');
+    if (chkTrash) {
+      const trashDataFormatted = (appState.data.recycledRecords || []).map(r => {
+        const isDtr = r.type === 'dtr';
+        const orig = r.originalRecord || {};
+        return {
+          'RECORD TYPE': isDtr ? 'GIP DTR & AR' : 'TRANSMITTAL',
+          'RECORD TITLE / DETAILS': isDtr 
+            ? `GIP: ${orig.gipName || ''} (${orig.month || ''})` 
+            : `PARTICULARS: ${(orig.particulars || '').replace(/\r?\n/g, ' ')}`,
+          'DATE DELETED': formatDate(r.deletedAt ? r.deletedAt.substring(0, 10) : ''),
+          'RETENTION REMAINING': `${getRetentionDaysRemaining(r.deletedAt)} DAYS`,
+          'REMARKS': (orig.remarks || '').toUpperCase()
+        };
+      });
+      const wsTrash = XLSX.utils.json_to_sheet(trashDataFormatted);
+      XLSX.utils.book_append_sheet(wb, wsTrash, 'RECYCLE BIN');
+    }
 
     const today = new Date().toISOString().split('T')[0];
     const fileName = `DOLE_LDNPFO_GIP_MONITORING_${today}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
+    closeExcelExportModal();
     showToast('EXCEL FILE DOWNLOADED SUCCESSFULLY!', 'success');
   } catch (err) {
     console.error('XLSX export error, falling back to CSV:', err);
