@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -559,6 +559,31 @@
               <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
             </label>
 
+            <!-- Sub-filter for Salary Download Status -->
+            <div id="export-salary-filter-box"
+              style="margin-top: -4px; margin-left: 28px; padding: 10px 12px; background: var(--bg-page); border: 1px solid var(--border-color); border-radius: 6px;">
+              <label style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                <i data-lucide="filter" style="width: 13px; height: 13px; color: var(--brand-accent);"></i> DOWNLOAD SALARY BY STATUS:
+              </label>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
+                  <input type="radio" name="export-salary-status" id="export-sal-all" value="ALL" checked style="accent-color: var(--brand-accent); width: 15px; height: 15px;">
+                  <span>&#x1F4CB; <strong>All Records</strong> &ndash; Both Paid &amp; Pending (1 sheet)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
+                  <input type="radio" name="export-salary-status" id="export-sal-paid" value="PAID" style="accent-color: #10b981; width: 15px; height: 15px;">
+                  <span>&#x2705; <strong>Paid / Received Only</strong> &ndash; Separate sheet</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
+                  <input type="radio" name="export-salary-status" id="export-sal-pending" value="PENDING" style="accent-color: #f59e0b; width: 15px; height: 15px;">
+                  <span>&#x23F3; <strong>Pending Only</strong> &ndash; Separate sheet</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
+                  <input type="radio" name="export-salary-status" id="export-sal-both-sep" value="BOTH_SEPARATE" style="accent-color: #6366f1; width: 15px; height: 15px;">
+                  <span>&#x1F4CA; <strong>Both Separately</strong> &ndash; Paid &amp; Pending as 2 sheets</span>
+                </label>
+              </div>
+            </div>
             <label
               style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
               <div style="display: flex; align-items: center; gap: 10px;">

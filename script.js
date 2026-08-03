@@ -2569,62 +2569,83 @@ function handleExcelExportFormSubmit(e) {
 
     const chkSalary = document.getElementById('export-chk-salary')?.checked;
     if (chkSalary) {
+      const salStatusMode = (document.querySelector('input[name="export-salary-status"]:checked')?.value) || 'ALL';
       const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
-      let grandTotalDisbursed = 0;
-      let grandTotalPending = 0;
 
-      const salDataFormatted = (appState.data.salaryRecords || []).map((r, idx) => {
-        const row = {
-          'NO.': idx + 1,
-          'GIP NAME / BENEFICIARY GROUP': (r.gipName || '').toUpperCase()
-        };
+      // Helper: build a salary sheet from a filtered subset of records
+      const buildSalarySheet = (records, label) => {
+        let grandTotalDisbursed = 0;
+        let grandTotalPending = 0;
 
-        let totalRowPaid = 0;
-        let totalRowPending = 0;
+        const rows = records.map((r, idx) => {
+          const row = {
+            'NO.': idx + 1,
+            'GIP NAME / BENEFICIARY GROUP': (r.gipName || '').toUpperCase()
+          };
+          let totalRowPaid = 0;
+          let totalRowPending = 0;
 
-        periodsList.forEach(pKey => {
-          const item = (r.periods || {})[pKey];
-          if (!item || item.amount <= 0 || item.status === 'na') {
-            row[pKey] = 'N/A';
-          } else {
-            let amt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
-            if (isNaN(amt)) amt = 0;
-
-            const isReceived = item.status === 'received';
-            const statusTag = isReceived ? 'PAID' : 'PENDING';
-            row[pKey] = `₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${statusTag})`;
-
-            if (isReceived) {
-              totalRowPaid += amt;
-              grandTotalDisbursed += amt;
+          periodsList.forEach(pKey => {
+            const item = (r.periods || {})[pKey];
+            if (!item || item.amount <= 0 || item.status === 'na') {
+              row[pKey] = 'N/A';
             } else {
-              totalRowPending += amt;
-              grandTotalPending += amt;
+              let amt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
+              if (isNaN(amt)) amt = 0;
+              const isReceived = item.status === 'received';
+              const statusTag = isReceived ? 'PAID' : 'PENDING';
+              row[pKey] = `\u20b1${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${statusTag})`;
+              if (isReceived) { totalRowPaid += amt; grandTotalDisbursed += amt; }
+              else { totalRowPending += amt; grandTotalPending += amt; }
             }
-          }
+          });
+
+          row['TOTAL PAID AMOUNT'] = `\u20b1${totalRowPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          row['TOTAL PENDING AMOUNT'] = `\u20b1${totalRowPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          row['REMARKS'] = (r.remarks || '').toUpperCase();
+          return row;
         });
 
-        row['TOTAL PAID AMOUNT'] = `₱${totalRowPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        row['TOTAL PENDING AMOUNT'] = `₱${totalRowPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        row['REMARKS'] = (r.remarks || '').toUpperCase();
-
-        return row;
-      });
-
-      // Append summary total row
-      const summaryRow = {
-        'NO.': '',
-        'GIP NAME / BENEFICIARY GROUP': '=== GRAND TOTAL DISBURSED ==='
+        // Summary row
+        const summaryRow = { 'NO.': '', 'GIP NAME / BENEFICIARY GROUP': `=== GRAND TOTAL ${label} ===` };
+        periodsList.forEach(pKey => { summaryRow[pKey] = ''; });
+        summaryRow['TOTAL PAID AMOUNT'] = `\u20b1${grandTotalDisbursed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        summaryRow['TOTAL PENDING AMOUNT'] = `\u20b1${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        summaryRow['REMARKS'] = `TOTAL DISBURSED - ${label}`;
+        rows.push(summaryRow);
+        return rows;
       };
-      periodsList.forEach(pKey => { summaryRow[pKey] = ''; });
-      summaryRow['TOTAL PAID AMOUNT'] = `₱${grandTotalDisbursed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      summaryRow['TOTAL PENDING AMOUNT'] = `₱${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      summaryRow['REMARKS'] = 'TOTAL DISBURSED ACROSS ALL RECORDS';
 
-      salDataFormatted.push(summaryRow);
+      const allRecords = appState.data.salaryRecords || [];
 
-      const wsSal = XLSX.utils.json_to_sheet(salDataFormatted);
-      XLSX.utils.book_append_sheet(wb, wsSal, 'SALARY & PAYROLL TRACKING');
+      // Filter helpers
+      const hasPaid = (r) => Object.values(r.periods || {}).some(p => p && p.status === 'received' && p.amount > 0);
+      const hasPending = (r) => Object.values(r.periods || {}).some(p => p && p.status === 'pending' && p.amount > 0);
+
+      if (salStatusMode === 'ALL') {
+        const rows = buildSalarySheet(allRecords, 'DISBURSED');
+        const ws = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, 'SALARY & PAYROLL');
+      } else if (salStatusMode === 'PAID') {
+        const paidRecords = allRecords.filter(hasPaid);
+        const rows = buildSalarySheet(paidRecords, 'PAID / RECEIVED');
+        const ws = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, 'SALARY - PAID ONLY');
+      } else if (salStatusMode === 'PENDING') {
+        const pendingRecords = allRecords.filter(hasPending);
+        const rows = buildSalarySheet(pendingRecords, 'PENDING');
+        const ws = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, 'SALARY - PENDING ONLY');
+      } else if (salStatusMode === 'BOTH_SEPARATE') {
+        const paidRecords = allRecords.filter(hasPaid);
+        const pendingRecords = allRecords.filter(hasPending);
+        const rowsPaid = buildSalarySheet(paidRecords, 'PAID / RECEIVED');
+        const rowsPending = buildSalarySheet(pendingRecords, 'PENDING');
+        const wsPaid = XLSX.utils.json_to_sheet(rowsPaid);
+        const wsPending = XLSX.utils.json_to_sheet(rowsPending);
+        XLSX.utils.book_append_sheet(wb, wsPaid, 'SALARY - PAID');
+        XLSX.utils.book_append_sheet(wb, wsPending, 'SALARY - PENDING');
+      }
     }
 
     if (chkTrash) {
