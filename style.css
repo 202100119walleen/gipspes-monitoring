@@ -58,7 +58,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
 }
@@ -232,8 +235,15 @@ button, input, select, textarea {
   border-radius: 50%;
 }
 
-.status-dot.connected { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
-.status-dot.offline { background-color: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+.status-dot.connected {
+  background-color: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.status-dot.offline {
+  background-color: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
 
 /* 4. Main Workspace Panel */
 .app-main {
@@ -329,9 +339,20 @@ button, input, select, textarea {
   font-size: 1.25rem;
 }
 
-.stat-icon.total { background: #f1f5f9; color: #475569; }
-.stat-icon.received { background: #e0f2fe; color: #0284c7; }
-.stat-icon.completed { background: #dcfce7; color: #16a34a; }
+.stat-icon.total {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.stat-icon.received {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.stat-icon.completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
 
 /* Filter & Action Toolbar */
 .toolbar-card {
@@ -769,8 +790,13 @@ button, input, select, textarea {
 }
 
 @keyframes spinAnimation {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .spin-icon {
@@ -826,8 +852,9 @@ button, input, select, textarea {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: 100%;
-  max-width: 600px;
+  max-width: 760px;
   max-height: 90vh;
+  overflow-x: hidden;
   overflow-y: auto;
   transform: translateY(20px);
   transition: var(--transition);
@@ -869,6 +896,72 @@ button, input, select, textarea {
 
 .modal-body {
   padding: 24px;
+  overflow-x: hidden;
+}
+
+/* Salary Modal Dynamic Inputs Grid */
+.salary-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  max-height: 340px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 4px 8px 0;
+}
+
+.salary-input-item {
+  background: var(--bg-page);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+/* Salary Table Pill Badges */
+.salary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: var(--transition);
+}
+
+.salary-pill.received {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+
+.salary-pill.received:hover {
+  background-color: #bae6fd;
+}
+
+.salary-pill.pending {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.salary-pill.pending:hover {
+  background-color: #fee2e2;
+}
+
+.salary-pill.na {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border: 1px dashed #cbd5e1;
+  padding: 3px 12px;
+}
+
+.salary-pill.na:hover {
+  background-color: #e2e8f0;
+  color: #475569;
 }
 
 .form-group {
@@ -942,13 +1035,28 @@ textarea.form-control {
   animation: slideInRight 0.3s ease forwards;
 }
 
-.toast.success { border-left: 4px solid #10b981; }
-.toast.info { border-left: 4px solid #0284c7; }
-.toast.danger { border-left: 4px solid #ef4444; }
+.toast.success {
+  border-left: 4px solid #10b981;
+}
+
+.toast.info {
+  border-left: 4px solid #0284c7;
+}
+
+.toast.danger {
+  border-left: 4px solid #ef4444;
+}
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Mobile Sidebar Overlay */
@@ -996,16 +1104,40 @@ textarea.form-control {
     padding-bottom: 12px;
   }
 
-  .print-header h1 { font-size: 16pt; font-weight: bold; }
-  .print-header p { font-size: 10pt; color: #333333; }
+  .print-header h1 {
+    font-size: 16pt;
+    font-weight: bold;
+  }
 
-  .table-card { border: none; box-shadow: none; }
-  .data-table { border: 1px solid #000000; }
-  .data-table th, .data-table td { border: 1px solid #000000; padding: 8px 10px; }
-  .data-table th { background-color: #f0f0f0 !important; color: #000000 !important; }
+  .print-header p {
+    font-size: 10pt;
+    color: #333333;
+  }
+
+  .table-card {
+    border: none;
+    box-shadow: none;
+  }
+
+  .data-table {
+    border: 1px solid #000000;
+  }
+
+  .data-table th,
+  .data-table td {
+    border: 1px solid #000000;
+    padding: 8px 10px;
+  }
+
+  .data-table th {
+    background-color: #f0f0f0 !important;
+    color: #000000 !important;
+  }
 }
 
-.print-header { display: none; }
+.print-header {
+  display: none;
+}
 
 /* Responsive adjustments */
 @media (max-width: 992px) {
@@ -1031,49 +1163,4 @@ textarea.form-control {
     align-items: center;
     gap: 6px;
   }
-}
-
-/* Salary & Payroll Status Pills */
-.salary-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 9px;
-  border-radius: 12px;
-  font-size: 0.775rem;
-  font-weight: 700;
-  font-family: monospace;
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.salary-pill.received {
-  background-color: rgba(3, 105, 161, 0.12);
-  color: #0284c7;
-  border: 1px solid rgba(2, 132, 199, 0.35);
-}
-
-.salary-pill.received:hover {
-  background-color: #0284c7;
-  color: #ffffff;
-}
-
-.salary-pill.pending {
-  background-color: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.35);
-}
-
-.salary-pill.pending:hover {
-  background-color: #ef4444;
-  color: #ffffff;
-}
-
-.salary-pill.na {
-  color: #94a3b8;
-  font-weight: 400;
-  font-style: italic;
-  cursor: default;
 }

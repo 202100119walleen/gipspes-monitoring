@@ -1483,6 +1483,41 @@ function getSortIcon(colName) {
 }
 
 /**
+ * Render Dynamic Salary Modal Inputs for active quincena periods
+ */
+function renderSalaryModalInputs(record = null) {
+  const container = document.getElementById('salary-quincena-inputs-container');
+  if (!container) return;
+
+  const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
+  const existingPeriods = (record && record.periods) ? record.periods : {};
+
+  container.innerHTML = periodsList.map((periodKey, idx) => {
+    const pData = existingPeriods[periodKey] || { amount: 0, status: 'na' };
+    const amtVal = pData.amount > 0 ? pData.amount : '';
+    const stVal = pData.status || 'na';
+    const fieldIdAmt = `sal-amt-${idx}`;
+    const fieldIdSt = `sal-st-${idx}`;
+
+    return `
+      <div class="salary-input-item">
+        <label for="${fieldIdAmt}" style="font-size: 0.775rem; font-weight: 700; color: var(--primary-navy); display: block; margin-bottom: 4px;">
+          ${escapeHtml(periodKey)} Amount (₱)
+        </label>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <input type="number" step="0.01" id="${fieldIdAmt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-amt" placeholder="0.00" value="${amtVal}" style="font-size: 0.825rem; flex: 1; min-width: 0;">
+          <select id="${fieldIdSt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-st" style="font-size: 0.8rem; width: 105px; min-width: 105px;">
+            <option value="received" ${stVal === 'received' ? 'selected' : ''}>Received</option>
+            <option value="pending" ${stVal === 'pending' ? 'selected' : ''}>Pending</option>
+            <option value="na" ${stVal === 'na' ? 'selected' : ''}>N/A</option>
+          </select>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
  * Form & Modal Handling (Add / Edit)
  */
 function openRecordModal(id = null) {
@@ -1549,6 +1584,7 @@ function openRecordModal(id = null) {
     document.getElementById('contact-assignment').required = false;
     document.getElementById('contact-number').required = false;
     if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = true;
+    renderSalaryModalInputs(id ? appState.data.salaryRecords.find(r => r.id === id) : null);
   } else {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'block';
@@ -1593,24 +1629,7 @@ function openRecordModal(id = null) {
         document.getElementById('contact-number').value = record.contactNumber || '';
       } else if (isSalary) {
         document.getElementById('salary-gip-name').value = (record.gipName || '').toUpperCase();
-        const p = record.periods || {};
-        const pKeys = [
-          { key: "APR 16-30", amt: "sal-amt-apr16", st: "sal-st-apr16" },
-          { key: "MAY 1-15", amt: "sal-amt-may1", st: "sal-st-may1" },
-          { key: "MAY 16-31", amt: "sal-amt-may16", st: "sal-st-may16" },
-          { key: "JUNE 1-15", amt: "sal-amt-jun1", st: "sal-st-jun1" },
-          { key: "JUNE 16-30", amt: "sal-amt-jun16", st: "sal-st-jun16" },
-          { key: "JULY 1-15", amt: "sal-amt-jul1", st: "sal-st-jul1" },
-          { key: "JULY 16-31", amt: "sal-amt-jul16", st: "sal-st-jul16" }
-        ];
-
-        pKeys.forEach(item => {
-          const pData = p[item.key] || { amount: 0, status: "na" };
-          const inputAmt = document.getElementById(item.amt);
-          const inputSt = document.getElementById(item.st);
-          if (inputAmt) inputAmt.value = pData.amount || '';
-          if (inputSt) inputSt.value = pData.status || 'na';
-        });
+        renderSalaryModalInputs(record);
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         document.getElementById('prepared-by-trn').value = (record.preparedBy || '').toUpperCase();
@@ -1653,23 +1672,14 @@ async function handleFormSubmit(e) {
       return;
     }
 
-    const pKeys = [
-      { key: "APR 16-30", amt: "sal-amt-apr16", st: "sal-st-apr16" },
-      { key: "MAY 1-15", amt: "sal-amt-may1", st: "sal-st-may1" },
-      { key: "MAY 16-31", amt: "sal-amt-may16", st: "sal-st-may16" },
-      { key: "JUNE 1-15", amt: "sal-amt-jun1", st: "sal-st-jun1" },
-      { key: "JUNE 16-30", amt: "sal-amt-jun16", st: "sal-st-jun16" },
-      { key: "JULY 1-15", amt: "sal-amt-jul1", st: "sal-st-jul1" },
-      { key: "JULY 16-31", amt: "sal-amt-jul16", st: "sal-st-jul16" }
-    ];
-
     const periods = {};
-    pKeys.forEach(item => {
-      const amtElem = document.getElementById(item.amt);
-      const stElem = document.getElementById(item.st);
-      const amtVal = amtElem ? (parseFloat(amtElem.value) || 0) : 0;
-      const stVal = stElem ? (stElem.value || 'na') : 'na';
-      periods[item.key] = { amount: amtVal, status: stVal };
+    const amtInputs = document.querySelectorAll('.sal-input-amt');
+    amtInputs.forEach(input => {
+      const pKey = input.getAttribute('data-period');
+      const amtVal = parseFloat(input.value) || 0;
+      const stSelect = document.querySelector(`.sal-input-st[data-period="${pKey}"]`);
+      const stVal = stSelect ? stSelect.value : 'na';
+      periods[pKey] = { amount: amtVal, status: stVal };
     });
 
     const payload = {
