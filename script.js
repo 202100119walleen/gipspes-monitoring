@@ -929,25 +929,35 @@ function updateCountsAndStats() {
   document.getElementById('stat-contacts-count').textContent = contactsCount;
   document.getElementById('stat-active-count').textContent = currentDatasetLength;
 
-  // Calculate Grand Total Paid Disbursed across all GIP Salary Records
+  // Calculate Grand Total Paid Disbursed across all GIP Salary Records cleanly
   let grandTotalPaid = 0;
   (appState.data.salaryRecords || []).forEach(record => {
     const p = record.periods || {};
     Object.values(p).forEach(item => {
-      if (item && item.status === 'received' && item.amount > 0) {
-        grandTotalPaid += Number(item.amount);
+      if (item && item.status === 'received' && item.amount) {
+        let numAmt = 0;
+        if (typeof item.amount === 'number') {
+          numAmt = item.amount;
+        } else {
+          numAmt = parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0;
+        }
+        if (!isNaN(numAmt) && numAmt > 0) {
+          grandTotalPaid += numAmt;
+        }
       }
     });
   });
 
+  const formattedTotal = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   const grandTotalValElem = document.getElementById('salary-grand-total-val');
   if (grandTotalValElem) {
-    grandTotalValElem.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    grandTotalValElem.textContent = formattedTotal;
   }
 
   const headerValElem = document.getElementById('header-salary-total-val');
   if (headerValElem) {
-    headerValElem.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    headerValElem.textContent = formattedTotal;
   }
 }
 
@@ -1075,7 +1085,14 @@ function renderTable() {
           `;
         }
 
-        const amt = Number(item.amount || 0);
+        let amt = 0;
+        if (typeof item.amount === 'number') {
+          amt = item.amount;
+        } else if (item.amount) {
+          amt = parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0;
+        }
+        if (isNaN(amt)) amt = 0;
+
         const isReceived = item.status === 'received';
         if (isReceived) rowTotal += amt;
 
@@ -2192,11 +2209,11 @@ function handleExcelExportFormSubmit(e) {
             row[pKey] = '-';
           } else {
             const statusLabel = item.status === 'received' ? 'RECEIVED' : 'PENDING';
-            row[pKey] = `₱${item.amount.toLocaleString('en-US', {minimumFractionDigits: 2})} (${statusLabel})`;
+            row[pKey] = `₱${item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${statusLabel})`;
             if (item.status === 'received') totalReceived += item.amount;
           }
         });
-        row['TOTAL RECEIVED'] = `₱${totalReceived.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        row['TOTAL RECEIVED'] = `₱${totalReceived.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
         return row;
       });
       const wsSal = XLSX.utils.json_to_sheet(salDataFormatted);
@@ -2626,66 +2643,12 @@ function formatPhoneNumber(numStr) {
 /**
  * Add New Quincena Period Modal & Handlers
  */
-/**
- * Manage & Delete Quincena Period Columns
- */
-function renderActiveQuincenasList() {
-  const container = document.getElementById('active-quincenas-list');
-  const countElem = document.getElementById('active-quincena-count');
-  if (!container) return;
-
-  const periods = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
-  if (countElem) countElem.textContent = periods.length;
-
-  if (periods.length === 0) {
-    container.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No active quincena columns.</span>`;
-    return;
-  }
-
-  container.innerHTML = periods.map(p => `
-    <div style="background: #ffffff; border: 1px solid var(--border-medium); border-radius: 12px; font-size: 0.775rem; padding: 4px 10px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-      <span style="font-weight: 700; color: var(--primary-navy);">${escapeHtml(p)}</span>
-      <button type="button" onclick="deleteQuincenaPeriod('${escapeHtml(p)}')" title="Delete '${escapeHtml(p)}' column" style="background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; border-radius: 50%; width: 18px; height: 18px; line-height: 16px; text-align: center; cursor: pointer; font-size: 0.8rem; padding: 0; font-weight: bold;">
-        &times;
-      </button>
-    </div>
-  `).join('');
-}
-
-async function deleteQuincenaPeriod(periodKey) {
-  if (!confirm(`Are you sure you want to delete the "${periodKey}" quincena column? This will remove all records for this period across all GIPs.`)) {
-    return;
-  }
-
-  if (!appState.quincenaPeriods) appState.quincenaPeriods = [...DEFAULT_QUINCENA_PERIODS];
-
-  appState.quincenaPeriods = appState.quincenaPeriods.filter(p => p !== periodKey);
-
-  // Remove period data from existing records
-  if (appState.data.salaryRecords) {
-    appState.data.salaryRecords.forEach(record => {
-      if (record.periods && record.periods[periodKey]) {
-        delete record.periods[periodKey];
-      }
-    });
-  }
-
-  saveToLocalStorage();
-  renderActiveQuincenasList();
-  renderApp();
-
-  await pushLocalSalaryToSupabase();
-  showToast(`QUINCENA COLUMN "${periodKey}" DELETED SUCCESSFULLY!`, 'success');
-}
-
 function openAddQuincenaModal() {
   const modal = document.getElementById('add-quincena-modal');
   if (!modal) return;
 
   const inputName = document.getElementById('new-quincena-name');
   if (inputName) inputName.value = '';
-
-  renderActiveQuincenasList();
 
   modal.classList.add('active');
   setTimeout(() => {
