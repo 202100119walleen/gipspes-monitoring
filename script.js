@@ -2449,24 +2449,61 @@ function handleExcelExportFormSubmit(e) {
     const chkSalary = document.getElementById('export-chk-salary')?.checked;
     if (chkSalary) {
       const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
-      const salDataFormatted = (appState.data.salaryRecords || []).map(r => {
-        const row = { 'GIP NAME / GROUP': (r.gipName || '').toUpperCase() };
-        let totalReceived = 0;
+      let grandTotalDisbursed = 0;
+      let grandTotalPending = 0;
+
+      const salDataFormatted = (appState.data.salaryRecords || []).map((r, idx) => {
+        const row = {
+          'NO.': idx + 1,
+          'GIP NAME / BENEFICIARY GROUP': (r.gipName || '').toUpperCase()
+        };
+
+        let totalRowPaid = 0;
+        let totalRowPending = 0;
+
         periodsList.forEach(pKey => {
           const item = (r.periods || {})[pKey];
           if (!item || item.amount <= 0 || item.status === 'na') {
-            row[pKey] = '-';
+            row[pKey] = 'N/A';
           } else {
-            const statusLabel = item.status === 'received' ? 'RECEIVED' : 'PENDING';
-            row[pKey] = `₱${item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${statusLabel})`;
-            if (item.status === 'received') totalReceived += item.amount;
+            let amt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
+            if (isNaN(amt)) amt = 0;
+
+            const isReceived = item.status === 'received';
+            const statusTag = isReceived ? 'PAID' : 'PENDING';
+            row[pKey] = `₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${statusTag})`;
+
+            if (isReceived) {
+              totalRowPaid += amt;
+              grandTotalDisbursed += amt;
+            } else {
+              totalRowPending += amt;
+              grandTotalPending += amt;
+            }
           }
         });
-        row['TOTAL RECEIVED'] = `₱${totalReceived.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+
+        row['TOTAL PAID AMOUNT'] = `₱${totalRowPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        row['TOTAL PENDING AMOUNT'] = `₱${totalRowPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        row['REMARKS'] = (r.remarks || '').toUpperCase();
+
         return row;
       });
+
+      // Append summary total row
+      const summaryRow = {
+        'NO.': '',
+        'GIP NAME / BENEFICIARY GROUP': '=== GRAND TOTAL DISBURSED ==='
+      };
+      periodsList.forEach(pKey => { summaryRow[pKey] = ''; });
+      summaryRow['TOTAL PAID AMOUNT'] = `₱${grandTotalDisbursed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      summaryRow['TOTAL PENDING AMOUNT'] = `₱${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      summaryRow['REMARKS'] = 'TOTAL DISBURSED ACROSS ALL RECORDS';
+
+      salDataFormatted.push(summaryRow);
+
       const wsSal = XLSX.utils.json_to_sheet(salDataFormatted);
-      XLSX.utils.book_append_sheet(wb, wsSal, 'SALARY MATRIX');
+      XLSX.utils.book_append_sheet(wb, wsSal, 'SALARY & PAYROLL TRACKING');
     }
 
     if (chkTrash) {
@@ -2503,20 +2540,42 @@ function handleExcelExportFormSubmit(e) {
  * CSV Fallback Exporter
  */
 function exportFallbackCSV() {
+  const isSalary = appState.activeTab === 'salary';
+  const isContacts = appState.activeTab === 'contacts';
   const isDtr = appState.activeTab === 'dtr';
-  const records = isDtr ? appState.data.dtrRecords : appState.data.transmittalRecords;
 
   let csvContent = 'data:text/csv;charset=utf-8,';
-  if (isDtr) {
-    csvContent += 'GIP NAME,MONTH,QUINCENA,DTR & AR DATE RECEIVED (LDNPFO),REMARKS\n';
-    records.forEach(r => {
-      csvContent += `"${(r.gipName || '').toUpperCase()}","${r.month}","${(r.quincena || '').toUpperCase()}","${r.dtrArDateReceived}","${(r.remarks || '').toUpperCase()}"\n`;
+  if (isSalary) {
+    const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
+    csvContent += `NO.,GIP NAME / BENEFICIARY GROUP,${periodsList.join(',')},TOTAL PAID AMOUNT,TOTAL PENDING AMOUNT,REMARKS\n`;
+    (appState.data.salaryRecords || []).forEach((r, idx) => {
+      let rowPaid = 0;
+      let rowPending = 0;
+      const periodVals = periodsList.map(pKey => {
+        const item = (r.periods || {})[pKey];
+        if (!item || item.amount <= 0 || item.status === 'na') return 'N/A';
+        const amt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
+        if (item.status === 'received') rowPaid += amt;
+        else rowPending += amt;
+        return `"₱${amt.toFixed(2)} (${item.status === 'received' ? 'PAID' : 'PENDING'})"`;
+      });
+      csvContent += `${idx + 1},"${(r.gipName || '').toUpperCase()}",${periodVals.join(',')},"₱${rowPaid.toFixed(2)}","₱${rowPending.toFixed(2)}","${(r.remarks || '').toUpperCase()}"\n`;
+    });
+  } else if (isContacts) {
+    csvContent += 'NO.,GIP FULL NAME,ASSIGNMENT / OFFICE,CONTACT NUMBER,REMARKS\n';
+    (appState.data.contactsRecords || []).forEach((r, idx) => {
+      csvContent += `${idx + 1},"${(r.gipName || '').toUpperCase()}","${(r.assignment || 'LDNPFO').toUpperCase()}","${r.contactNumber || ''}","${(r.remarks || '').toUpperCase()}"\n`;
+    });
+  } else if (isDtr) {
+    csvContent += 'NO.,GIP NAME,MONTH,QUINCENA,DTR & AR DATE RECEIVED (LDNPFO),REMARKS\n';
+    appState.data.dtrRecords.forEach((r, idx) => {
+      csvContent += `${idx + 1},"${(r.gipName || '').toUpperCase()}","${r.month}","${(r.quincena || '').toUpperCase()}","${r.dtrArDateReceived}","${(r.remarks || '').toUpperCase()}"\n`;
     });
   } else {
-    csvContent += 'PARTICULARS,PREPARED BY,DATE TRANSMITTED,DATE RECEIVED (REGIONAL OFFICE),REMARKS\n';
-    records.forEach(r => {
+    csvContent += 'NO.,PARTICULARS,PREPARED BY,DATE TRANSMITTED,DATE RECEIVED (REGIONAL OFFICE),REMARKS\n';
+    appState.data.transmittalRecords.forEach((r, idx) => {
       const cleanParticulars = (r.particulars || '').replace(/\r?\n/g, ' ').toUpperCase();
-      csvContent += `"${cleanParticulars}","${(r.preparedBy || '').toUpperCase()}","${r.dateTransmitted}","${r.regionalDateReceived}","${(r.remarks || '').toUpperCase()}"\n`;
+      csvContent += `${idx + 1},"${cleanParticulars}","${(r.preparedBy || '').toUpperCase()}","${r.dateTransmitted}","${r.regionalDateReceived}","${(r.remarks || '').toUpperCase()}"\n`;
     });
   }
 

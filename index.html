@@ -422,18 +422,9 @@
         <button class="modal-close" id="delete-modal-close">&times;</button>
       </div>
       <div class="modal-body">
-        <p id="delete-modal-msg">Are you sure you want to delete this record?</p>
+        <p>Are you sure you want to delete this record? This action cannot be undone.</p>
         <div id="delete-record-summary"
           style="margin-top: 12px; font-weight: 600; color: var(--text-main); background: var(--bg-page); padding: 10px; border-radius: 6px;">
-        </div>
-
-        <!-- Password Prompt for Protected Deletes (Contacts Directory & Recycle Bin) -->
-        <div id="delete-auth-container" style="display: none; margin-top: 14px; padding: 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 8px;">
-          <label for="delete-password-input"
-            style="font-size: 0.8rem; font-weight: 700; color: #ef4444; display: block; margin-bottom: 6px;">
-            <i data-lucide="lock" style="width: 12px; height: 12px; vertical-align: middle;"></i> ENTER PASSWORD TO CONFIRM DELETE <span class="required">*</span>
-          </label>
-          <input type="password" id="delete-password-input" class="form-control" placeholder="Enter password (010826)..." autocomplete="off">
         </div>
       </div>
       <div class="modal-footer">
@@ -541,6 +532,19 @@
                 <option value="ALL">-- ALL PREPARED BY OFFICERS --</option>
               </select>
             </div>
+
+            <label
+              style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="export-chk-salary" checked
+                  style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Salary & Payroll Tracking</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Quincena Payroll Disbursements & Payment Matrix</div>
+                </div>
+              </div>
+              <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
+            </label>
 
             <label
               style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
