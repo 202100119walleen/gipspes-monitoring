@@ -798,14 +798,14 @@ function renderTable() {
 }
 
 /**
- * Formats Transmittal Particulars into an Executive Document Card
+ * Formats Transmittal Particulars into an Executive Document Card preserving exact line breaks & bullets
  */
 function formatParticularsMemoCard(rawText) {
   if (!rawText || !rawText.trim()) {
     return `<span style="color: var(--text-light); font-style: italic;">NO PARTICULARS SPECIFIED</span>`;
   }
 
-  const text = rawText.trim().toUpperCase();
+  const text = formatEtAl(rawText.trim());
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
   let titleHeader = null;
@@ -813,21 +813,16 @@ function formatParticularsMemoCard(rawText) {
 
   lines.forEach((line, index) => {
     const isHeaderLine = line.endsWith(':') || 
-                         /^transmittal\s+of/i.test(line) || 
-                         /^transmittal\s+letter/i.test(line) ||
-                         /^subject:/i.test(line) || 
-                         /^re:/i.test(line);
+                         /^TRANSMITTAL\s+OF/i.test(line) || 
+                         /^TRANSMITTAL\s+LETTER/i.test(line) ||
+                         /^SUBJECT:/i.test(line) || 
+                         /^RE:/i.test(line) ||
+                         /^TO\s+PAYMENT/i.test(line);
 
     if (isHeaderLine && index === 0 && lines.length > 1) {
-      titleHeader = line.replace(/:$/, '');
+      titleHeader = line;
     } else {
-      const cleanedLine = line
-        .replace(/^[\d]+[\.\)]\s*/, '')
-        .replace(/^[•\-\*\+]\s*/, '')
-        .trim();
-      if (cleanedLine.length > 0) {
-        bodyLines.push(cleanedLine);
-      }
+      bodyLines.push(line);
     }
   });
 
@@ -838,8 +833,8 @@ function formatParticularsMemoCard(rawText) {
 
   let formattedBody = bodyLines.join('\n');
 
-  formattedBody = escapeHtml(formattedBody)
-    .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b)/gi, 
+  let htmlBody = escapeHtml(formattedBody)
+    .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b|\bAMOUNTING TO:\s*[\d,\.]+\b)/gi, 
       '<span class="inline-tag">$1</span>');
 
   let html = `<div class="particulars-memo-box">`;
@@ -847,13 +842,13 @@ function formatParticularsMemoCard(rawText) {
   if (titleHeader) {
     html += `
       <div class="particulars-memo-title">
-        <i data-lucide="file-text" style="width: 14px; height: 14px; color: var(--primary-blue);"></i>
+        <i data-lucide="file-text" style="width: 14px; height: 14px; color: var(--primary-blue); flex-shrink: 0;"></i>
         <span>${escapeHtml(titleHeader)}</span>
       </div>
     `;
   }
 
-  html += `<div class="particulars-memo-body">${formattedBody}</div>`;
+  html += `<div class="particulars-memo-body">${htmlBody}</div>`;
   html += `</div>`;
 
   return html;
@@ -1452,14 +1447,17 @@ function escapeHtml(str) {
 
 /**
  * Formats any variation of "ET AL", "ETAL", "ET AL.,", "ETAL.", "et al.", etc.
- * into "et al." (lowercase with dot), while keeping all surrounding text in CAPSLOCK.
+ * into "et al." (lowercase with dot), while keeping all surrounding text in CAPSLOCK and preserving line breaks.
  */
 function formatEtAl(str) {
   if (!str) return '';
   let text = String(str).toUpperCase();
   return text
     .replace(/\b(ET\s*AL|ETAL)[\.,\s]*/gi, ' et al.')
-    .replace(/\s+/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .join('\n')
     .trim();
 }
 
