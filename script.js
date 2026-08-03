@@ -676,11 +676,32 @@ function bindEvents() {
     renderTable();
   });
 
-  document.getElementById('btn-clear-filters').addEventListener('click', () => {
-    searchInput.value = '';
+  document.getElementById('btn-clear-filters').addEventListener('click', async () => {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.value = '';
     appState.searchQuery = '';
-    renderTable();
-    showToast('SEARCH RESET', 'info');
+
+    // Reset salary filters & sorting parameters to defaults
+    appState.salarySortOption = 'name-asc';
+    appState.salaryStatusFilter = 'ALL';
+    appState.salaryQuincenaFilter = 'ALL';
+
+    const sSort = document.getElementById('salary-sort-select');
+    const sStat = document.getElementById('salary-status-filter');
+    const sQuin = document.getElementById('salary-quincena-filter');
+    if (sSort) sSort.value = 'name-asc';
+    if (sStat) sStat.value = 'ALL';
+    if (sQuin) sQuin.value = 'ALL';
+
+    // Re-fetch fresh data from Supabase / LocalStorage to update data live
+    if (isSupabaseConnected && supabaseClient) {
+      await fetchRecordsFromSupabase();
+    } else {
+      loadLocalStorageData();
+    }
+
+    renderApp();
+    showToast('ALL FILTERS RESET & DATA UPDATED LIVE!', 'success');
   });
 
   // Particulars Live Form Preview Listener
