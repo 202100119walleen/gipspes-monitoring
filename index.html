@@ -196,6 +196,9 @@
           <button class="btn btn-danger btn-icon" id="btn-empty-trash" style="display: none;" title="Empty Recycle Bin">
             <i data-lucide="trash-2"></i> Empty Recycle Bin
           </button>
+          <button class="btn btn-secondary btn-icon" id="btn-add-quincena" style="display: none;" title="Add New Quincena Column">
+            <i data-lucide="plus-circle"></i> + Add Quincena Column
+          </button>
         </div>
       </section>
 
@@ -639,6 +642,53 @@
           <button type="button" class="btn btn-secondary" id="excel-modal-cancel-btn">Cancel</button>
           <button type="submit" class="btn btn-primary" style="background: #10b981; border-color: #059669;">
             <i data-lucide="download"></i> Download Excel
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add New Quincena Period Modal -->
+  <div class="modal-backdrop" id="add-quincena-modal">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="plus-circle" style="width: 18px; height: 18px; color: var(--brand-accent);"></i> Add New Quincena Column
+        </h2>
+        <button class="modal-close" id="quincena-modal-close">&times;</button>
+      </div>
+      <form id="add-quincena-form">
+        <div class="modal-body">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">
+            Add a new payroll quincena column to your Salary & Payroll Tracking Matrix table.
+          </p>
+
+          <div class="form-group">
+            <label for="new-quincena-name">Quincena Period Name <span class="required">*</span></label>
+            <input type="text" id="new-quincena-name" class="form-control" placeholder="e.g. AUG 1-15 or AUG 16-31 or SEP 1-15" required autocomplete="off">
+            <small style="color: var(--text-muted); font-size: 0.775rem; margin-top: 6px; display: block;">
+              Quick Presets: 
+              <a href="#" onclick="setQuincenaPreset('AUG 1-15'); return false;" style="color: var(--brand-accent); font-weight: 600;">AUG 1-15</a> | 
+              <a href="#" onclick="setQuincenaPreset('AUG 16-31'); return false;" style="color: var(--brand-accent); font-weight: 600;">AUG 16-31</a> | 
+              <a href="#" onclick="setQuincenaPreset('SEP 1-15'); return false;" style="color: var(--brand-accent); font-weight: 600;">SEP 1-15</a> | 
+              <a href="#" onclick="setQuincenaPreset('SEP 16-30'); return false;" style="color: var(--brand-accent); font-weight: 600;">SEP 16-30</a>
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="new-quincena-default-status">Default Payment Status for Existing GIPs</label>
+            <select id="new-quincena-default-status" class="form-control">
+              <option value="pending">Pending / Unpaid (Red)</option>
+              <option value="received">Received / Paid (Blue)</option>
+              <option value="na">N/A (Not Applicable)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: space-between;">
+          <button type="button" class="btn btn-secondary" id="quincena-modal-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i data-lucide="plus"></i> Add Quincena Column
           </button>
         </div>
       </form>
