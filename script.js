@@ -1051,6 +1051,92 @@ function renderTable() {
   const tableWrapper = document.getElementById('table-responsive-wrapper');
   const salaryCardsGrid = document.getElementById('salary-cards-grid');
 
+  if (appState.activeTab === 'trash') {
+    if (tableWrapper) tableWrapper.style.display = 'block';
+    if (salaryCardsGrid) salaryCardsGrid.style.display = 'none';
+
+    tableHead.innerHTML = `
+      <tr>
+        <th onclick="handleSort('type')">
+          <div class="th-content">RECORD TYPE ${getSortIcon('type')}</div>
+        </th>
+        <th onclick="handleSort('title')">
+          <div class="th-content">RECORD DETAILS / TITLE ${getSortIcon('title')}</div>
+        </th>
+        <th onclick="handleSort('deletedAt')">
+          <div class="th-content">DATE DELETED ${getSortIcon('deletedAt')}</div>
+        </th>
+        <th>
+          <div class="th-content">RETENTION REMAINING</div>
+        </th>
+        <th style="text-align: right;">ACTIONS</th>
+      </tr>
+    `;
+
+    const records = getFilteredAndSortedRecords();
+
+    if (records.length === 0) {
+      tableBody.innerHTML = '';
+      emptyState.style.display = 'block';
+      if (emptyMsg) emptyMsg.textContent = 'Recycle bin is empty. No deleted records.';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tableBody.innerHTML = records.map(item => {
+      const type = item.type || 'dtr';
+      const orig = item.originalRecord || {};
+
+      let typeBadge = '';
+      let titleText = '';
+
+      if (type === 'dtr') {
+        typeBadge = `<span class="quincena-pill quincena-q1"><i data-lucide="users" style="width: 12px; height: 12px;"></i> GIP DTR & AR</span>`;
+        titleText = `GIP NAME: ${escapeHtml(formatEtAl(orig.gipName || ''))} (${formatMonth(orig.month)})`;
+      } else if (type === 'contacts') {
+        typeBadge = `<span class="quincena-pill quincena-q1" style="background: #e0e7ff; color: #3730a3; border-color: #c7d2fe;"><i data-lucide="phone" style="width: 12px; height: 12px;"></i> GIP CONTACT</span>`;
+        titleText = `CONTACT: ${escapeHtml(formatEtAl(orig.gipName || ''))} (${escapeHtml(orig.assignment || 'LDNPFO')})`;
+      } else if (type === 'salary') {
+        typeBadge = `<span class="quincena-pill quincena-q1" style="background: #e0f2fe; color: #0369a1; border-color: #7dd3fc;"><i data-lucide="wallet" style="width: 12px; height: 12px;"></i> SALARY RECORD</span>`;
+        titleText = `SALARY: ${escapeHtml(formatEtAl(orig.gipName || ''))}`;
+      } else {
+        typeBadge = `<span class="quincena-pill quincena-q2"><i data-lucide="send" style="width: 12px; height: 12px;"></i> TRANSMITTAL</span>`;
+        titleText = `PARTICULARS: ${escapeHtml(formatEtAl((orig.particulars || '').substring(0, 65)))}...`;
+      }
+
+      const daysRemaining = getRetentionDaysRemaining(item.deletedAt);
+      const dateDeletedFormatted = formatDate(item.deletedAt ? item.deletedAt.substring(0, 10) : '');
+
+      return `
+        <tr>
+          <td>${typeBadge}</td>
+          <td style="font-weight: 600; font-size: 0.9rem; color: var(--primary-navy);">${titleText}</td>
+          <td>${dateDeletedFormatted}</td>
+          <td>
+            <span class="retention-pill">
+              <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
+              ${daysRemaining} DAYS REMAINING
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-buttons" style="justify-content: flex-end;">
+              <button class="btn-action restore" onclick="restoreRecord('${item.id}')" title="Restore Record to original module">
+                <i data-lucide="rotate-ccw"></i> Restore
+              </button>
+              <button class="btn-action delete" onclick="deletePermanently('${item.id}')" title="Delete Permanently">
+                <i data-lucide="trash-2"></i> Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
   if (appState.activeTab === 'salary') {
     if (tableWrapper) tableWrapper.style.display = 'none';
     if (salaryCardsGrid) salaryCardsGrid.style.display = 'grid';
@@ -1876,32 +1962,13 @@ async function confirmDeleteRecord() {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
+  const type = isDtr ? 'dtr' : isContacts ? 'contacts' : isSalary ? 'salary' : 'transmittal';
 
-  if (isSalary) {
-    appState.data.salaryRecords = appState.data.salaryRecords.filter(r => r.id !== id);
-    if (isSupabaseConnected && supabaseClient) {
-      await supabaseClient.from('gip_salary_records').delete().eq('id', id);
-    }
-    saveToLocalStorage();
-    closeDeleteModal();
-    renderApp();
-    showToast('SALARY RECORD DELETED SUCCESSFULLY', 'info');
-    return;
-  }
+  let dataset = appState.data.dtrRecords;
+  if (isContacts) dataset = appState.data.contactsRecords;
+  else if (isSalary) dataset = appState.data.salaryRecords;
+  else if (!isDtr) dataset = appState.data.transmittalRecords;
 
-  if (isContacts) {
-    appState.data.contactsRecords = appState.data.contactsRecords.filter(r => r.id !== id);
-    if (isSupabaseConnected && supabaseClient) {
-      await supabaseClient.from('gip_contacts').delete().eq('id', id);
-    }
-    saveToLocalStorage();
-    closeDeleteModal();
-    renderApp();
-    showToast('GIP CONTACT DELETED SUCCESSFULLY', 'info');
-    return;
-  }
-
-  const dataset = isDtr ? appState.data.dtrRecords : appState.data.transmittalRecords;
   const targetRecord = dataset.find(r => r.id === id);
 
   if (!targetRecord) {
@@ -1912,7 +1979,7 @@ async function confirmDeleteRecord() {
   const nowISO = new Date().toISOString();
   const recycledItem = {
     id: 'trash-' + Date.now(),
-    type: isDtr ? 'dtr' : 'transmittal',
+    type: type,
     originalId: targetRecord.id,
     originalRecord: { ...targetRecord },
     deletedAt: nowISO
@@ -1925,26 +1992,111 @@ async function confirmDeleteRecord() {
     appState.data.dtrRecords = appState.data.dtrRecords.filter(r => r.id !== id);
     if (isSupabaseConnected && supabaseClient) {
       await supabaseClient.from('gip_dtr_ar_records').delete().eq('id', id);
-      await supabaseClient.from('recycled_records').upsert({
-        id: recycledItem.id,
-        type: recycledItem.type,
-        original_id: recycledItem.originalId,
-        original_record: recycledItem.originalRecord,
-        deleted_at: nowISO
-      });
+    }
+  } else if (isContacts) {
+    appState.data.contactsRecords = appState.data.contactsRecords.filter(r => r.id !== id);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_contacts').delete().eq('id', id);
+    }
+  } else if (isSalary) {
+    appState.data.salaryRecords = appState.data.salaryRecords.filter(r => r.id !== id);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_salary_records').delete().eq('id', id);
     }
   } else {
     appState.data.transmittalRecords = appState.data.transmittalRecords.filter(r => r.id !== id);
     if (isSupabaseConnected && supabaseClient) {
       await supabaseClient.from('transmittal_records').delete().eq('id', id);
-      await supabaseClient.from('recycled_records').upsert({
-        id: recycledItem.id,
-        type: recycledItem.type,
-        original_id: recycledItem.originalId,
-        original_record: recycledItem.originalRecord,
-        deleted_at: nowISO
+    }
+  }
+
+  if (isSupabaseConnected && supabaseClient) {
+    await supabaseClient.from('recycled_records').upsert({
+      id: recycledItem.id,
+      type: recycledItem.type,
+      original_id: recycledItem.originalId,
+      original_record: recycledItem.originalRecord,
+      deleted_at: nowISO
+    });
+  }
+
+  saveToLocalStorage();
+  closeDeleteModal();
+  renderApp();
+  showToast('RECORD MOVED TO RECYCLE BIN (AUTO-PURGES IN 30 DAYS)', 'info');
+}
+
+/**
+ * Restore Record from Recycle Bin
+ */
+async function restoreRecord(trashId) {
+  if (!appState.data.recycledRecords) return;
+
+  const index = appState.data.recycledRecords.findIndex(r => r.id === trashId);
+  if (index === -1) return;
+
+  const item = appState.data.recycledRecords[index];
+  const orig = item.originalRecord;
+  const type = item.type;
+
+  if (type === 'dtr') {
+    appState.data.dtrRecords.unshift(orig);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_dtr_ar_records').upsert({
+        id: orig.id,
+        gip_name: orig.gipName,
+        month: orig.month,
+        quincena: orig.quincena,
+        dtr_ar_date_received: orig.dtrArDateReceived,
+        remarks: orig.remarks,
+        created_at: orig.createdAt,
+        updated_at: new Date().toISOString()
       });
     }
+  } else if (type === 'contacts') {
+    if (!appState.data.contactsRecords) appState.data.contactsRecords = [];
+    appState.data.contactsRecords.unshift(orig);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_contacts').upsert({
+        id: orig.id,
+        gip_name: orig.gipName,
+        assignment: orig.assignment || 'LDNPFO',
+        contact_number: orig.contactNumber,
+        remarks: orig.remarks || '',
+        created_at: orig.createdAt || new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    }
+  } else if (type === 'salary') {
+    if (!appState.data.salaryRecords) appState.data.salaryRecords = [];
+    appState.data.salaryRecords.unshift(orig);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_salary_records').upsert({
+        id: orig.id,
+        gip_name: orig.gipName,
+        periods: orig.periods,
+        updated_at: new Date().toISOString()
+      });
+    }
+  } else {
+    appState.data.transmittalRecords.unshift(orig);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('transmittal_records').upsert({
+        id: orig.id,
+        particulars: orig.particulars,
+        prepared_by: orig.preparedBy,
+        date_transmitted: orig.dateTransmitted,
+        regional_date_received: orig.regionalDateReceived,
+        remarks: orig.remarks,
+        created_at: orig.createdAt,
+        updated_at: new Date().toISOString()
+      });
+    }
+  }
+
+  appState.data.recycledRecords.splice(index, 1);
+  if (isSupabaseConnected && supabaseClient) {
+    await supabaseClient.from('recycled_records').delete().eq('id', trashId);
   }
 
   saveToLocalStorage();
