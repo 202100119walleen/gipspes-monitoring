@@ -525,41 +525,12 @@ async function fetchRecordsFromSupabase() {
 
 /**
  * Auto-sync Local Records to Supabase Cloud Database
- */async function pushLocalContactsToSupabase() {
+ */
+async function pushLocalDataToSupabase() {
   if (!isSupabaseConnected || !supabaseClient) return;
-  try {
-    const contacts = appState.data.contactsRecords || DEFAULT_CONTACTS_SEED;
-    const payload = contacts.map(r => ({
-      id: r.id,
-      gip_name: r.gipName,
-      assignment: r.assignment || 'LDNPFO',
-      contact_number: r.contactNumber,
-      remarks: r.remarks || '',
-      created_at: r.createdAt || new Date().toISOString(),
-      updated_at: r.updatedAt || new Date().toISOString()
-    }));
-    await supabaseClient.from('gip_contacts').upsert(payload);
-  } catch (err) {
-    console.warn('Push contacts note:', err.message);
-  }
-}
 
-async function pushLocalSalaryToSupabase() {
-  if (!isSupabaseConnected || !supabaseClient) return;
   try {
-    const salaries = appState.data.salaryRecords || DEFAULT_SALARY_SEED;
-    const payload = salaries.map(r => ({
-      id: r.id,
-      gip_name: r.gipName,
-      periods: r.periods || {},
-      created_at: r.createdAt || new Date().toISOString(),
-      updated_at: r.updatedAt || new Date().toISOString()
-    }));
-    await supabaseClient.from('gip_salary_records').upsert(payload);
-  } catch (err) {
-    console.warn('Push salary note:', err.message);
-  }
-}    if (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) {
+    if (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) {
       const dtrPayload = appState.data.dtrRecords.map(r => ({
         id: r.id,
         gip_name: r.gipName,
@@ -599,8 +570,55 @@ async function pushLocalSalaryToSupabase() {
       }));
       await supabaseClient.from('gip_contacts').upsert(cntPayload);
     }
+
+    if (appState.data.salaryRecords && appState.data.salaryRecords.length > 0) {
+      const salPayload = appState.data.salaryRecords.map(r => ({
+        id: r.id,
+        gip_name: r.gipName,
+        periods: r.periods,
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_salary_records').upsert(salPayload);
+    }
   } catch (err) {
     console.warn('Auto-push local data note:', err.message);
+  }
+}
+
+async function pushLocalContactsToSupabase() {
+  if (!isSupabaseConnected || !supabaseClient) return;
+  try {
+    const contacts = appState.data.contactsRecords || DEFAULT_CONTACTS_SEED;
+    const payload = contacts.map(r => ({
+      id: r.id,
+      gip_name: r.gipName,
+      assignment: r.assignment || 'LDNPFO',
+      contact_number: r.contactNumber,
+      remarks: r.remarks || '',
+      created_at: r.createdAt || new Date().toISOString(),
+      updated_at: r.updatedAt || new Date().toISOString()
+    }));
+    await supabaseClient.from('gip_contacts').upsert(payload);
+  } catch (err) {
+    console.warn('Push contacts note:', err.message);
+  }
+}
+
+async function pushLocalSalaryToSupabase() {
+  if (!isSupabaseConnected || !supabaseClient) return;
+  try {
+    const salaries = appState.data.salaryRecords || DEFAULT_SALARY_SEED;
+    const payload = salaries.map(r => ({
+      id: r.id,
+      gip_name: r.gipName,
+      periods: r.periods || {},
+      created_at: r.createdAt || new Date().toISOString(),
+      updated_at: r.updatedAt || new Date().toISOString()
+    }));
+    await supabaseClient.from('gip_salary_records').upsert(payload);
+  } catch (err) {
+    console.warn('Push salary note:', err.message);
   }
 }
 
