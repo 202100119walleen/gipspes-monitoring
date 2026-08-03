@@ -1,71 +1,79 @@
 /**
  * DOLE LDNPFO - GIP Document Monitoring System
- * Master JavaScript Logic Sheet (v8 - Executive Sidebar & Responsive Navigation)
+ * Master JavaScript Logic Sheet (v11 - Pre-configured Supabase Project URL & Anon Key)
  */
 
-const LOCAL_STORAGE_KEY = 'dole_gip_monitoring_db_v6';
+const LOCAL_STORAGE_KEY = 'dole_gip_monitoring_db_v9';
 const SUPABASE_CONFIG_KEY = 'dole_gip_supabase_config';
+
+// Pre-configured Supabase Project Credentials from window.ENV or fallback
+const DEFAULT_SUPABASE_CONFIG = {
+  url: (window.ENV && window.ENV.SUPABASE_URL) || 'https://gprkzegwymkufrbmzakd.supabase.co',
+  key: (window.ENV && window.ENV.SUPABASE_ANON_KEY) || 'sb_publishable_LqDDREJQqzUD3BEVNWtuzA_Z3wIy_wU'
+};
 
 // Supabase Global Client Instance
 let supabaseClient = null;
 let isSupabaseConnected = false;
 let realtimeSubscription = null;
 
-// Initial Sample Seed Data
+// Initial Sample Seed Data (All Uppercase)
 const DEFAULT_SEED_DATA = {
   dtrRecords: [
     {
       id: 'dtr-101',
-      gipName: 'Maria Santos',
+      gipName: 'MARIA SANTOS',
       month: '2026-07',
-      quincena: '1st Quincena (1-15)',
+      quincena: '1ST QUINCENA (1-15)',
       dtrArDateReceived: '2026-07-05',
-      remarks: 'Complete DTR & AR attached and verified.',
+      remarks: 'COMPLETE DTR & AR ATTACHED AND VERIFIED.',
       createdAt: '2026-07-05T08:00:00.000Z'
     },
     {
       id: 'dtr-102',
-      gipName: 'Juan Dela Cruz',
+      gipName: 'JUAN DELA CRUZ',
       month: '2026-07',
-      quincena: '1st Quincena (1-15)',
+      quincena: '1ST QUINCENA (1-15)',
       dtrArDateReceived: '2026-07-15',
-      remarks: 'DTR & AR received at LDNPFO. Pending transmittal to RO.',
+      remarks: 'DTR & AR RECEIVED AT LDNPFO. PENDING TRANSMITTAL TO RO.',
       createdAt: '2026-07-15T09:30:00.000Z'
     },
     {
       id: 'dtr-103',
-      gipName: 'Angela Reyes',
+      gipName: 'ANGELA REYES',
       month: '2026-07',
-      quincena: '2nd Quincena (16-31)',
+      quincena: '2ND QUINCENA (16-31)',
       dtrArDateReceived: '',
-      remarks: 'Awaiting submission of DTR & Accomplishment Report.',
+      remarks: 'AWAITING SUBMISSION OF DTR & ACCOMPLISHMENT REPORT.',
       createdAt: '2026-07-28T14:15:00.000Z'
     },
     {
       id: 'dtr-104',
-      gipName: 'Christian Gonzales',
+      gipName: 'CHRISTIAN GONZALES',
       month: '2026-06',
-      quincena: '2nd Quincena (16-31)',
+      quincena: '2ND QUINCENA (16-31)',
       dtrArDateReceived: '2026-06-30',
-      remarks: 'Processed and submitted for payroll clearing.',
+      remarks: 'PROCESSED AND SUBMITTED FOR PAYROLL CLEARING.',
       createdAt: '2026-06-30T11:00:00.000Z'
     }
   ],
   transmittalRecords: [
     {
       id: 'trn-201',
-      particulars: 'Transmittal Letter #2026-07-042:\nTransmittal of 15 sets DTR & AR for July 1st Quincena, including Summary of Hours Worked & Accomplishments, Approved Work Programs, and Deployment Logs.',
+      particulars: 'TRANSMITTAL LETTER #2026-07-042:\nTRANSMITTAL OF 15 SETS DTR & AR FOR JULY 1ST QUINCENA, INCLUDING SUMMARY OF HOURS WORKED & ACCOMPLISHMENTS, APPROVED WORK PROGRAMS, AND DEPLOYMENT LOGS.',
+      preparedBy: 'MARIA SANTOS / ADMINISTRATIVE ASSISTANT',
       dateTransmitted: '2026-07-14',
       regionalDateReceived: '2026-07-16',
-      remarks: 'Transmittal Letter acknowledged and signed by Regional Office.',
+      remarks: 'TRANSMITTAL LETTER ACKNOWLEDGED AND SIGNED BY REGIONAL OFFICE.',
       createdAt: '2026-07-14T10:00:00.000Z'
     },
     {
       id: 'trn-202',
-      particulars: 'Transmittal Letter #2026-07-088:\n10 sets DTR & AR for July 2nd Quincena, Internship Attendance Logs, Performance Rating Reports',
+      particulars: 'TRANSMITTAL LETTER #2026-07-088:\n10 SETS DTR & AR FOR JULY 2ND QUINCENA, INTERNSHIP ATTENDANCE LOGS, PERFORMANCE RATING REPORTS',
+      preparedBy: 'JUAN DELA CRUZ / GIP COORDINATOR',
       dateTransmitted: '2026-07-25',
       regionalDateReceived: '',
-      remarks: 'Dispatched via courier services. Tracking #PH982341.',
+      remarks: 'DISPATCHED VIA COURIER SERVICES. TRACKING #PH982341.',
       createdAt: '2026-07-25T15:20:00.000Z'
     }
   ]
@@ -94,18 +102,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /**
- * Initialize Supabase SDK Client
+ * Initialize Supabase SDK Client with pre-configured URL & Key
  */
 async function initSupabaseClient() {
-  updateConnectionBadge('connecting', 'Connecting...');
+  updateConnectionBadge('connecting', 'CONNECTING...');
   try {
-    const storedConfig = localStorage.getItem(SUPABASE_CONFIG_KEY);
-    if (!storedConfig) {
-      setLocalMode();
-      return;
-    }
+    const url = (window.ENV && window.ENV.SUPABASE_URL) || DEFAULT_SUPABASE_CONFIG.url;
+    const key = (window.ENV && window.ENV.SUPABASE_ANON_KEY) || DEFAULT_SUPABASE_CONFIG.key;
 
-    const { url, key } = JSON.parse(storedConfig);
     if (!url || !key || !window.supabase) {
       setLocalMode();
       return;
@@ -115,14 +119,11 @@ async function initSupabaseClient() {
 
     const { error } = await supabaseClient.from('gip_dtr_ar_records').select('id').limit(1);
     if (error && error.code !== 'PGRST116') {
-      console.warn('Supabase test query warning:', error.message);
+      console.warn('Supabase connection test note:', error ? error.message : 'OK');
     }
 
     isSupabaseConnected = true;
-    updateConnectionBadge('connected', 'Supabase Connected');
-
-    document.getElementById('supabase-url').value = url;
-    document.getElementById('supabase-key').value = key;
+    updateConnectionBadge('connected', 'SUPABASE CONNECTED');
 
     await fetchRecordsFromSupabase();
     subscribeSupabaseRealtime();
@@ -136,7 +137,7 @@ async function initSupabaseClient() {
 function setLocalMode() {
   isSupabaseConnected = false;
   supabaseClient = null;
-  updateConnectionBadge('offline', 'Local Storage Mode');
+  updateConnectionBadge('offline', 'LOCAL STORAGE MODE');
 }
 
 function updateConnectionBadge(status, text) {
@@ -147,7 +148,7 @@ function updateConnectionBadge(status, text) {
   if (badge && dot && textElem) {
     badge.className = `meta-badge ${status}`;
     dot.className = `status-dot ${status}`;
-    textElem.textContent = text;
+    textElem.textContent = text.toUpperCase();
   }
 }
 
@@ -200,21 +201,22 @@ async function fetchRecordsFromSupabase() {
 
     appState.data.dtrRecords = (dtrData || []).map(r => ({
       id: r.id,
-      gipName: r.gip_name,
+      gipName: (r.gip_name || '').toUpperCase(),
       month: r.month,
-      quincena: r.quincena,
+      quincena: (r.quincena || '').toUpperCase(),
       dtrArDateReceived: r.dtr_ar_date_received,
-      remarks: r.remarks,
+      remarks: (r.remarks || '').toUpperCase(),
       createdAt: r.created_at,
       updatedAt: r.updated_at
     }));
 
     appState.data.transmittalRecords = (trnData || []).map(r => ({
       id: r.id,
-      particulars: r.particulars,
+      particulars: (r.particulars || '').toUpperCase(),
+      preparedBy: (r.prepared_by || '').toUpperCase(),
       dateTransmitted: r.date_transmitted,
       regionalDateReceived: r.regional_date_received,
-      remarks: r.remarks,
+      remarks: (r.remarks || '').toUpperCase(),
       createdAt: r.created_at,
       updatedAt: r.updated_at
     }));
@@ -223,7 +225,7 @@ async function fetchRecordsFromSupabase() {
     renderApp();
   } catch (err) {
     console.error('Error fetching data from Supabase:', err.message);
-    showToast('Cloud database sync error: ' + err.message, 'danger');
+    showToast('CLOUD DATABASE SYNC ERROR: ' + err.message.toUpperCase(), 'danger');
   }
 }
 
@@ -252,7 +254,6 @@ function bindEvents() {
   // Sidebar Navigation Items
   document.getElementById('side-nav-dtr').addEventListener('click', () => switchTab('dtr'));
   document.getElementById('side-nav-transmittal').addEventListener('click', () => switchTab('transmittal'));
-  document.getElementById('side-nav-settings').addEventListener('click', openSupabaseModal);
   document.getElementById('side-nav-excel').addEventListener('click', handleExportExcel);
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
 
@@ -286,7 +287,7 @@ function bindEvents() {
     searchInput.value = '';
     appState.searchQuery = '';
     renderTable();
-    showToast('Search reset', 'info');
+    showToast('SEARCH RESET', 'info');
   });
 
   // Particulars Live Form Preview Listener
@@ -295,13 +296,6 @@ function bindEvents() {
 
   // Header Action Buttons
   document.getElementById('btn-add-record').addEventListener('click', () => openRecordModal());
-
-  // Supabase Configuration Form
-  document.getElementById('supabase-form').addEventListener('submit', handleSaveSupabaseConfig);
-  document.getElementById('btn-disconnect-supabase').addEventListener('click', handleDisconnectSupabase);
-  document.getElementById('supabase-modal-close').addEventListener('click', closeSupabaseModal);
-  document.getElementById('supabase-modal-done').addEventListener('click', closeSupabaseModal);
-  document.getElementById('btn-copy-sql').addEventListener('click', copySqlScriptToClipboard);
 
   // Form Submission
   document.getElementById('record-form').addEventListener('submit', handleFormSubmit);
@@ -320,9 +314,6 @@ function bindEvents() {
   document.getElementById('delete-modal').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeDeleteModal();
   });
-  document.getElementById('supabase-modal').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeSupabaseModal();
-  });
 }
 
 /**
@@ -332,24 +323,21 @@ function switchTab(tabName) {
   if (appState.activeTab === tabName) return;
   appState.activeTab = tabName;
 
-  // Close mobile sidebar if open
   document.getElementById('app-sidebar').classList.remove('mobile-open');
   document.getElementById('sidebar-overlay').classList.remove('mobile-open');
 
-  // Update active sidebar nav items
   document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('active'));
   document.getElementById(`side-nav-${tabName}`).classList.add('active');
 
-  // Update Page Title and Subtitle
   const viewTitle = document.getElementById('view-title');
   const viewSubtitle = document.getElementById('view-subtitle');
 
   if (tabName === 'dtr') {
-    viewTitle.textContent = 'GIP DTR & AR Monitoring';
-    viewSubtitle.textContent = 'Daily Time Records & Accomplishment Reports tracking';
+    viewTitle.textContent = 'GIP DTR & AR MONITORING';
+    viewSubtitle.textContent = 'DAILY TIME RECORDS & ACCOMPLISHMENT REPORTS TRACKING';
   } else {
-    viewTitle.textContent = 'Transmittal Monitoring';
-    viewSubtitle.textContent = 'Document transmittals sent to Regional Office';
+    viewTitle.textContent = 'TRANSMITTAL MONITORING';
+    viewSubtitle.textContent = 'DOCUMENT TRANSMITTALS SENT TO REGIONAL OFFICE';
   }
 
   appState.sortColumn = 'createdAt';
@@ -405,6 +393,7 @@ function getFilteredAndSortedRecords() {
                (r.remarks || '').toLowerCase().includes(q);
       } else {
         return (r.particulars || '').toLowerCase().includes(q) ||
+               (r.preparedBy || '').toLowerCase().includes(q) ||
                (r.remarks || '').toLowerCase().includes(q);
       }
     });
@@ -435,36 +424,39 @@ function renderTable() {
     tableHead.innerHTML = `
       <tr>
         <th onclick="handleSort('gipName')">
-          <div class="th-content">GIP Name ${getSortIcon('gipName')}</div>
+          <div class="th-content">GIP NAME ${getSortIcon('gipName')}</div>
         </th>
         <th onclick="handleSort('month')">
-          <div class="th-content">Payroll Period / Quincena ${getSortIcon('month')}</div>
+          <div class="th-content">PAYROLL PERIOD / QUINCENA ${getSortIcon('month')}</div>
         </th>
         <th onclick="handleSort('dtrArDateReceived')">
-          <div class="th-content">DTR & AR Date Received by DOLE LDNPFO ${getSortIcon('dtrArDateReceived')}</div>
+          <div class="th-content">DTR & AR DATE RECEIVED BY DOLE LDNPFO ${getSortIcon('dtrArDateReceived')}</div>
         </th>
         <th>
-          <div class="th-content">Remarks</div>
+          <div class="th-content">REMARKS</div>
         </th>
-        <th style="text-align: right;">Actions</th>
+        <th style="text-align: right;">ACTIONS</th>
       </tr>
     `;
   } else {
     tableHead.innerHTML = `
       <tr>
         <th onclick="handleSort('particulars')">
-          <div class="th-content">Particulars (Documents Transmitted) ${getSortIcon('particulars')}</div>
+          <div class="th-content">PARTICULARS (DOCUMENTS TRANSMITTED) ${getSortIcon('particulars')}</div>
+        </th>
+        <th onclick="handleSort('preparedBy')">
+          <div class="th-content">PREPARED BY ${getSortIcon('preparedBy')}</div>
         </th>
         <th onclick="handleSort('dateTransmitted')">
-          <div class="th-content">Date Transmitted ${getSortIcon('dateTransmitted')}</div>
+          <div class="th-content">DATE TRANSMITTED ${getSortIcon('dateTransmitted')}</div>
         </th>
         <th onclick="handleSort('regionalDateReceived')">
-          <div class="th-content">Date Received by Regional Office ${getSortIcon('regionalDateReceived')}</div>
+          <div class="th-content">DATE RECEIVED BY REGIONAL OFFICE ${getSortIcon('regionalDateReceived')}</div>
         </th>
         <th>
-          <div class="th-content">Remarks</div>
+          <div class="th-content">REMARKS</div>
         </th>
-        <th style="text-align: right;">Actions</th>
+        <th style="text-align: right;">ACTIONS</th>
       </tr>
     `;
   }
@@ -481,14 +473,14 @@ function renderTable() {
 
   tableBody.innerHTML = records.map(record => {
     if (isDtr) {
-      const quincenaLabel = record.quincena || '1st Quincena (1-15)';
-      const monthFormatted = formatMonth(record.month);
-      const isQ2 = String(quincenaLabel).includes('2nd');
+      const quincenaLabel = (record.quincena || '1ST QUINCENA (1-15)').toUpperCase();
+      const monthFormatted = formatMonth(record.month).toUpperCase();
+      const isQ2 = String(quincenaLabel).includes('2ND');
       const qClass = isQ2 ? 'quincena-q2' : 'quincena-q1';
 
       return `
         <tr>
-          <td style="font-weight: 600; font-size: 0.95rem;">${escapeHtml(record.gipName)}</td>
+          <td style="font-weight: 600; font-size: 0.95rem;">${escapeHtml(record.gipName).toUpperCase()}</td>
           <td>
             <span class="quincena-pill ${qClass}">
               <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
@@ -496,7 +488,7 @@ function renderTable() {
             </span>
           </td>
           <td>${formatDate(record.dtrArDateReceived)}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${escapeHtml(record.remarks || '-')}</td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${escapeHtml(record.remarks || '-').toUpperCase()}</td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Record">
@@ -514,9 +506,10 @@ function renderTable() {
       return `
         <tr>
           <td>${memoFormatted}</td>
+          <td><span style="font-weight: 600; color: var(--text-main);">${escapeHtml(record.preparedBy || '-').toUpperCase()}</span></td>
           <td>${formatDate(record.dateTransmitted)}</td>
           <td>${formatDate(record.regionalDateReceived)}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${escapeHtml(record.remarks || '-')}</td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(record.remarks || '-').toUpperCase()}</td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Record">
@@ -542,10 +535,10 @@ function renderTable() {
  */
 function formatParticularsMemoCard(rawText) {
   if (!rawText || !rawText.trim()) {
-    return `<span style="color: var(--text-light); font-style: italic;">No particulars specified</span>`;
+    return `<span style="color: var(--text-light); font-style: italic;">NO PARTICULARS SPECIFIED</span>`;
   }
 
-  const text = rawText.trim();
+  const text = rawText.trim().toUpperCase();
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
   let titleHeader = null;
@@ -579,7 +572,7 @@ function formatParticularsMemoCard(rawText) {
   let formattedBody = bodyLines.join('\n');
 
   formattedBody = escapeHtml(formattedBody)
-    .replace(/(\b\d+\s+sets?\b|\b1st Quincena\b|\b2nd Quincena\b|\bBatch\s+\d+\b|\bDTRs?\s*&\s*ARs?\b)/gi, 
+    .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b)/gi, 
       '<span class="inline-tag">$1</span>');
 
   let html = `<div class="particulars-memo-box">`;
@@ -607,7 +600,7 @@ function handleParticularsLivePreview() {
   const previewWrapper = document.getElementById('particulars-preview-wrapper');
   const previewContainer = document.getElementById('particulars-live-preview');
 
-  const text = textarea.value.trim();
+  const text = textarea.value.trim().toUpperCase();
   if (!text) {
     previewWrapper.style.display = 'none';
     previewContainer.innerHTML = '';
@@ -666,6 +659,7 @@ function openRecordModal(id = null) {
     document.getElementById('record-month').required = true;
     document.getElementById('record-quincena').required = true;
     document.getElementById('particulars').required = false;
+    document.getElementById('prepared-by-trn').required = false;
   } else {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'block';
@@ -673,31 +667,33 @@ function openRecordModal(id = null) {
     document.getElementById('record-month').required = false;
     document.getElementById('record-quincena').required = false;
     document.getElementById('particulars').required = true;
+    document.getElementById('prepared-by-trn').required = true;
   }
 
   if (id) {
-    modalTitle.textContent = isDtr ? 'Edit GIP DTR & AR Record' : 'Edit Transmittal Record';
+    modalTitle.textContent = isDtr ? 'EDIT GIP DTR & AR RECORD' : 'EDIT TRANSMITTAL RECORD';
     const dataset = isDtr ? appState.data.dtrRecords : appState.data.transmittalRecords;
     const record = dataset.find(r => r.id === id);
 
     if (record) {
       document.getElementById('form-record-id').value = record.id;
-      document.getElementById('record-remarks').value = record.remarks || '';
+      document.getElementById('record-remarks').value = (record.remarks || '').toUpperCase();
 
       if (isDtr) {
-        document.getElementById('gip-name').value = record.gipName || '';
+        document.getElementById('gip-name').value = (record.gipName || '').toUpperCase();
         document.getElementById('record-month').value = record.month || currentMonthStr;
         document.getElementById('record-quincena').value = record.quincena || '1st Quincena (1-15)';
         document.getElementById('dtr-ar-date-received').value = record.dtrArDateReceived || '';
       } else {
-        document.getElementById('particulars').value = record.particulars || '';
+        document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
+        document.getElementById('prepared-by-trn').value = (record.preparedBy || '').toUpperCase();
         document.getElementById('date-transmitted').value = record.dateTransmitted || '';
         document.getElementById('regional-date-received-trn').value = record.regionalDateReceived || '';
         handleParticularsLivePreview();
       }
     }
   } else {
-    modalTitle.textContent = isDtr ? 'Add New GIP DTR & AR Record' : 'Add New Transmittal Record';
+    modalTitle.textContent = isDtr ? 'ADD NEW GIP DTR & AR RECORD' : 'ADD NEW TRANSMITTAL RECORD';
     document.getElementById('form-record-id').value = '';
   }
 
@@ -713,18 +709,18 @@ async function handleFormSubmit(e) {
   e.preventDefault();
   const isDtr = appState.activeTab === 'dtr';
   const recordId = document.getElementById('form-record-id').value;
-  const remarks = document.getElementById('record-remarks').value.trim();
+  const remarks = document.getElementById('record-remarks').value.trim().toUpperCase();
 
   const nowISO = new Date().toISOString();
 
   if (isDtr) {
-    const gipName = document.getElementById('gip-name').value.trim();
+    const gipName = document.getElementById('gip-name').value.trim().toUpperCase();
     const month = document.getElementById('record-month').value;
-    const quincena = document.getElementById('record-quincena').value;
+    const quincena = document.getElementById('record-quincena').value.toUpperCase();
     const dtrArDateReceived = document.getElementById('dtr-ar-date-received').value;
 
     if (!gipName) {
-      showToast('GIP Name is required', 'danger');
+      showToast('GIP NAME IS REQUIRED', 'danger');
       return;
     }
 
@@ -754,7 +750,7 @@ async function handleFormSubmit(e) {
         }).eq('id', recordId);
       }
 
-      showToast('GIP Record updated successfully!', 'success');
+      showToast('GIP RECORD UPDATED SUCCESSFULLY!', 'success');
     } else {
       const newId = 'dtr-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
@@ -773,20 +769,26 @@ async function handleFormSubmit(e) {
         }]);
       }
 
-      showToast('New GIP Record added successfully!', 'success');
+      showToast('NEW GIP RECORD ADDED SUCCESSFULLY!', 'success');
     }
   } else {
-    const particulars = document.getElementById('particulars').value.trim();
+    const particulars = document.getElementById('particulars').value.trim().toUpperCase();
+    const preparedBy = document.getElementById('prepared-by-trn').value.trim().toUpperCase();
     const dateTransmitted = document.getElementById('date-transmitted').value;
     const regionalDateReceived = document.getElementById('regional-date-received-trn').value;
 
     if (!particulars) {
-      showToast('Particulars field is required', 'danger');
+      showToast('PARTICULARS FIELD IS REQUIRED', 'danger');
+      return;
+    }
+    if (!preparedBy) {
+      showToast('PREPARED BY FIELD IS REQUIRED', 'danger');
       return;
     }
 
     const payload = {
       particulars,
+      preparedBy,
       dateTransmitted,
       regionalDateReceived,
       remarks,
@@ -802,6 +804,7 @@ async function handleFormSubmit(e) {
       if (isSupabaseConnected && supabaseClient) {
         await supabaseClient.from('transmittal_records').update({
           particulars,
+          prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
           regional_date_received: regionalDateReceived,
           remarks,
@@ -809,7 +812,7 @@ async function handleFormSubmit(e) {
         }).eq('id', recordId);
       }
 
-      showToast('Transmittal record updated successfully!', 'success');
+      showToast('TRANSMITTAL RECORD UPDATED SUCCESSFULLY!', 'success');
     } else {
       const newId = 'trn-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
@@ -819,6 +822,7 @@ async function handleFormSubmit(e) {
         await supabaseClient.from('transmittal_records').insert([{
           id: newId,
           particulars,
+          prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
           regional_date_received: regionalDateReceived,
           remarks,
@@ -827,7 +831,7 @@ async function handleFormSubmit(e) {
         }]);
       }
 
-      showToast('New Transmittal record added successfully!', 'success');
+      showToast('NEW TRANSMITTAL RECORD ADDED SUCCESSFULLY!', 'success');
     }
   }
 
@@ -849,10 +853,10 @@ function openDeleteModal(id) {
   if (!record) return;
 
   const summary = isDtr 
-    ? `GIP Name: ${record.gipName} (${formatMonth(record.month)} - ${record.quincena || '1st Quincena'})` 
-    : `Particulars: ${record.particulars.substring(0, 50)}...`;
+    ? `GIP NAME: ${record.gipName} (${formatMonth(record.month)} - ${record.quincena || '1ST QUINCENA'})` 
+    : `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
 
-  document.getElementById('delete-record-summary').textContent = summary;
+  document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
   document.getElementById('delete-modal').classList.add('active');
 }
 
@@ -881,73 +885,10 @@ async function confirmDeleteRecord() {
   saveToLocalStorage();
   closeDeleteModal();
   renderApp();
-  showToast('Record deleted successfully', 'info');
+  showToast('RECORD DELETED SUCCESSFULLY', 'info');
 }
 
-/**
- * Supabase Settings Modal Handlers
- */
-function openSupabaseModal() {
-  const storedConfig = localStorage.getItem(SUPABASE_CONFIG_KEY);
-  if (storedConfig) {
-    try {
-      const { url, key } = JSON.parse(storedConfig);
-      document.getElementById('supabase-url').value = url || '';
-      document.getElementById('supabase-key').value = key || 'sb_publishable_LqDDREJQqzUD3BEVNWtuzA_Z3wIy_wU';
-    } catch (e) {}
-  } else {
-    document.getElementById('supabase-key').value = 'sb_publishable_LqDDREJQqzUD3BEVNWtuzA_Z3wIy_wU';
-  }
-  document.getElementById('supabase-modal').classList.add('active');
-  if (window.lucide) lucide.createIcons();
-}
 
-function closeSupabaseModal() {
-  document.getElementById('supabase-modal').classList.remove('active');
-}
-
-async function handleSaveSupabaseConfig(e) {
-  e.preventDefault();
-  const url = document.getElementById('supabase-url').value.trim();
-  const key = document.getElementById('supabase-key').value.trim();
-
-  if (!url || !key) {
-    showToast('Please enter both Supabase URL and API Key', 'danger');
-    return;
-  }
-
-  try {
-    const config = { url, key };
-    localStorage.setItem(SUPABASE_CONFIG_KEY, JSON.stringify(config));
-    showToast('Testing Supabase connection...', 'info');
-    await initSupabaseClient();
-
-    if (isSupabaseConnected) {
-      showToast('Successfully connected to Supabase!', 'success');
-      closeSupabaseModal();
-    } else {
-      showToast('Could not verify Supabase connection. Check your URL and Key.', 'danger');
-    }
-  } catch (err) {
-    showToast('Connection failed: ' + err.message, 'danger');
-  }
-}
-
-function handleDisconnectSupabase() {
-  localStorage.removeItem(SUPABASE_CONFIG_KEY);
-  setLocalMode();
-  closeSupabaseModal();
-  showToast('Disconnected from Supabase. Switched to Local Storage Mode.', 'info');
-}
-
-function copySqlScriptToClipboard() {
-  const sqlText = document.getElementById('sql-script-code').innerText;
-  navigator.clipboard.writeText(sqlText).then(() => {
-    showToast('SQL script copied to clipboard!', 'success');
-  }).catch(() => {
-    showToast('Failed to copy to clipboard', 'danger');
-  });
-}
 
 /**
  * Excel Export Handler using SheetJS (XLSX)
@@ -957,31 +898,32 @@ function handleExportExcel() {
     const wb = XLSX.utils.book_new();
 
     const dtrDataFormatted = appState.data.dtrRecords.map(r => ({
-      'GIP Name': r.gipName,
-      'Month / Year': formatMonth(r.month),
-      'Quincena (Payroll Period)': r.quincena || '1st Quincena (1-15)',
-      'DTR & AR Date Received (LDNPFO)': r.dtrArDateReceived || 'N/A',
-      'Remarks': r.remarks || ''
+      'GIP NAME': (r.gipName || '').toUpperCase(),
+      'MONTH / YEAR': formatMonth(r.month).toUpperCase(),
+      'QUINCENA (PAYROLL PERIOD)': (r.quincena || '1ST QUINCENA (1-15)').toUpperCase(),
+      'DTR & AR DATE RECEIVED (LDNPFO)': r.dtrArDateReceived || 'N/A',
+      'REMARKS': (r.remarks || '').toUpperCase()
     }));
 
     const wsDtr = XLSX.utils.json_to_sheet(dtrDataFormatted);
     XLSX.utils.book_append_sheet(wb, wsDtr, 'GIP DTR & AR');
 
     const trnDataFormatted = appState.data.transmittalRecords.map(r => ({
-      'Particulars (Transmitted Documents)': (r.particulars || '').replace(/\r?\n/g, ' '),
-      'Date Transmitted': r.dateTransmitted || 'N/A',
-      'Date Received (Regional Office)': r.regionalDateReceived || 'N/A',
-      'Remarks': r.remarks || ''
+      'PARTICULARS (TRANSMITTED DOCUMENTS)': (r.particulars || '').replace(/\r?\n/g, ' ').toUpperCase(),
+      'PREPARED BY': (r.preparedBy || 'N/A').toUpperCase(),
+      'DATE TRANSMITTED': r.dateTransmitted || 'N/A',
+      'DATE RECEIVED (REGIONAL OFFICE)': r.regionalDateReceived || 'N/A',
+      'REMARKS': (r.remarks || '').toUpperCase()
     }));
 
     const wsTrn = XLSX.utils.json_to_sheet(trnDataFormatted);
-    XLSX.utils.book_append_sheet(wb, wsTrn, 'Transmittals');
+    XLSX.utils.book_append_sheet(wb, wsTrn, 'TRANSMITTALS');
 
     const today = new Date().toISOString().split('T')[0];
-    const fileName = `DOLE_LDNPFO_GIP_Monitoring_${today}.xlsx`;
+    const fileName = `DOLE_LDNPFO_GIP_MONITORING_${today}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
-    showToast('Excel file downloaded successfully!', 'success');
+    showToast('EXCEL FILE DOWNLOADED SUCCESSFULLY!', 'success');
   } catch (err) {
     console.error('XLSX export error, falling back to CSV:', err);
     exportFallbackCSV();
@@ -997,26 +939,26 @@ function exportFallbackCSV() {
 
   let csvContent = 'data:text/csv;charset=utf-8,';
   if (isDtr) {
-    csvContent += 'GIP Name,Month,Quincena,DTR & AR Date Received (LDNPFO),Remarks\n';
+    csvContent += 'GIP NAME,MONTH,QUINCENA,DTR & AR DATE RECEIVED (LDNPFO),REMARKS\n';
     records.forEach(r => {
-      csvContent += `"${r.gipName}","${r.month}","${r.quincena}","${r.dtrArDateReceived}","${r.remarks}"\n`;
+      csvContent += `"${(r.gipName || '').toUpperCase()}","${r.month}","${(r.quincena || '').toUpperCase()}","${r.dtrArDateReceived}","${(r.remarks || '').toUpperCase()}"\n`;
     });
   } else {
-    csvContent += 'Particulars,Date Transmitted,Date Received (Regional Office),Remarks\n';
+    csvContent += 'PARTICULARS,PREPARED BY,DATE TRANSMITTED,DATE RECEIVED (REGIONAL OFFICE),REMARKS\n';
     records.forEach(r => {
-      const cleanParticulars = (r.particulars || '').replace(/\r?\n/g, ' ');
-      csvContent += `"${cleanParticulars}","${r.dateTransmitted}","${r.regionalDateReceived}","${r.remarks}"\n`;
+      const cleanParticulars = (r.particulars || '').replace(/\r?\n/g, ' ').toUpperCase();
+      csvContent += `"${cleanParticulars}","${(r.preparedBy || '').toUpperCase()}","${r.dateTransmitted}","${r.regionalDateReceived}","${(r.remarks || '').toUpperCase()}"\n`;
     });
   }
 
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement('a');
   link.setAttribute('href', encodedUri);
-  link.setAttribute('download', `GIP_Monitoring_Export_${Date.now()}.csv`);
+  link.setAttribute('download', `GIP_MONITORING_EXPORT_${Date.now()}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  showToast('CSV file downloaded!', 'info');
+  showToast('CSV FILE DOWNLOADED!', 'info');
 }
 
 /**
@@ -1026,9 +968,9 @@ function handlePrintReport() {
   const titleElem = document.getElementById('print-report-title');
   const timestampElem = document.getElementById('print-timestamp');
 
-  const moduleName = appState.activeTab === 'dtr' ? 'GIP DTR & AR Monitoring' : 'Transmittal Monitoring';
-  titleElem.textContent = `DOLE LDNPFO - ${moduleName} Official Report`;
-  timestampElem.textContent = `Generated on: ${new Date().toLocaleString()}`;
+  const moduleName = appState.activeTab === 'dtr' ? 'GIP DTR & AR MONITORING' : 'TRANSMITTAL MONITORING';
+  titleElem.textContent = `DOLE LDNPFO - ${moduleName} OFFICIAL REPORT`;
+  timestampElem.textContent = `GENERATED ON: ${new Date().toLocaleString().toUpperCase()}`;
 
   window.print();
 }
@@ -1047,7 +989,7 @@ function showToast(message, type = 'info') {
 
   toast.innerHTML = `
     <i data-lucide="${iconName}" style="width: 18px; height: 18px;"></i>
-    <span>${escapeHtml(message)}</span>
+    <span>${escapeHtml(message).toUpperCase()}</span>
   `;
 
   container.appendChild(toast);
@@ -1069,7 +1011,7 @@ function formatDate(dateStr) {
     const [y, m, d] = dateStr.split('-');
     if (!y || !m || !d) return dateStr;
     const date = new Date(y, m - 1, d);
-    return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
   } catch (e) {
     return dateStr;
   }
@@ -1081,9 +1023,9 @@ function formatMonth(monthStr) {
     const [y, m] = monthStr.split('-');
     if (!y || !m) return monthStr;
     const date = new Date(y, m - 1, 1);
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase();
   } catch (e) {
-    return monthStr;
+    return monthStr.toUpperCase();
   }
 }
 

@@ -63,12 +63,6 @@
         </button>
 
         <div class="nav-section-title">System Tools</div>
-        <button class="sidebar-item" id="side-nav-settings">
-          <div class="sidebar-item-content">
-            <i data-lucide="database"></i>
-            <span>Database Settings</span>
-          </div>
-        </button>
         <button class="sidebar-item" id="side-nav-excel">
           <div class="sidebar-item-content">
             <i data-lucide="download"></i>
@@ -232,6 +226,12 @@
                 <div id="particulars-live-preview"></div>
               </div>
             </div>
+
+            <div class="form-group">
+              <label for="prepared-by-trn">Prepared By <span class="required">*</span></label>
+              <input type="text" id="prepared-by-trn" class="form-control" placeholder="e.g. Juan De La Cruz / Administrative Assistant">
+            </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label for="date-transmitted">Date Transmitted</label>
@@ -282,97 +282,11 @@
     </div>
   </div>
 
-  <!-- Supabase Database Settings Modal -->
-  <div class="modal-backdrop" id="supabase-modal">
-    <div class="modal-container" style="max-width: 680px;">
-      <div class="modal-header">
-        <h2><i data-lucide="database" style="width: 20px; height: 20px; color: var(--brand-accent);"></i> Supabase Database Settings</h2>
-        <button class="modal-close" id="supabase-modal-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px;">
-          Connect your Supabase project to enable cloud database storage and multi-device real-time synchronization.
-        </p>
-
-        <form id="supabase-form">
-          <div class="form-group">
-            <label for="supabase-url">Supabase Project URL <span class="required">*</span></label>
-            <input type="url" id="supabase-url" class="form-control" placeholder="https://your-project.supabase.co">
-          </div>
-
-          <div class="form-group">
-            <label for="supabase-key">Supabase Anon Public API Key <span class="required">*</span></label>
-            <textarea id="supabase-key" class="form-control" style="min-height: 70px; font-family: monospace; font-size: 0.8rem;" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."></textarea>
-          </div>
-
-          <div style="display: flex; gap: 10px; margin-top: 16px;">
-            <button type="submit" class="btn btn-primary" id="btn-save-supabase">
-              <i data-lucide="plug"></i> Test & Save Connection
-            </button>
-            <button type="button" class="btn btn-secondary" id="btn-disconnect-supabase">
-              <i data-lucide="power"></i> Disconnect / Switch to Local Storage
-            </button>
-          </div>
-        </form>
-
-        <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-light);">
-
-        <!-- SQL Schema Setup Helper -->
-        <div>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-main);">
-              <i data-lucide="terminal" style="width: 16px; height: 16px;"></i> Supabase SQL Setup Script
-            </h3>
-            <button class="btn btn-secondary btn-icon" id="btn-copy-sql" style="font-size: 0.8rem;">
-              <i data-lucide="copy"></i> Copy SQL
-            </button>
-          </div>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
-            Run this SQL script in your <strong>Supabase SQL Editor</strong> to create the required database tables:
-          </p>
-          <pre class="sql-code-box" id="sql-script-code">
--- 1. Create GIP DTR & AR Table
-CREATE TABLE IF NOT EXISTS gip_dtr_ar_records (
-  id TEXT PRIMARY KEY,
-  gip_name TEXT NOT NULL,
-  month TEXT,
-  quincena TEXT,
-  dtr_ar_date_received TEXT,
-  remarks TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 2. Create Transmittal Monitoring Table
-CREATE TABLE IF NOT EXISTS transmittal_records (
-  id TEXT PRIMARY KEY,
-  particulars TEXT NOT NULL,
-  date_transmitted TEXT,
-  regional_date_received TEXT,
-  remarks TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 3. Enable Public Access Policies
-ALTER TABLE gip_dtr_ar_records ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public full access" ON gip_dtr_ar_records FOR ALL USING (true) WITH CHECK (true);
-
-ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public full access" ON transmittal_records FOR ALL USING (true) WITH CHECK (true);</pre>
-        </div>
-
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="supabase-modal-done">Close</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- Custom Logic Script -->
+  <!-- Environment & Custom Logic Scripts -->
+  <script src="env.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

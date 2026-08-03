@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS gip_dtr_ar_records (
 CREATE TABLE IF NOT EXISTS transmittal_records (
   id TEXT PRIMARY KEY,
   particulars TEXT NOT NULL,
+  prepared_by TEXT,
   date_transmitted TEXT,
   regional_date_received TEXT,
   remarks TEXT,
