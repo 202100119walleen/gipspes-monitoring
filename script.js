@@ -443,6 +443,9 @@ function bindEvents() {
     });
   });
 
+  // Transmittal OCR Image Scanner Handler
+  initOCRHandler();
+
   // Header Action Buttons
   document.getElementById('btn-add-record').addEventListener('click', () => openRecordModal());
 
@@ -1458,4 +1461,70 @@ function formatEtAl(str) {
     .replace(/\b(ET\s*AL|ETAL)[\.,\s]*/gi, ' et al.')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * Initialize Transmittal OCR Image Reader using Tesseract.js
+ */
+function initOCRHandler() {
+  const fileInput = document.getElementById('transmittal-ocr-file');
+  if (!fileInput) return;
+
+  fileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const statusBox = document.getElementById('ocr-status-box');
+    const statusText = document.getElementById('ocr-status-text');
+
+    try {
+      statusBox.style.display = 'flex';
+      statusText.textContent = 'Initializing OCR engine...';
+
+      if (!window.Tesseract) {
+        throw new Error('OCR library is loading, please try again in a moment');
+      }
+
+      showToast('SCANNING TRANSMITTAL IMAGE...', 'info');
+
+      const result = await Tesseract.recognize(file, 'eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            const pct = Math.round((m.progress || 0) * 100);
+            statusText.textContent = `Scanning image & extracting text... ${pct}%`;
+          } else if (m.status) {
+            statusText.textContent = `${m.status.toUpperCase()}...`;
+          }
+        }
+      });
+
+      const rawExtracted = (result && result.data && result.data.text) ? result.data.text.trim() : '';
+
+      if (!rawExtracted) {
+        showToast('NO CLEAR TEXT WAS FOUND IN IMAGE', 'warning');
+        statusBox.style.display = 'none';
+        return;
+      }
+
+      const cleanText = formatEtAl(rawExtracted.toUpperCase());
+      const textarea = document.getElementById('particulars');
+
+      if (textarea.value.trim()) {
+        textarea.value = textarea.value.trim() + '\n\n' + cleanText;
+      } else {
+        textarea.value = cleanText;
+      }
+
+      handleParticularsLivePreview();
+      statusBox.style.display = 'none';
+      showToast('TEXT EXTRACTED FROM TRANSMITTAL IMAGE SUCCESSFULLY!', 'success');
+
+    } catch (err) {
+      console.error('OCR Error:', err);
+      statusBox.style.display = 'none';
+      showToast('OCR SCAN FAILED: ' + err.message.toUpperCase(), 'danger');
+    } finally {
+      fileInput.value = '';
+    }
+  });
 }
