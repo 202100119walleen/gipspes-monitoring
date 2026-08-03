@@ -1037,8 +1037,11 @@ function renderTable() {
         if (!item || item.amount <= 0 || item.status === 'na') {
           return `
             <div class="salary-card-period-box" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" style="cursor: pointer;" title="Click to set status">
-              <span class="salary-card-period-label">${escapeHtml(periodKey)}</span>
-              <span class="salary-pill na" style="width: fit-content; margin-top: 2px;">- N/A</span>
+              <div class="salary-card-period-header">
+                <span class="salary-card-period-label">${escapeHtml(periodKey)}</span>
+                <span class="card-status-badge na">N/A</span>
+              </div>
+              <div class="salary-card-period-amt" style="color: #94a3b8;">-</div>
             </div>
           `;
         }
@@ -1047,17 +1050,21 @@ function renderTable() {
         const isReceived = item.status === 'received';
         if (isReceived) rowTotal += amt;
 
-        const pillClass = isReceived ? 'received' : 'pending';
+        const badgeClass = isReceived ? 'received' : 'pending';
         const iconName = isReceived ? 'check-circle' : 'clock';
-        const labelText = isReceived ? 'Received' : 'Pending';
+        const labelText = isReceived ? 'Paid' : 'Pending';
 
         return `
-          <div class="salary-card-period-box" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" style="cursor: pointer;" title="Click to toggle status between Received (Blue) and Pending (Red)">
-            <span class="salary-card-period-label">${escapeHtml(periodKey)}</span>
-            <span class="salary-pill ${pillClass}" style="width: fit-content; margin-top: 2px;">
-              <i data-lucide="${iconName}" style="width: 11px; height: 11px;"></i>
-              ₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${labelText}
-            </span>
+          <div class="salary-card-period-box" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" style="cursor: pointer;" title="Click to toggle status (Received <-> Pending)">
+            <div class="salary-card-period-header">
+              <span class="salary-card-period-label">${escapeHtml(periodKey)}</span>
+              <span class="card-status-badge ${badgeClass}">
+                <i data-lucide="${iconName}" style="width: 10px; height: 10px;"></i> ${labelText}
+              </span>
+            </div>
+            <div class="salary-card-period-amt">
+              ₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
           </div>
         `;
       }).join('');

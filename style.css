@@ -1035,13 +1035,64 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: var(--transition);
+}
+
+.salary-card-period-box:hover {
+  background: #ffffff;
+  border-color: var(--brand-accent);
+}
+
+.salary-card-period-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .salary-card-period-label {
-  font-size: 0.725rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
+}
+
+.salary-card-period-amt {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--primary-navy);
+  margin-top: 2px;
+}
+
+/* Compact Card Status Badge (Prevents Any Overlap) */
+.card-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-size: 0.675rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.card-status-badge.received {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+
+.card-status-badge.pending {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.card-status-badge.na {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border: 1px dashed #cbd5e1;
 }
 
 .salary-card-footer {
