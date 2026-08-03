@@ -89,7 +89,8 @@ let appState = {
   deletingRecordId: null,
   data: {
     dtrRecords: [],
-    transmittalRecords: []
+    transmittalRecords: [],
+    recycledRecords: []
   }
 };
 
@@ -155,6 +156,47 @@ function updateConnectionBadge(status, text) {
 /**
  * Load LocalStorage Backup Data
  */
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+function purgeExpiredRecycledRecords() {
+  if (!appState.data.recycledRecords) {
+    appState.data.recycledRecords = [];
+    return;
+  }
+
+  const now = Date.now();
+  const initialCount = appState.data.recycledRecords.length;
+
+  const activeRecycled = appState.data.recycledRecords.filter(r => {
+    const deletedTime = new Date(r.deletedAt).getTime();
+    return (now - deletedTime) < THIRTY_DAYS_MS;
+  });
+
+  if (activeRecycled.length < initialCount) {
+    const expiredItems = appState.data.recycledRecords.filter(r => {
+      const deletedTime = new Date(r.deletedAt).getTime();
+      return (now - deletedTime) >= THIRTY_DAYS_MS;
+    });
+
+    appState.data.recycledRecords = activeRecycled;
+    saveToLocalStorage();
+
+    if (isSupabaseConnected && supabaseClient) {
+      expiredItems.forEach(async item => {
+        await supabaseClient.from('recycled_records').delete().eq('id', item.id);
+      });
+    }
+  }
+}
+
+function getRetentionDaysRemaining(deletedAtStr) {
+  if (!deletedAtStr) return 30;
+  const deletedTime = new Date(deletedAtStr).getTime();
+  const expiresTime = deletedTime + THIRTY_DAYS_MS;
+  const diffMs = expiresTime - Date.now();
+  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
 function loadLocalStorageData() {
   try {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -175,15 +217,21 @@ function loadLocalStorageData() {
           remarks: formatEtAl(r.remarks)
         }));
       }
+      if (!parsed.recycledRecords) {
+        parsed.recycledRecords = [];
+      }
       appState.data = parsed;
+      purgeExpiredRecycledRecords();
       saveToLocalStorage();
     } else {
       appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
+      appState.data.recycledRecords = [];
       saveToLocalStorage();
     }
   } catch (err) {
     console.error('Failed to load local storage:', err);
     appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
+    appState.data.recycledRecords = [];
   }
 }
 
@@ -216,9 +264,18 @@ async function fetchRecordsFromSupabase() {
 
     if (trnErr) throw trnErr;
 
-    const hasRemoteData = (dtrData && dtrData.length > 0) || (trnData && trnData.length > 0);
+    const { data: recData } = await supabaseClient
+      .from('recycled_records')
+      .select('*')
+      .order('deleted_at', { ascending: false });
+
+    const hasRemoteData = (dtrData && dtrData.length > 0) || 
+                          (trnData && trnData.length > 0) || 
+                          (recData && recData.length > 0);
+
     const hasLocalData = (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) || 
-                         (appState.data.transmittalRecords && appState.data.transmittalRecords.length > 0);
+                         (appState.data.transmittalRecords && appState.data.transmittalRecords.length > 0) ||
+                         (appState.data.recycledRecords && appState.data.recycledRecords.length > 0);
 
     if (hasRemoteData) {
       appState.data.dtrRecords = (dtrData || []).map(r => ({
@@ -243,9 +300,20 @@ async function fetchRecordsFromSupabase() {
         updatedAt: r.updated_at
       }));
 
+      appState.data.recycledRecords = (recData || []).map(r => ({
+        id: r.id,
+        type: r.type,
+        originalId: r.original_id,
+        originalRecord: r.original_record,
+        deletedAt: r.deleted_at
+      }));
+
+      purgeExpiredRecycledRecords();
       saveToLocalStorage();
       renderApp();
     } else if (hasLocalData) {
+      await pushLocalDataToSupabase();
+    }
       // Remote DB is empty, automatically seed remote DB with existing local data
       await pushLocalDataToSupabase();
     }
@@ -319,8 +387,10 @@ function bindEvents() {
   // Sidebar Navigation Items
   document.getElementById('side-nav-dtr').addEventListener('click', () => switchTab('dtr'));
   document.getElementById('side-nav-transmittal').addEventListener('click', () => switchTab('transmittal'));
+  document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
   document.getElementById('side-nav-excel').addEventListener('click', handleExportExcel);
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
+  document.getElementById('btn-empty-trash').addEventListener('click', handleEmptyTrash);
 
   // Mobile Menu Toggle
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -396,16 +466,27 @@ function switchTab(tabName) {
 
   const viewTitle = document.getElementById('view-title');
   const viewSubtitle = document.getElementById('view-subtitle');
+  const btnAdd = document.getElementById('btn-add-record');
+  const btnEmptyTrash = document.getElementById('btn-empty-trash');
 
   if (tabName === 'dtr') {
     viewTitle.textContent = 'GIP DTR & AR MONITORING';
     viewSubtitle.textContent = 'DAILY TIME RECORDS & ACCOMPLISHMENT REPORTS TRACKING';
-  } else {
+    btnAdd.style.display = 'inline-flex';
+    btnEmptyTrash.style.display = 'none';
+  } else if (tabName === 'transmittal') {
     viewTitle.textContent = 'TRANSMITTAL MONITORING';
     viewSubtitle.textContent = 'DOCUMENT TRANSMITTALS SENT TO REGIONAL OFFICE';
+    btnAdd.style.display = 'inline-flex';
+    btnEmptyTrash.style.display = 'none';
+  } else if (tabName === 'trash') {
+    viewTitle.textContent = 'RECYCLE BIN';
+    viewSubtitle.textContent = 'DELETED RECORDS STORED FOR 30 DAYS BEFORE AUTOMATIC PERMANENT DELETION';
+    btnAdd.style.display = 'none';
+    btnEmptyTrash.style.display = 'inline-flex';
   }
 
-  appState.sortColumn = 'createdAt';
+  appState.sortColumn = tabName === 'trash' ? 'deletedAt' : 'createdAt';
   appState.sortDirection = 'desc';
 
   renderApp();
@@ -428,23 +509,52 @@ function renderApp() {
 function updateCountsAndStats() {
   const dtrCount = appState.data.dtrRecords.length;
   const trnCount = appState.data.transmittalRecords.length;
+  const trashCount = (appState.data.recycledRecords || []).length;
 
   document.getElementById('side-count-dtr').textContent = dtrCount;
   document.getElementById('side-count-transmittal').textContent = trnCount;
+  document.getElementById('side-count-trash').textContent = trashCount;
 
-  const currentDataset = appState.activeTab === 'dtr' 
-    ? appState.data.dtrRecords 
-    : appState.data.transmittalRecords;
+  let currentDatasetLength = 0;
+  if (appState.activeTab === 'dtr') currentDatasetLength = dtrCount;
+  else if (appState.activeTab === 'transmittal') currentDatasetLength = trnCount;
+  else if (appState.activeTab === 'trash') currentDatasetLength = trashCount;
 
   document.getElementById('stat-dtr-count').textContent = dtrCount;
   document.getElementById('stat-trn-count').textContent = trnCount;
-  document.getElementById('stat-active-count').textContent = currentDataset.length;
+  document.getElementById('stat-trash-count').textContent = trashCount;
+  document.getElementById('stat-active-count').textContent = currentDatasetLength;
 }
 
 /**
  * Filter & Sort Active Dataset
  */
 function getFilteredAndSortedRecords() {
+  if (appState.activeTab === 'trash') {
+    let records = appState.data.recycledRecords ? [...appState.data.recycledRecords] : [];
+    if (appState.searchQuery) {
+      const q = appState.searchQuery;
+      records = records.filter(r => {
+        const orig = r.originalRecord || {};
+        return (orig.gipName || '').toLowerCase().includes(q) ||
+               (orig.particulars || '').toLowerCase().includes(q) ||
+               (orig.preparedBy || '').toLowerCase().includes(q) ||
+               (orig.remarks || '').toLowerCase().includes(q);
+      });
+    }
+
+    records.sort((a, b) => {
+      let valA = a[appState.sortColumn] || a.deletedAt || '';
+      let valB = b[appState.sortColumn] || b.deletedAt || '';
+
+      if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return records;
+  }
+
   const isDtr = appState.activeTab === 'dtr';
   let records = isDtr ? [...appState.data.dtrRecords] : [...appState.data.transmittalRecords];
 
@@ -483,6 +593,81 @@ function renderTable() {
   const tableHead = document.getElementById('table-head');
   const tableBody = document.getElementById('table-body');
   const emptyState = document.getElementById('empty-state');
+  const emptyMsg = document.getElementById('empty-state-msg');
+
+  if (appState.activeTab === 'trash') {
+    tableHead.innerHTML = `
+      <tr>
+        <th onclick="handleSort('type')">
+          <div class="th-content">RECORD TYPE ${getSortIcon('type')}</div>
+        </th>
+        <th onclick="handleSort('title')">
+          <div class="th-content">RECORD DETAILS / TITLE ${getSortIcon('title')}</div>
+        </th>
+        <th onclick="handleSort('deletedAt')">
+          <div class="th-content">DATE DELETED ${getSortIcon('deletedAt')}</div>
+        </th>
+        <th>
+          <div class="th-content">RETENTION REMAINING</div>
+        </th>
+        <th style="text-align: right;">ACTIONS</th>
+      </tr>
+    `;
+
+    const records = getFilteredAndSortedRecords();
+
+    if (records.length === 0) {
+      tableBody.innerHTML = '';
+      emptyState.style.display = 'block';
+      if (emptyMsg) emptyMsg.textContent = 'Recycle bin is empty. No deleted records.';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tableBody.innerHTML = records.map(item => {
+      const isDtr = item.type === 'dtr';
+      const typeBadge = isDtr 
+        ? `<span class="quincena-pill quincena-q1"><i data-lucide="users" style="width: 12px; height: 12px;"></i> GIP DTR & AR</span>`
+        : `<span class="quincena-pill quincena-q2"><i data-lucide="send" style="width: 12px; height: 12px;"></i> TRANSMITTAL</span>`;
+
+      const orig = item.originalRecord || {};
+      const titleText = isDtr 
+        ? `GIP NAME: ${escapeHtml(formatEtAl(orig.gipName))} (${formatMonth(orig.month)})`
+        : `PARTICULARS: ${escapeHtml(formatEtAl((orig.particulars || '').substring(0, 65)))}...`;
+
+      const daysRemaining = getRetentionDaysRemaining(item.deletedAt);
+      const dateDeletedFormatted = formatDate(item.deletedAt ? item.deletedAt.substring(0, 10) : '');
+
+      return `
+        <tr>
+          <td>${typeBadge}</td>
+          <td style="font-weight: 600; font-size: 0.9rem;">${titleText}</td>
+          <td>${dateDeletedFormatted}</td>
+          <td>
+            <span class="retention-pill">
+              <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
+              ${daysRemaining} DAYS REMAINING
+            </span>
+          </td>
+          <td style="text-align: right;">
+            <div class="action-buttons" style="justify-content: flex-end;">
+              <button class="btn-action restore" onclick="restoreRecord('${item.id}')" title="Restore Record">
+                <i data-lucide="rotate-ccw"></i> Restore
+              </button>
+              <button class="btn-action delete" onclick="deletePermanently('${item.id}')" title="Delete Permanently">
+                <i data-lucide="trash-2"></i> Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
   const isDtr = appState.activeTab === 'dtr';
 
   if (isDtr) {
@@ -941,22 +1126,148 @@ async function confirmDeleteRecord() {
   if (!id) return;
 
   const isDtr = appState.activeTab === 'dtr';
+  const dataset = isDtr ? appState.data.dtrRecords : appState.data.transmittalRecords;
+  const targetRecord = dataset.find(r => r.id === id);
+
+  if (!targetRecord) {
+    closeDeleteModal();
+    return;
+  }
+
+  const nowISO = new Date().toISOString();
+  const recycledItem = {
+    id: 'trash-' + Date.now(),
+    type: isDtr ? 'dtr' : 'transmittal',
+    originalId: targetRecord.id,
+    originalRecord: { ...targetRecord },
+    deletedAt: nowISO
+  };
+
+  if (!appState.data.recycledRecords) appState.data.recycledRecords = [];
+  appState.data.recycledRecords.unshift(recycledItem);
+
   if (isDtr) {
     appState.data.dtrRecords = appState.data.dtrRecords.filter(r => r.id !== id);
     if (isSupabaseConnected && supabaseClient) {
       await supabaseClient.from('gip_dtr_ar_records').delete().eq('id', id);
+      await supabaseClient.from('recycled_records').upsert({
+        id: recycledItem.id,
+        type: recycledItem.type,
+        original_id: recycledItem.originalId,
+        original_record: recycledItem.originalRecord,
+        deleted_at: nowISO
+      });
     }
   } else {
     appState.data.transmittalRecords = appState.data.transmittalRecords.filter(r => r.id !== id);
     if (isSupabaseConnected && supabaseClient) {
       await supabaseClient.from('transmittal_records').delete().eq('id', id);
+      await supabaseClient.from('recycled_records').upsert({
+        id: recycledItem.id,
+        type: recycledItem.type,
+        original_id: recycledItem.originalId,
+        original_record: recycledItem.originalRecord,
+        deleted_at: nowISO
+      });
     }
   }
 
   saveToLocalStorage();
   closeDeleteModal();
   renderApp();
-  showToast('RECORD DELETED SUCCESSFULLY', 'info');
+  showToast('RECORD MOVED TO RECYCLE BIN (AUTO-PURGES IN 30 DAYS)', 'info');
+}
+
+/**
+ * Restore Record from Recycle Bin
+ */
+async function restoreRecord(trashId) {
+  if (!appState.data.recycledRecords) return;
+
+  const index = appState.data.recycledRecords.findIndex(r => r.id === trashId);
+  if (index === -1) return;
+
+  const item = appState.data.recycledRecords[index];
+  const orig = item.originalRecord;
+  const isDtr = item.type === 'dtr';
+
+  if (isDtr) {
+    appState.data.dtrRecords.unshift(orig);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_dtr_ar_records').upsert({
+        id: orig.id,
+        gip_name: orig.gipName,
+        month: orig.month,
+        quincena: orig.quincena,
+        dtr_ar_date_received: orig.dtrArDateReceived,
+        remarks: orig.remarks,
+        created_at: orig.createdAt,
+        updated_at: new Date().toISOString()
+      });
+      await supabaseClient.from('recycled_records').delete().eq('id', trashId);
+    }
+  } else {
+    appState.data.transmittalRecords.unshift(orig);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('transmittal_records').upsert({
+        id: orig.id,
+        particulars: orig.particulars,
+        prepared_by: orig.preparedBy,
+        date_transmitted: orig.dateTransmitted,
+        regional_date_received: orig.regionalDateReceived,
+        remarks: orig.remarks,
+        created_at: orig.createdAt,
+        updated_at: new Date().toISOString()
+      });
+      await supabaseClient.from('recycled_records').delete().eq('id', trashId);
+    }
+  }
+
+  appState.data.recycledRecords.splice(index, 1);
+  saveToLocalStorage();
+  renderApp();
+  showToast('RECORD RESTORED SUCCESSFULLY!', 'success');
+}
+
+/**
+ * Delete Permanently from Recycle Bin
+ */
+async function deletePermanently(trashId) {
+  if (!appState.data.recycledRecords) return;
+
+  appState.data.recycledRecords = appState.data.recycledRecords.filter(r => r.id !== trashId);
+  if (isSupabaseConnected && supabaseClient) {
+    await supabaseClient.from('recycled_records').delete().eq('id', trashId);
+  }
+
+  saveToLocalStorage();
+  renderApp();
+  showToast('RECORD PERMANENTLY DELETED', 'info');
+}
+
+/**
+ * Empty Entire Recycle Bin
+ */
+async function handleEmptyTrash() {
+  if (!appState.data.recycledRecords || appState.data.recycledRecords.length === 0) {
+    showToast('RECYCLE BIN IS ALREADY EMPTY', 'info');
+    return;
+  }
+
+  if (confirm('ARE YOU SURE YOU WANT TO PERMANENTLY DELETE ALL ITEMS IN THE RECYCLE BIN? THIS CANNOT BE UNDONE.')) {
+    const ids = appState.data.recycledRecords.map(r => r.id);
+    appState.data.recycledRecords = [];
+
+    if (isSupabaseConnected && supabaseClient) {
+      ids.forEach(async trashId => {
+        await supabaseClient.from('recycled_records').delete().eq('id', trashId);
+      });
+    }
+
+    saveToLocalStorage();
+    renderApp();
+    showToast('RECYCLE BIN EMPTIED PERMANENTLY!', 'success');
+  }
 }
 
 

@@ -62,6 +62,14 @@
           <span class="sidebar-badge" id="side-count-transmittal">0</span>
         </button>
 
+        <button class="sidebar-item" id="side-nav-trash" data-tab="trash">
+          <div class="sidebar-item-content">
+            <i data-lucide="trash-2"></i>
+            <span>Recycle Bin</span>
+          </div>
+          <span class="sidebar-badge danger" id="side-count-trash">0</span>
+        </button>
+
         <div class="nav-section-title">System Tools</div>
         <button class="sidebar-item" id="side-nav-excel">
           <div class="sidebar-item-content">
@@ -134,6 +142,15 @@
             <i data-lucide="files"></i>
           </div>
         </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Recycle Bin (30-Day Auto Purge)</div>
+            <div class="stat-value" id="stat-trash-count">0</div>
+          </div>
+          <div class="stat-icon pending" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+            <i data-lucide="trash-2"></i>
+          </div>
+        </div>
       </section>
 
       <!-- Toolbar: Search and Action Buttons -->
@@ -145,6 +162,9 @@
           </div>
           <button class="btn btn-secondary btn-icon" id="btn-clear-filters" title="Reset search">
             <i data-lucide="rotate-ccw"></i> Reset Search
+          </button>
+          <button class="btn btn-danger btn-icon" id="btn-empty-trash" style="display: none;" title="Empty Recycle Bin">
+            <i data-lucide="trash-2"></i> Empty Recycle Bin
           </button>
         </div>
       </section>

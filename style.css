@@ -647,10 +647,44 @@ button, input, select, textarea {
   border-color: var(--brand-accent);
 }
 
+.btn-action.restore:hover {
+  background-color: #ecfdf5;
+  color: #10b981;
+  border-color: #a7f3d0;
+}
+
 .btn-action.delete:hover {
   background-color: #fef2f2;
   color: #ef4444;
   border-color: #fca5a5;
+}
+
+.retention-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.sidebar-badge.danger {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.btn-danger {
+  background-color: #ef4444 !important;
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626 !important;
 }
 
 /* Empty State */
