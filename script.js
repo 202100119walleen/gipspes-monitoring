@@ -399,15 +399,22 @@ async function fetchRecordsFromSupabase() {
         deletedAt: r.deleted_at
       }));
 
-      appState.data.contactsRecords = (cntData || []).map(r => ({
-        id: r.id,
-        gipName: formatEtAl(r.gip_name),
-        assignment: (r.assignment || '').toUpperCase(),
-        contactNumber: r.contact_number,
-        remarks: formatEtAl(r.remarks),
-        createdAt: r.created_at,
-        updatedAt: r.updated_at
-      }));
+      if (cntData && cntData.length > 0) {
+        appState.data.contactsRecords = cntData.map(r => ({
+          id: r.id,
+          gipName: formatEtAl(r.gip_name),
+          assignment: (r.assignment || '').toUpperCase(),
+          contactNumber: r.contact_number,
+          remarks: formatEtAl(r.remarks),
+          createdAt: r.created_at,
+          updatedAt: r.updated_at
+        }));
+      } else {
+        if (!appState.data.contactsRecords || appState.data.contactsRecords.length === 0) {
+          appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
+        }
+        await pushLocalContactsToSupabase();
+      }
 
       purgeExpiredRecycledRecords();
       saveToLocalStorage();
@@ -457,19 +464,29 @@ async function pushLocalDataToSupabase() {
     }
 
     if (appState.data.contactsRecords && appState.data.contactsRecords.length > 0) {
-      const cntPayload = appState.data.contactsRecords.map(r => ({
-        id: r.id,
-        gip_name: r.gipName,
-        assignment: r.assignment,
-        contact_number: r.contactNumber,
-        remarks: r.remarks,
-        created_at: r.createdAt || new Date().toISOString(),
-        updated_at: r.updatedAt || new Date().toISOString()
-      }));
-      await supabaseClient.from('gip_contacts').upsert(cntPayload);
+      await pushLocalContactsToSupabase();
     }
   } catch (err) {
     console.warn('Auto-push local data note:', err.message);
+  }
+}
+
+async function pushLocalContactsToSupabase() {
+  if (!isSupabaseConnected || !supabaseClient) return;
+  try {
+    const contacts = appState.data.contactsRecords || DEFAULT_CONTACTS_SEED;
+    const payload = contacts.map(r => ({
+      id: r.id,
+      gip_name: r.gipName,
+      assignment: r.assignment || 'LDNPFO',
+      contact_number: r.contactNumber,
+      remarks: r.remarks || '',
+      created_at: r.createdAt || new Date().toISOString(),
+      updated_at: r.updatedAt || new Date().toISOString()
+    }));
+    await supabaseClient.from('gip_contacts').upsert(payload);
+  } catch (err) {
+    console.warn('Push contacts note:', err.message);
   }
 }
 
