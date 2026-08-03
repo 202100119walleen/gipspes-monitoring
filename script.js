@@ -1160,9 +1160,9 @@ function renderTable() {
 }
 
 /**
- * Formats Transmittal Particulars into an Executive Document Card preserving exact line breaks & bullets
+ * Formats Transmittal Particulars into an Executive Document Card with Collapsible Dropdown
  */
-function formatParticularsMemoCard(rawText) {
+function formatParticularsMemoCard(rawText, isPreview = false, cardId = null) {
   if (!rawText || !rawText.trim()) {
     return `<span style="color: var(--text-light); font-style: italic;">NO PARTICULARS SPECIFIED</span>`;
   }
@@ -1199,7 +1199,11 @@ function formatParticularsMemoCard(rawText) {
     .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b|\bAMOUNTING TO:\s*[\d,\.]+\b)/gi, 
       '<span class="inline-tag">$1</span>');
 
-  let html = `<div class="particulars-memo-box">`;
+  const totalLines = bodyLines.length + (titleHeader ? 1 : 0);
+  const isCollapsible = !isPreview && totalLines > 3;
+  const boxId = cardId || ('memo-card-' + Math.random().toString(36).substr(2, 9));
+
+  let html = `<div class="particulars-memo-box ${isCollapsible ? 'collapsible collapsed' : ''}" id="${boxId}">`;
 
   if (titleHeader) {
     html += `
@@ -1211,9 +1215,44 @@ function formatParticularsMemoCard(rawText) {
   }
 
   html += `<div class="particulars-memo-body">${htmlBody}</div>`;
+
+  if (isCollapsible) {
+    html += `
+      <button type="button" class="btn-memo-toggle" onclick="toggleParticularsMemoCard('${boxId}', ${totalLines})" title="Click to expand/collapse full particulars">
+        <i data-lucide="chevron-down" style="width: 13px; height: 13px;"></i>
+        <span class="toggle-text">Show All (${totalLines} lines)</span>
+      </button>
+    `;
+  }
+
   html += `</div>`;
 
   return html;
+}
+
+/**
+ * Toggle Expand/Collapse for Long Particulars Cards
+ */
+function toggleParticularsMemoCard(cardId, totalLines) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+
+  const isCollapsed = card.classList.contains('collapsed');
+  const btn = card.querySelector('.btn-memo-toggle');
+
+  if (isCollapsed) {
+    card.classList.remove('collapsed');
+    if (btn) {
+      btn.innerHTML = `<i data-lucide="chevron-up" style="width: 13px; height: 13px;"></i> <span class="toggle-text">Show Less</span>`;
+    }
+  } else {
+    card.classList.add('collapsed');
+    if (btn) {
+      btn.innerHTML = `<i data-lucide="chevron-down" style="width: 13px; height: 13px;"></i> <span class="toggle-text">Show All (${totalLines} lines)</span>`;
+    }
+  }
+
+  if (window.lucide) lucide.createIcons();
 }
 
 /**
@@ -1230,7 +1269,7 @@ function handleParticularsLivePreview() {
     previewContainer.innerHTML = '';
   } else {
     previewWrapper.style.display = 'block';
-    previewContainer.innerHTML = formatParticularsMemoCard(text);
+    previewContainer.innerHTML = formatParticularsMemoCard(text, true);
     if (window.lucide) lucide.createIcons();
   }
 }
