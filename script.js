@@ -1810,8 +1810,9 @@ function openRecordModal(id = null) {
     else if (isSalary) modalTitle.textContent = 'EDIT GIP SALARY RECORD';
     else modalTitle.textContent = 'EDIT TRANSMITTAL RECORD';
 
-    let dataset = appState.data.dtrRecords;
-    if (isContacts) dataset = appState.data.contactsRecords;
+    let dataset;
+    if (isDtr) dataset = appState.data.dtrRecords;
+    else if (isContacts) dataset = appState.data.contactsRecords;
     else if (isSalary) dataset = appState.data.salaryRecords;
     else dataset = appState.data.transmittalRecords;
 
@@ -2130,8 +2131,9 @@ function openDeleteModal(id) {
   const isSalary = appState.activeTab === 'salary';
   appState.deletingRecordId = id;
 
-  let dataset = appState.data.dtrRecords;
-  if (isContacts) dataset = appState.data.contactsRecords;
+  let dataset;
+  if (isDtr) dataset = appState.data.dtrRecords;
+  else if (isContacts) dataset = appState.data.contactsRecords;
   else if (isSalary) dataset = appState.data.salaryRecords;
   else dataset = appState.data.transmittalRecords;
 
