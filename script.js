@@ -314,9 +314,6 @@ async function fetchRecordsFromSupabase() {
     } else if (hasLocalData) {
       await pushLocalDataToSupabase();
     }
-      // Remote DB is empty, automatically seed remote DB with existing local data
-      await pushLocalDataToSupabase();
-    }
   } catch (err) {
     console.error('Cloud database sync notice:', err.message);
     showToast('WORKING IN LOCAL BACKUP MODE (SUPABASE SYNC NOTE)', 'info');
@@ -1390,10 +1387,22 @@ function showToast(message, type = 'info') {
 function formatDate(dateStr) {
   if (!dateStr) return '<span style="color: var(--text-light);">-</span>';
   try {
-    const [y, m, d] = dateStr.split('-');
-    if (!y || !m || !d) return dateStr;
-    const date = new Date(y, m - 1, d);
-    return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
+    const cleanStr = String(dateStr).split('T')[0];
+    const parts = cleanStr.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      const date = new Date(y, m, d);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
+      }
+    }
+    const parsedDate = new Date(dateStr);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
+    }
+    return dateStr;
   } catch (e) {
     return dateStr;
   }
