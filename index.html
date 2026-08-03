@@ -190,6 +190,27 @@
             <i data-lucide="search" class="search-icon"></i>
             <input type="text" id="search-input" placeholder="Search by GIP name or particulars..." autocomplete="off">
           </div>
+          <!-- Salary Specific Filter & Sort Controls -->
+          <div id="salary-toolbar-controls" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <select id="salary-sort-select" class="form-control" style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;" title="Sort Salary Records">
+              <option value="name-asc">Sort: Name (A-Z)</option>
+              <option value="name-desc">Sort: Name (Z-A)</option>
+              <option value="paid-desc">Sort: Highest Paid First</option>
+              <option value="paid-asc">Sort: Lowest Paid First</option>
+              <option value="pending-desc">Sort: Most Pending First</option>
+            </select>
+
+            <select id="salary-status-filter" class="form-control" style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;" title="Filter by Payment Status">
+              <option value="ALL">Status: All Statuses</option>
+              <option value="paid">Status: Paid / Received</option>
+              <option value="pending">Status: Pending Only</option>
+            </select>
+
+            <select id="salary-quincena-filter" class="form-control" style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;" title="Filter by Specific Quincena Period">
+              <option value="ALL">Period: All Quincenas</option>
+            </select>
+          </div>
+
           <div id="salary-grand-total-badge" class="salary-grand-total-badge" style="display: none;"
             title="Total Amount Paid Disbursed Across All GIPs">
             <i data-lucide="wallet" style="width: 15px; height: 15px; color: #0284c7;"></i>

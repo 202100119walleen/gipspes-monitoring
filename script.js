@@ -207,6 +207,9 @@ let appState = {
   editingRecordId: null,
   deletingRecordId: null,
   quincenaPeriods: [...DEFAULT_QUINCENA_PERIODS],
+  salarySortOption: 'name-asc',
+  salaryStatusFilter: 'ALL',
+  salaryQuincenaFilter: 'ALL',
   data: {
     dtrRecords: [],
     transmittalRecords: [],
@@ -758,6 +761,31 @@ function bindEvents() {
 
   const chkTrash = document.getElementById('export-chk-trash');
   if (chkTrash) chkTrash.addEventListener('change', updateExportAuthVisibility);
+
+  // Salary Filter & Sort Controls Listeners
+  const salSortSelect = document.getElementById('salary-sort-select');
+  if (salSortSelect) {
+    salSortSelect.addEventListener('change', (e) => {
+      appState.salarySortOption = e.target.value;
+      renderApp();
+    });
+  }
+
+  const salStatusSelect = document.getElementById('salary-status-filter');
+  if (salStatusSelect) {
+    salStatusSelect.addEventListener('change', (e) => {
+      appState.salaryStatusFilter = e.target.value;
+      renderApp();
+    });
+  }
+
+  const salQuincenaSelect = document.getElementById('salary-quincena-filter');
+  if (salQuincenaSelect) {
+    salQuincenaSelect.addEventListener('change', (e) => {
+      appState.salaryQuincenaFilter = e.target.value;
+      renderApp();
+    });
+  }
 }
 
 const SYSTEM_MODULE_PASSWORD = 'dolegip2026';
@@ -843,12 +871,17 @@ function switchTab(tabName) {
   const btnEmptyTrash = document.getElementById('btn-empty-trash');
   const btnAddQuincena = document.getElementById('btn-add-quincena');
   const totalBadge = document.getElementById('salary-grand-total-badge');
+  const salControls = document.getElementById('salary-toolbar-controls');
 
   if (btnAddQuincena) {
     btnAddQuincena.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
   if (totalBadge) {
     totalBadge.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
+  }
+  if (salControls) {
+    salControls.style.display = (tabName === 'salary') ? 'flex' : 'none';
+    if (tabName === 'salary') renderSalaryFilterOptions();
   }
 
   if (tabName === 'dtr') {
@@ -1007,18 +1040,75 @@ function getFilteredAndSortedRecords() {
 
   if (appState.activeTab === 'salary') {
     let records = appState.data.salaryRecords ? [...appState.data.salaryRecords] : [];
+
     if (appState.searchQuery) {
       const q = appState.searchQuery;
       records = records.filter(r => (r.gipName || '').toLowerCase().includes(q));
     }
 
-    records.sort((a, b) => {
-      let valA = a[appState.sortColumn] || a.gipName || '';
-      let valB = b[appState.sortColumn] || b.gipName || '';
+    const getRowStats = (r) => {
+      let paidTotal = 0;
+      let pendingTotal = 0;
+      let paidCount = 0;
+      let pendingCount = 0;
 
-      if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
-      if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
-      return 0;
+      const p = r.periods || {};
+      const selQuincena = appState.salaryQuincenaFilter || 'ALL';
+      const periodKeys = (selQuincena !== 'ALL') ? [selQuincena] : Object.keys(p);
+
+      periodKeys.forEach(pKey => {
+        const item = p[pKey];
+        if (item && item.amount > 0 && item.status !== 'na') {
+          let amt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
+          if (isNaN(amt)) amt = 0;
+
+          if (item.status === 'received') {
+            paidTotal += amt;
+            paidCount++;
+          } else if (item.status === 'pending') {
+            pendingTotal += amt;
+            pendingCount++;
+          }
+        }
+      });
+
+      return { paidTotal, pendingTotal, paidCount, pendingCount };
+    };
+
+    const statusFilter = appState.salaryStatusFilter || 'ALL';
+    if (statusFilter === 'paid') {
+      records = records.filter(r => getRowStats(r).paidCount > 0);
+    } else if (statusFilter === 'pending') {
+      records = records.filter(r => getRowStats(r).pendingCount > 0);
+    }
+
+    const quincenaFilter = appState.salaryQuincenaFilter || 'ALL';
+    if (quincenaFilter !== 'ALL') {
+      records = records.filter(r => {
+        const item = (r.periods || {})[quincenaFilter];
+        return item && item.amount > 0 && item.status !== 'na';
+      });
+    }
+
+    const sortType = appState.salarySortOption || 'name-asc';
+
+    records.sort((a, b) => {
+      const statsA = getRowStats(a);
+      const statsB = getRowStats(b);
+
+      if (sortType === 'name-asc') {
+        return (a.gipName || '').localeCompare(b.gipName || '');
+      } else if (sortType === 'name-desc') {
+        return (b.gipName || '').localeCompare(a.gipName || '');
+      } else if (sortType === 'paid-desc') {
+        return statsB.paidTotal - statsA.paidTotal;
+      } else if (sortType === 'paid-asc') {
+        return statsA.paidTotal - statsB.paidTotal;
+      } else if (sortType === 'pending-desc') {
+        return statsB.pendingCount - statsA.pendingCount || statsB.pendingTotal - statsA.pendingTotal;
+      }
+
+      return (a.gipName || '').localeCompare(b.gipName || '');
     });
 
     return records;
@@ -2290,6 +2380,20 @@ async function handleEmptyTrash() {
 /**
  * Excel Export Selection Modal & Handlers
  */
+function renderSalaryFilterOptions() {
+  const quincenaSelect = document.getElementById('salary-quincena-filter');
+  if (!quincenaSelect) return;
+
+  const currentVal = appState.salaryQuincenaFilter || 'ALL';
+  const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
+  let html = `<option value="ALL">Period: All Quincenas</option>`;
+  periodsList.forEach(pKey => {
+    const isSel = currentVal === pKey ? 'selected' : '';
+    html += `<option value="${escapeHtml(pKey)}" ${isSel}>Period: ${escapeHtml(pKey)}</option>`;
+  });
+  quincenaSelect.innerHTML = html;
+}
+
 function openExcelExportModal() {
   const modal = document.getElementById('excel-export-modal');
   if (!modal) {
