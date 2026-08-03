@@ -159,7 +159,24 @@ function loadLocalStorageData() {
   try {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (stored) {
-      appState.data = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (parsed.dtrRecords) {
+        parsed.dtrRecords = parsed.dtrRecords.map(r => ({
+          ...r,
+          gipName: formatEtAl(r.gipName),
+          remarks: formatEtAl(r.remarks)
+        }));
+      }
+      if (parsed.transmittalRecords) {
+        parsed.transmittalRecords = parsed.transmittalRecords.map(r => ({
+          ...r,
+          particulars: formatEtAl(r.particulars),
+          preparedBy: formatEtAl(r.preparedBy),
+          remarks: formatEtAl(r.remarks)
+        }));
+      }
+      appState.data = parsed;
+      saveToLocalStorage();
     } else {
       appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
       saveToLocalStorage();
@@ -206,22 +223,22 @@ async function fetchRecordsFromSupabase() {
     if (hasRemoteData) {
       appState.data.dtrRecords = (dtrData || []).map(r => ({
         id: r.id,
-        gipName: formatEtAl((r.gip_name || '').toUpperCase()),
+        gipName: formatEtAl(r.gip_name),
         month: r.month,
         quincena: (r.quincena || '').toUpperCase(),
         dtrArDateReceived: r.dtr_ar_date_received,
-        remarks: formatEtAl((r.remarks || '').toUpperCase()),
+        remarks: formatEtAl(r.remarks),
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
 
       appState.data.transmittalRecords = (trnData || []).map(r => ({
         id: r.id,
-        particulars: formatEtAl((r.particulars || '').toUpperCase()),
-        preparedBy: formatEtAl((r.prepared_by || '').toUpperCase()),
+        particulars: formatEtAl(r.particulars),
+        preparedBy: formatEtAl(r.prepared_by),
         dateTransmitted: r.date_transmitted,
         regionalDateReceived: r.regional_date_received,
-        remarks: formatEtAl((r.remarks || '').toUpperCase()),
+        remarks: formatEtAl(r.remarks),
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
@@ -1094,13 +1111,14 @@ function escapeHtml(str) {
 }
 
 /**
- * Formats "ETAL", "ET AL", "etal", "Etal.", etc. into proper Latin abbreviation "et al.,"
+ * Formats any variation of "ET AL", "ETAL", "ET AL.,", "ETAL.", "et al.", etc.
+ * into "et al." (lowercase with dot), while keeping all surrounding text in CAPSLOCK.
  */
 function formatEtAl(str) {
   if (!str) return '';
-  return String(str)
-    .replace(/\b(et\s*al|etal)\.?,?/gi, 'et al.,')
-    .replace(/,\s*,/g, ',')
+  let text = String(str).toUpperCase();
+  return text
+    .replace(/\b(ET\s*AL|ETAL)[\.,\s]*/gi, ' et al.')
     .replace(/\s+/g, ' ')
     .trim();
 }
