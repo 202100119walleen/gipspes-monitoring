@@ -570,55 +570,8 @@ async function pushLocalDataToSupabase() {
       }));
       await supabaseClient.from('gip_contacts').upsert(cntPayload);
     }
-
-    if (appState.data.salaryRecords && appState.data.salaryRecords.length > 0) {
-      const salPayload = appState.data.salaryRecords.map(r => ({
-        id: r.id,
-        gip_name: r.gipName,
-        periods: r.periods,
-        created_at: r.createdAt || new Date().toISOString(),
-        updated_at: r.updatedAt || new Date().toISOString()
-      }));
-      await supabaseClient.from('gip_salary_records').upsert(salPayload);
-    }
   } catch (err) {
     console.warn('Auto-push local data note:', err.message);
-  }
-}
-
-async function pushLocalContactsToSupabase() {
-  if (!isSupabaseConnected || !supabaseClient) return;
-  try {
-    const contacts = appState.data.contactsRecords || DEFAULT_CONTACTS_SEED;
-    const payload = contacts.map(r => ({
-      id: r.id,
-      gip_name: r.gipName,
-      assignment: r.assignment || 'LDNPFO',
-      contact_number: r.contactNumber,
-      remarks: r.remarks || '',
-      created_at: r.createdAt || new Date().toISOString(),
-      updated_at: r.updatedAt || new Date().toISOString()
-    }));
-    await supabaseClient.from('gip_contacts').upsert(payload);
-  } catch (err) {
-    console.warn('Push contacts note:', err.message);
-  }
-}
-
-async function pushLocalSalaryToSupabase() {
-  if (!isSupabaseConnected || !supabaseClient) return;
-  try {
-    const salaries = appState.data.salaryRecords || DEFAULT_SALARY_SEED;
-    const payload = salaries.map(r => ({
-      id: r.id,
-      gip_name: r.gipName,
-      periods: r.periods || {},
-      created_at: r.createdAt || new Date().toISOString(),
-      updated_at: r.updatedAt || new Date().toISOString()
-    }));
-    await supabaseClient.from('gip_salary_records').upsert(payload);
-  } catch (err) {
-    console.warn('Push salary note:', err.message);
   }
 }
 
@@ -648,7 +601,8 @@ function bindEvents() {
   document.getElementById('side-nav-dtr').addEventListener('click', () => switchTab('dtr'));
   document.getElementById('side-nav-transmittal').addEventListener('click', () => switchTab('transmittal'));
   document.getElementById('side-nav-contacts').addEventListener('click', () => switchTab('contacts'));
-  document.getElementById('side-nav-salary').addEventListener('click', () => switchTab('salary'));
+  const sideSalary = document.getElementById('side-nav-salary');
+  if (sideSalary) sideSalary.addEventListener('click', () => switchTab('salary'));
   document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
   document.getElementById('side-nav-excel').addEventListener('click', openExcelExportModal);
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
@@ -878,7 +832,7 @@ function switchTab(tabName) {
   } else if (tabName === 'salary') {
     viewTitle.textContent = 'GIP SALARY & PAYROLL TRACKING';
     viewSubtitle.textContent = 'QUINCENA STIPENDS & RECEIVED/PENDING SALARY STATUS MONITORING';
-    btnAdd.style.display = 'none';
+    btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'trash') {
     viewTitle.textContent = 'RECYCLE BIN';
@@ -918,7 +872,8 @@ function updateCountsAndStats() {
   document.getElementById('side-count-transmittal').textContent = trnCount;
   document.getElementById('side-count-trash').textContent = trashCount;
   document.getElementById('side-count-contacts').textContent = contactsCount;
-  document.getElementById('side-count-salary').textContent = salaryCount;
+  const sideSalCount = document.getElementById('side-count-salary');
+  if (sideSalCount) sideSalCount.textContent = salaryCount;
 
   let currentDatasetLength = 0;
   if (appState.activeTab === 'dtr') currentDatasetLength = dtrCount;
@@ -945,39 +900,15 @@ function getFilteredAndSortedRecords() {
       records = records.filter(r => {
         const orig = r.originalRecord || {};
         return (orig.gipName || '').toLowerCase().includes(q) ||
-               (orig.particulars || '').toLowerCase().includes(q) ||
-               (orig.preparedBy || '').toLowerCase().includes(q) ||
-               (orig.remarks || '').toLowerCase().includes(q);
+          (orig.particulars || '').toLowerCase().includes(q) ||
+          (orig.preparedBy || '').toLowerCase().includes(q) ||
+          (orig.remarks || '').toLowerCase().includes(q);
       });
     }
 
     records.sort((a, b) => {
       let valA = a[appState.sortColumn] || a.deletedAt || '';
       let valB = b[appState.sortColumn] || b.deletedAt || '';
-
-      if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
-      if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return records;
-  }
-
-  if (appState.activeTab === 'contacts') {
-    let records = appState.data.contactsRecords ? [...appState.data.contactsRecords] : [];
-    if (appState.searchQuery) {
-      const q = appState.searchQuery;
-      records = records.filter(r => {
-        return (r.gipName || '').toLowerCase().includes(q) ||
-               (r.assignment || '').toLowerCase().includes(q) ||
-               (r.contactNumber || '').toLowerCase().includes(q) ||
-               (r.remarks || '').toLowerCase().includes(q);
-      });
-    }
-
-    records.sort((a, b) => {
-      let valA = a[appState.sortColumn] || a.gipName || '';
-      let valB = b[appState.sortColumn] || b.gipName || '';
 
       if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
       if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
@@ -1014,13 +945,13 @@ function getFilteredAndSortedRecords() {
     records = records.filter(r => {
       if (isDtr) {
         return (r.gipName || '').toLowerCase().includes(q) ||
-               (r.quincena || '').toLowerCase().includes(q) ||
-               (r.month || '').toLowerCase().includes(q) ||
-               (r.remarks || '').toLowerCase().includes(q);
+          (r.quincena || '').toLowerCase().includes(q) ||
+          (r.month || '').toLowerCase().includes(q) ||
+          (r.remarks || '').toLowerCase().includes(q);
       } else {
         return (r.particulars || '').toLowerCase().includes(q) ||
-               (r.preparedBy || '').toLowerCase().includes(q) ||
-               (r.remarks || '').toLowerCase().includes(q);
+          (r.preparedBy || '').toLowerCase().includes(q) ||
+          (r.remarks || '').toLowerCase().includes(q);
       }
     });
   }
@@ -1078,12 +1009,12 @@ function renderTable() {
 
     tableBody.innerHTML = records.map(item => {
       const isDtr = item.type === 'dtr';
-      const typeBadge = isDtr 
+      const typeBadge = isDtr
         ? `<span class="quincena-pill quincena-q1"><i data-lucide="users" style="width: 12px; height: 12px;"></i> GIP DTR & AR</span>`
         : `<span class="quincena-pill quincena-q2"><i data-lucide="send" style="width: 12px; height: 12px;"></i> TRANSMITTAL</span>`;
 
       const orig = item.originalRecord || {};
-      const titleText = isDtr 
+      const titleText = isDtr
         ? `GIP NAME: ${escapeHtml(formatEtAl(orig.gipName))} (${formatMonth(orig.month)})`
         : `PARTICULARS: ${escapeHtml(formatEtAl((orig.particulars || '').substring(0, 65)))}...`;
 
@@ -1203,6 +1134,7 @@ function renderTable() {
         <th style="text-align: center;"><div class="th-content">JULY 1-15</div></th>
         <th style="text-align: center;"><div class="th-content">JULY 16-31</div></th>
         <th style="text-align: right;"><div class="th-content">TOTAL RECEIVED</div></th>
+        <th style="text-align: right;">ACTIONS</th>
       </tr>
     `;
 
@@ -1211,7 +1143,7 @@ function renderTable() {
     if (records.length === 0) {
       tableBody.innerHTML = '';
       emptyState.style.display = 'block';
-      if (emptyMsg) emptyMsg.textContent = 'No salary records found.';
+      if (emptyMsg) emptyMsg.textContent = 'No salary records found. Click "+ Add New Record" to create one.';
       return;
     }
 
@@ -1253,6 +1185,16 @@ function renderTable() {
           ${periodCells}
           <td style="text-align: right; font-weight: 700; font-family: monospace; color: #0284c7; font-size: 0.95rem;">
             ₱${rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </td>
+          <td style="text-align: right;">
+            <div class="action-buttons" style="justify-content: flex-end;">
+              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Salary Record">
+                <i data-lucide="edit-3"></i>
+              </button>
+              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Salary Record">
+                <i data-lucide="trash-2"></i>
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -1389,12 +1331,12 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null) {
   let bodyLines = [];
 
   lines.forEach((line, index) => {
-    const isHeaderLine = line.endsWith(':') || 
-                         /^TRANSMITTAL\s+OF/i.test(line) || 
-                         /^TRANSMITTAL\s+LETTER/i.test(line) ||
-                         /^SUBJECT:/i.test(line) || 
-                         /^RE:/i.test(line) ||
-                         /^TO\s+PAYMENT/i.test(line);
+    const isHeaderLine = line.endsWith(':') ||
+      /^TRANSMITTAL\s+OF/i.test(line) ||
+      /^TRANSMITTAL\s+LETTER/i.test(line) ||
+      /^SUBJECT:/i.test(line) ||
+      /^RE:/i.test(line) ||
+      /^TO\s+PAYMENT/i.test(line);
 
     if (isHeaderLine && index === 0 && lines.length > 1) {
       titleHeader = line;
@@ -1411,7 +1353,7 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null) {
   let formattedBody = bodyLines.join('\n');
 
   let htmlBody = escapeHtml(formattedBody)
-    .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b|\bAMOUNTING TO:\s*[\d,\.]+\b)/gi, 
+    .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b|\bAMOUNTING TO:\s*[\d,\.]+\b)/gi,
       '<span class="inline-tag">$1</span>');
 
   const totalLines = bodyLines.length + (titleHeader ? 1 : 0);
@@ -1515,12 +1457,14 @@ function getSortIcon(colName) {
 function openRecordModal(id = null) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
+  const isSalary = appState.activeTab === 'salary';
   appState.editingRecordId = id;
 
   const modalTitle = document.getElementById('modal-title');
   const dtrFields = document.getElementById('fields-dtr');
   const trnFields = document.getElementById('fields-transmittal');
   const cntFields = document.getElementById('fields-contacts');
+  const salFields = document.getElementById('fields-salary');
   const form = document.getElementById('record-form');
 
   form.reset();
@@ -1536,6 +1480,7 @@ function openRecordModal(id = null) {
     dtrFields.style.display = 'block';
     trnFields.style.display = 'none';
     cntFields.style.display = 'none';
+    if (salFields) salFields.style.display = 'none';
     document.getElementById('gip-name').required = true;
     document.getElementById('record-month').required = true;
     document.getElementById('record-quincena').required = true;
@@ -1544,10 +1489,12 @@ function openRecordModal(id = null) {
     document.getElementById('contact-gip-name').required = false;
     document.getElementById('contact-assignment').required = false;
     document.getElementById('contact-number').required = false;
+    if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = false;
   } else if (isContacts) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
     cntFields.style.display = 'block';
+    if (salFields) salFields.style.display = 'none';
     document.getElementById('gip-name').required = false;
     document.getElementById('record-month').required = false;
     document.getElementById('record-quincena').required = false;
@@ -1556,10 +1503,26 @@ function openRecordModal(id = null) {
     document.getElementById('contact-gip-name').required = true;
     document.getElementById('contact-assignment').required = true;
     document.getElementById('contact-number').required = true;
+    if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = false;
+  } else if (isSalary) {
+    dtrFields.style.display = 'none';
+    trnFields.style.display = 'none';
+    cntFields.style.display = 'none';
+    if (salFields) salFields.style.display = 'block';
+    document.getElementById('gip-name').required = false;
+    document.getElementById('record-month').required = false;
+    document.getElementById('record-quincena').required = false;
+    document.getElementById('particulars').required = false;
+    document.getElementById('prepared-by-trn').required = false;
+    document.getElementById('contact-gip-name').required = false;
+    document.getElementById('contact-assignment').required = false;
+    document.getElementById('contact-number').required = false;
+    if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = true;
   } else {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'block';
     cntFields.style.display = 'none';
+    if (salFields) salFields.style.display = 'none';
     document.getElementById('gip-name').required = false;
     document.getElementById('record-month').required = false;
     document.getElementById('record-quincena').required = false;
@@ -1568,16 +1531,19 @@ function openRecordModal(id = null) {
     document.getElementById('contact-gip-name').required = false;
     document.getElementById('contact-assignment').required = false;
     document.getElementById('contact-number').required = false;
+    if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = false;
   }
 
   if (id) {
     if (isDtr) modalTitle.textContent = 'EDIT GIP DTR & AR RECORD';
     else if (isContacts) modalTitle.textContent = 'EDIT GIP CONTACT RECORD';
+    else if (isSalary) modalTitle.textContent = 'EDIT GIP SALARY RECORD';
     else modalTitle.textContent = 'EDIT TRANSMITTAL RECORD';
 
     let dataset = appState.data.dtrRecords;
     if (isContacts) dataset = appState.data.contactsRecords;
-    else if (!isDtr) dataset = appState.data.transmittalRecords;
+    else if (isSalary) dataset = appState.data.salaryRecords;
+    else dataset = appState.data.transmittalRecords;
 
     const record = dataset.find(r => r.id === id);
 
@@ -1594,6 +1560,26 @@ function openRecordModal(id = null) {
         document.getElementById('contact-gip-name').value = (record.gipName || '').toUpperCase();
         document.getElementById('contact-assignment').value = (record.assignment || '').toUpperCase();
         document.getElementById('contact-number').value = record.contactNumber || '';
+      } else if (isSalary) {
+        document.getElementById('salary-gip-name').value = (record.gipName || '').toUpperCase();
+        const p = record.periods || {};
+        const pKeys = [
+          { key: "APR 16-30", amt: "sal-amt-apr16", st: "sal-st-apr16" },
+          { key: "MAY 1-15", amt: "sal-amt-may1", st: "sal-st-may1" },
+          { key: "MAY 16-31", amt: "sal-amt-may16", st: "sal-st-may16" },
+          { key: "JUNE 1-15", amt: "sal-amt-jun1", st: "sal-st-jun1" },
+          { key: "JUNE 16-30", amt: "sal-amt-jun16", st: "sal-st-jun16" },
+          { key: "JULY 1-15", amt: "sal-amt-jul1", st: "sal-st-jul1" },
+          { key: "JULY 16-31", amt: "sal-amt-jul16", st: "sal-st-jul16" }
+        ];
+
+        pKeys.forEach(item => {
+          const pData = p[item.key] || { amount: 0, status: "na" };
+          const inputAmt = document.getElementById(item.amt);
+          const inputSt = document.getElementById(item.st);
+          if (inputAmt) inputAmt.value = pData.amount || '';
+          if (inputSt) inputSt.value = pData.status || 'na';
+        });
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         document.getElementById('prepared-by-trn').value = (record.preparedBy || '').toUpperCase();
@@ -1605,6 +1591,7 @@ function openRecordModal(id = null) {
   } else {
     if (isDtr) modalTitle.textContent = 'ADD NEW GIP DTR & AR RECORD';
     else if (isContacts) modalTitle.textContent = 'ADD NEW GIP CONTACT RECORD';
+    else if (isSalary) modalTitle.textContent = 'ADD NEW GIP SALARY RECORD';
     else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
 
     document.getElementById('form-record-id').value = '';
@@ -1622,10 +1609,85 @@ async function handleFormSubmit(e) {
   e.preventDefault();
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
+  const isSalary = appState.activeTab === 'salary';
   const recordId = document.getElementById('form-record-id').value;
   const remarks = formatEtAl(document.getElementById('record-remarks').value.trim().toUpperCase());
 
   const nowISO = new Date().toISOString();
+
+  if (isSalary) {
+    const gipName = formatEtAl(document.getElementById('salary-gip-name').value.trim().toUpperCase());
+    if (!gipName) {
+      showToast('GIP NAME / GROUP NAME IS REQUIRED', 'danger');
+      return;
+    }
+
+    const pKeys = [
+      { key: "APR 16-30", amt: "sal-amt-apr16", st: "sal-st-apr16" },
+      { key: "MAY 1-15", amt: "sal-amt-may1", st: "sal-st-may1" },
+      { key: "MAY 16-31", amt: "sal-amt-may16", st: "sal-st-may16" },
+      { key: "JUNE 1-15", amt: "sal-amt-jun1", st: "sal-st-jun1" },
+      { key: "JUNE 16-30", amt: "sal-amt-jun16", st: "sal-st-jun16" },
+      { key: "JULY 1-15", amt: "sal-amt-jul1", st: "sal-st-jul1" },
+      { key: "JULY 16-31", amt: "sal-amt-jul16", st: "sal-st-jul16" }
+    ];
+
+    const periods = {};
+    pKeys.forEach(item => {
+      const amtElem = document.getElementById(item.amt);
+      const stElem = document.getElementById(item.st);
+      const amtVal = amtElem ? (parseFloat(amtElem.value) || 0) : 0;
+      const stVal = stElem ? (stElem.value || 'na') : 'na';
+      periods[item.key] = { amount: amtVal, status: stVal };
+    });
+
+    const payload = {
+      gipName,
+      periods,
+      remarks,
+      updatedAt: nowISO
+    };
+
+    if (recordId) {
+      const index = appState.data.salaryRecords.findIndex(r => r.id === recordId);
+      if (index !== -1) {
+        appState.data.salaryRecords[index] = { ...appState.data.salaryRecords[index], ...payload };
+      }
+
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_salary_records').upsert({
+          id: recordId,
+          gip_name: gipName,
+          periods,
+          updated_at: nowISO
+        });
+      }
+
+      showToast('SALARY RECORD UPDATED SUCCESSFULLY!', 'success');
+    } else {
+      const newId = 'sal-' + Date.now();
+      const newRecord = { id: newId, ...payload, createdAt: nowISO };
+      if (!appState.data.salaryRecords) appState.data.salaryRecords = [];
+      appState.data.salaryRecords.unshift(newRecord);
+
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_salary_records').upsert({
+          id: newId,
+          gip_name: gipName,
+          periods,
+          created_at: nowISO,
+          updated_at: nowISO
+        });
+      }
+
+      showToast('NEW SALARY RECORD ADDED SUCCESSFULLY!', 'success');
+    }
+
+    closeRecordModal();
+    saveToLocalStorage();
+    renderApp();
+    return;
+  }
 
   if (isContacts) {
     const gipName = formatEtAl(document.getElementById('contact-gip-name').value.trim().toUpperCase());
@@ -1821,11 +1883,13 @@ async function handleFormSubmit(e) {
 function openDeleteModal(id) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
+  const isSalary = appState.activeTab === 'salary';
   appState.deletingRecordId = id;
 
   let dataset = appState.data.dtrRecords;
   if (isContacts) dataset = appState.data.contactsRecords;
-  else if (!isDtr) dataset = appState.data.transmittalRecords;
+  else if (isSalary) dataset = appState.data.salaryRecords;
+  else dataset = appState.data.transmittalRecords;
 
   const record = dataset.find(r => r.id === id);
 
@@ -1834,6 +1898,7 @@ function openDeleteModal(id) {
   let summary = '';
   if (isDtr) summary = `GIP NAME: ${record.gipName} (${formatMonth(record.month)})`;
   else if (isContacts) summary = `GIP CONTACT: ${record.gipName} (${record.assignment})`;
+  else if (isSalary) summary = `SALARY RECORD: ${record.gipName}`;
   else summary = `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
 
   document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
@@ -1851,6 +1916,19 @@ async function confirmDeleteRecord() {
 
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
+  const isSalary = appState.activeTab === 'salary';
+
+  if (isSalary) {
+    appState.data.salaryRecords = appState.data.salaryRecords.filter(r => r.id !== id);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_salary_records').delete().eq('id', id);
+    }
+    saveToLocalStorage();
+    closeDeleteModal();
+    renderApp();
+    showToast('SALARY RECORD DELETED SUCCESSFULLY', 'info');
+    return;
+  }
 
   if (isContacts) {
     appState.data.contactsRecords = appState.data.contactsRecords.filter(r => r.id !== id);
@@ -2160,37 +2238,14 @@ function handleExcelExportFormSubmit(e) {
       XLSX.utils.book_append_sheet(wb, wsCnt, 'GIP CONTACTS');
     }
 
-    const chkSalary = document.getElementById('export-chk-salary')?.checked;
-    if (chkSalary) {
-      const periodsList = ["APR 16-30", "MAY 1-15", "MAY 16-31", "JUNE 1-15", "JUNE 16-30", "JULY 1-15", "JULY 16-31"];
-      const salDataFormatted = (appState.data.salaryRecords || []).map(r => {
-        const row = { 'GIP NAME / GROUP': (r.gipName || '').toUpperCase() };
-        let totalReceived = 0;
-        periodsList.forEach(pKey => {
-          const item = (r.periods || {})[pKey];
-          if (!item || item.amount <= 0 || item.status === 'na') {
-            row[pKey] = '-';
-          } else {
-            const statusLabel = item.status === 'received' ? 'RECEIVED' : 'PENDING';
-            row[pKey] = `₱${item.amount.toLocaleString('en-US', {minimumFractionDigits: 2})} (${statusLabel})`;
-            if (item.status === 'received') totalReceived += item.amount;
-          }
-        });
-        row['TOTAL RECEIVED'] = `₱${totalReceived.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
-        return row;
-      });
-      const wsSal = XLSX.utils.json_to_sheet(salDataFormatted);
-      XLSX.utils.book_append_sheet(wb, wsSal, 'SALARY MATRIX');
-    }
-
     if (chkTrash) {
       const trashDataFormatted = (appState.data.recycledRecords || []).map(r => {
         const isDtr = r.type === 'dtr';
         const orig = r.originalRecord || {};
         return {
           'RECORD TYPE': isDtr ? 'GIP DTR & AR' : 'TRANSMITTAL',
-          'RECORD TITLE / DETAILS': isDtr 
-            ? `GIP: ${orig.gipName || ''} (${orig.month || ''})` 
+          'RECORD TITLE / DETAILS': isDtr
+            ? `GIP: ${orig.gipName || ''} (${orig.month || ''})`
             : `PARTICULARS: ${(orig.particulars || '').replace(/\r?\n/g, ' ')}`,
           'DATE DELETED': formatDate(r.deletedAt ? r.deletedAt.substring(0, 10) : ''),
           'RETENTION REMAINING': `${getRetentionDaysRemaining(r.deletedAt)} DAYS`,
@@ -2396,9 +2451,9 @@ function parseTransmittalOcrText(rawText) {
     }
 
     // Filter out headers/footers/logos
-    const isIgnored = ignorePatterns.some(pattern => pattern.test(line)) || 
-                      /^prepared\s+by/i.test(line) ||
-                      /^date:/i.test(line);
+    const isIgnored = ignorePatterns.some(pattern => pattern.test(line)) ||
+      /^prepared\s+by/i.test(line) ||
+      /^date:/i.test(line);
 
     if (!isIgnored) {
       // Clean OCR bullet artifacts (e.g. 'E ', 'EO ', '~~ EO ', '"EO ')
@@ -2428,11 +2483,11 @@ function parseTransmittalOcrText(rawText) {
 
   // Format list items with clean bullets
   let formattedLines = finalLines.map(line => {
-    const isHeaderLine = line.endsWith(':') || 
-                         /^TO\s+PAYMENT/i.test(line) ||
-                         /^WITH\s+ATTACHMENTS/i.test(line) ||
-                         /^TRANSMITTAL/i.test(line) ||
-                         /^SUBJECT/i.test(line);
+    const isHeaderLine = line.endsWith(':') ||
+      /^TO\s+PAYMENT/i.test(line) ||
+      /^WITH\s+ATTACHMENTS/i.test(line) ||
+      /^TRANSMITTAL/i.test(line) ||
+      /^SUBJECT/i.test(line);
     if (isHeaderLine) {
       return line;
     }
@@ -2462,7 +2517,7 @@ function parseOcrDateToYYYYMMDD(dateStr) {
       const dd = String(d.getDate()).padStart(2, '0');
       return `${yyyy}-${mm}-${dd}`;
     }
-  } catch (e) {}
+  } catch (e) { }
   return '';
 }
 
