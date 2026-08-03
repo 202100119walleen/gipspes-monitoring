@@ -206,22 +206,22 @@ async function fetchRecordsFromSupabase() {
     if (hasRemoteData) {
       appState.data.dtrRecords = (dtrData || []).map(r => ({
         id: r.id,
-        gipName: (r.gip_name || '').toUpperCase(),
+        gipName: formatEtAl((r.gip_name || '').toUpperCase()),
         month: r.month,
         quincena: (r.quincena || '').toUpperCase(),
         dtrArDateReceived: r.dtr_ar_date_received,
-        remarks: (r.remarks || '').toUpperCase(),
+        remarks: formatEtAl((r.remarks || '').toUpperCase()),
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
 
       appState.data.transmittalRecords = (trnData || []).map(r => ({
         id: r.id,
-        particulars: (r.particulars || '').toUpperCase(),
-        preparedBy: (r.prepared_by || '').toUpperCase(),
+        particulars: formatEtAl((r.particulars || '').toUpperCase()),
+        preparedBy: formatEtAl((r.prepared_by || '').toUpperCase()),
         dateTransmitted: r.date_transmitted,
         regionalDateReceived: r.regional_date_received,
-        remarks: (r.remarks || '').toUpperCase(),
+        remarks: formatEtAl((r.remarks || '').toUpperCase()),
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
@@ -528,7 +528,7 @@ function renderTable() {
 
       return `
         <tr>
-          <td style="font-weight: 600; font-size: 0.95rem;">${escapeHtml(record.gipName).toUpperCase()}</td>
+          <td style="font-weight: 600; font-size: 0.95rem;">${escapeHtml(formatEtAl(record.gipName))}</td>
           <td>
             <span class="quincena-pill ${qClass}">
               <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
@@ -536,7 +536,7 @@ function renderTable() {
             </span>
           </td>
           <td>${formatDate(record.dtrArDateReceived)}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${escapeHtml(record.remarks || '-').toUpperCase()}</td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${escapeHtml(formatEtAl(record.remarks || '-'))}</td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Record">
@@ -550,14 +550,14 @@ function renderTable() {
         </tr>
       `;
     } else {
-      const memoFormatted = formatParticularsMemoCard(record.particulars);
+      const memoFormatted = formatParticularsMemoCard(formatEtAl(record.particulars));
       return `
         <tr>
           <td>${memoFormatted}</td>
-          <td><span style="font-weight: 600; color: var(--text-main);">${escapeHtml(record.preparedBy || '-').toUpperCase()}</span></td>
+          <td><span style="font-weight: 600; color: var(--text-main);">${escapeHtml(formatEtAl(record.preparedBy || '-'))}</span></td>
           <td>${formatDate(record.dateTransmitted)}</td>
           <td>${formatDate(record.regionalDateReceived)}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(record.remarks || '-').toUpperCase()}</td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(formatEtAl(record.remarks || '-'))}</td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Record">
@@ -757,12 +757,12 @@ async function handleFormSubmit(e) {
   e.preventDefault();
   const isDtr = appState.activeTab === 'dtr';
   const recordId = document.getElementById('form-record-id').value;
-  const remarks = document.getElementById('record-remarks').value.trim().toUpperCase();
+  const remarks = formatEtAl(document.getElementById('record-remarks').value.trim().toUpperCase());
 
   const nowISO = new Date().toISOString();
 
   if (isDtr) {
-    const gipName = document.getElementById('gip-name').value.trim().toUpperCase();
+    const gipName = formatEtAl(document.getElementById('gip-name').value.trim().toUpperCase());
     const month = document.getElementById('record-month').value;
     const quincena = document.getElementById('record-quincena').value.toUpperCase();
     const dtrArDateReceived = document.getElementById('dtr-ar-date-received').value;
@@ -823,8 +823,8 @@ async function handleFormSubmit(e) {
       showToast('NEW GIP RECORD ADDED SUCCESSFULLY!', 'success');
     }
   } else {
-    const particulars = document.getElementById('particulars').value.trim().toUpperCase();
-    const preparedBy = document.getElementById('prepared-by-trn').value.trim().toUpperCase();
+    const particulars = formatEtAl(document.getElementById('particulars').value.trim().toUpperCase());
+    const preparedBy = formatEtAl(document.getElementById('prepared-by-trn').value.trim().toUpperCase());
     const dateTransmitted = document.getElementById('date-transmitted').value;
     const regionalDateReceived = document.getElementById('regional-date-received-trn').value;
 
@@ -1091,4 +1091,16 @@ function escapeHtml(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+/**
+ * Formats "ETAL", "ET AL", "etal", "Etal.", etc. into proper Latin abbreviation "et al.,"
+ */
+function formatEtAl(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/\b(et\s*al|etal)\.?,?/gi, 'et al.,')
+    .replace(/,\s*,/g, ',')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
