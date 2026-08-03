@@ -656,6 +656,9 @@ function bindEvents() {
     });
   }
 
+  const chkTrn = document.getElementById('export-chk-trn');
+  if (chkTrn) chkTrn.addEventListener('change', updateExportAuthVisibility);
+
   const chkCnt = document.getElementById('export-chk-cnt');
   if (chkCnt) chkCnt.addEventListener('change', updateExportAuthVisibility);
 
@@ -1810,12 +1813,27 @@ function openExcelExportModal() {
   const chkCnt = document.getElementById('export-chk-cnt');
   const chkTrash = document.getElementById('export-chk-trash');
   const pwdInput = document.getElementById('export-password-input');
+  const preparedBySelect = document.getElementById('export-select-prepared-by');
 
   if (chkDtr) chkDtr.checked = true;
   if (chkTrn) chkTrn.checked = true;
   if (chkCnt) chkCnt.checked = authenticatedModules.contacts;
   if (chkTrash) chkTrash.checked = authenticatedModules.trash;
   if (pwdInput) pwdInput.value = '';
+
+  // Dynamically populate "Prepared By" dropdown from existing transmittals
+  if (preparedBySelect) {
+    const trnRecords = appState.data.transmittalRecords || [];
+    const uniquePreparedBy = Array.from(new Set(trnRecords.map(r => (r.preparedBy || '').trim().toUpperCase()).filter(Boolean))).sort();
+
+    let optionsHtml = `<option value="ALL">-- ALL PREPARED BY OFFICERS (${trnRecords.length} records) --</option>`;
+    uniquePreparedBy.forEach(name => {
+      const count = trnRecords.filter(r => (r.preparedBy || '').trim().toUpperCase() === name).length;
+      optionsHtml += `<option value="${escapeHtml(name)}">${escapeHtml(name)} (${count} transmittals)</option>`;
+    });
+
+    preparedBySelect.innerHTML = optionsHtml;
+  }
 
   updateExportAuthVisibility();
   modal.classList.add('active');
@@ -1827,9 +1845,15 @@ function closeExcelExportModal() {
 }
 
 function updateExportAuthVisibility() {
+  const chkTrn = document.getElementById('export-chk-trn');
   const chkCnt = document.getElementById('export-chk-cnt');
   const chkTrash = document.getElementById('export-chk-trash');
   const authContainer = document.getElementById('export-auth-container');
+  const trnFilterBox = document.getElementById('export-trn-filter-box');
+
+  if (trnFilterBox) {
+    trnFilterBox.style.display = chkTrn && chkTrn.checked ? 'block' : 'none';
+  }
 
   const requiresCntAuth = chkCnt && chkCnt.checked && !authenticatedModules.contacts;
   const requiresTrashAuth = chkTrash && chkTrash.checked && !authenticatedModules.trash;
@@ -1895,7 +1919,14 @@ function handleExcelExportFormSubmit(e) {
     }
 
     if (chkTrn) {
-      const trnDataFormatted = appState.data.transmittalRecords.map(r => ({
+      const selectedPreparedBy = document.getElementById('export-select-prepared-by')?.value || 'ALL';
+      let trnRecordsToExport = appState.data.transmittalRecords || [];
+
+      if (selectedPreparedBy !== 'ALL') {
+        trnRecordsToExport = trnRecordsToExport.filter(r => (r.preparedBy || '').trim().toUpperCase() === selectedPreparedBy);
+      }
+
+      const trnDataFormatted = trnRecordsToExport.map(r => ({
         'PARTICULARS (TRANSMITTED DOCUMENTS)': (r.particulars || '').replace(/\r?\n/g, ' ').toUpperCase(),
         'PREPARED BY': (r.preparedBy || 'N/A').toUpperCase(),
         'DATE TRANSMITTED': r.dateTransmitted || 'N/A',

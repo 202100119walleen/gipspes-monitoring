@@ -439,6 +439,16 @@
               <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
             </label>
 
+            <!-- Sub-filter for Transmittal "Prepared By" -->
+            <div id="export-trn-filter-box" style="margin-top: -4px; margin-left: 28px; padding: 10px 12px; background: var(--bg-page); border: 1px solid var(--border-color); border-radius: 6px;">
+              <label for="export-select-prepared-by" style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                <i data-lucide="user-check" style="width: 13px; height: 13px; color: var(--brand-accent);"></i> FILTER BY PREPARED BY:
+              </label>
+              <select id="export-select-prepared-by" class="form-control" style="font-size: 0.825rem; padding: 6px 10px;">
+                <option value="ALL">-- ALL PREPARED BY OFFICERS --</option>
+              </select>
+            </div>
+
             <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="checkbox" id="export-chk-cnt" style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
