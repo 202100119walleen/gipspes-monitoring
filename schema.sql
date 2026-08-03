@@ -48,7 +48,16 @@ CREATE TABLE IF NOT EXISTS gip_contacts (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Ensure all columns exist (Migration fix for existing tables)
+-- 5. Create GIP Salary & Payroll Monitoring Table
+CREATE TABLE IF NOT EXISTS gip_salary_records (
+  id TEXT PRIMARY KEY,
+  gip_name TEXT NOT NULL,
+  periods JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Ensure all columns exist (Migration fix for existing tables)
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS prepared_by TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS particulars TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS date_transmitted TEXT;
@@ -66,13 +75,17 @@ ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS assignment TEXT;
 ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS contact_number TEXT;
 ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS remarks TEXT;
 
--- 6. Enable Row Level Security (RLS)
+ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
+ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS periods JSONB;
+
+-- 7. Enable Row Level Security (RLS)
 ALTER TABLE gip_dtr_ar_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recycled_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gip_salary_records ENABLE ROW LEVEL SECURITY;
 
--- 7. Enable Public Read & Write Access Policies
+-- 8. Enable Public Read & Write Access Policies
 DROP POLICY IF EXISTS "Public full access on gip_dtr_ar_records" ON gip_dtr_ar_records;
 CREATE POLICY "Public full access on gip_dtr_ar_records" 
   ON gip_dtr_ar_records FOR ALL 
@@ -93,8 +106,13 @@ CREATE POLICY "Public full access on gip_contacts"
   ON gip_contacts FOR ALL 
   USING (true) WITH CHECK (true);
 
--- 8. Enable Realtime Publications for Realtime Multi-device Sync
+DROP POLICY IF EXISTS "Public full access on gip_salary_records" ON gip_salary_records;
+CREATE POLICY "Public full access on gip_salary_records" 
+  ON gip_salary_records FOR ALL 
+  USING (true) WITH CHECK (true);
+
+-- 9. Enable Realtime Publications for Realtime Multi-device Sync
 BEGIN;
   DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts;
+  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts, gip_salary_records;
 COMMIT;

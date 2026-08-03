@@ -72,6 +72,14 @@
           <span class="sidebar-badge" id="side-count-contacts">0</span>
         </button>
 
+        <button class="sidebar-item" id="side-nav-salary" data-tab="salary">
+          <div class="sidebar-item-content">
+            <i data-lucide="banknote"></i>
+            <span>Salary & Payroll Tracking</span>
+          </div>
+          <span class="sidebar-badge" id="side-count-salary">0</span>
+        </button>
+
         <button class="sidebar-item" id="side-nav-trash" data-tab="trash">
           <div class="sidebar-item-content">
             <i data-lucide="trash-2"></i>
@@ -448,6 +456,17 @@
                 <option value="ALL">-- ALL PREPARED BY OFFICERS --</option>
               </select>
             </div>
+
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="export-chk-salary" checked style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">GIP Salary & Payroll Matrix</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Quincena Stipends & Received/Pending Status</div>
+                </div>
+              </div>
+              <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
+            </label>
 
             <label style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
               <div style="display: flex; align-items: center; gap: 10px;">

@@ -1032,3 +1032,48 @@ textarea.form-control {
     gap: 6px;
   }
 }
+
+/* Salary & Payroll Status Pills */
+.salary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 12px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  font-family: monospace;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.salary-pill.received {
+  background-color: rgba(3, 105, 161, 0.12);
+  color: #0284c7;
+  border: 1px solid rgba(2, 132, 199, 0.35);
+}
+
+.salary-pill.received:hover {
+  background-color: #0284c7;
+  color: #ffffff;
+}
+
+.salary-pill.pending {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.salary-pill.pending:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.salary-pill.na {
+  color: #94a3b8;
+  font-weight: 400;
+  font-style: italic;
+  cursor: default;
+}

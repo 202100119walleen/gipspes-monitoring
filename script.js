@@ -157,9 +157,46 @@ const DEFAULT_CONTACTS_SEED = [
   { id: "cnt-74", gipName: "CABILANDO, SUSAN RECENTES", assignment: "LDNPFO", contactNumber: "09530526247", remarks: "" }
 ];
 
+// Initial GIP Salary & Payroll Tracking Seed Data from CSV
+const DEFAULT_SALARY_SEED = [
+  { id: "sal-1", gipName: "ABBAS, EXSAN S. et al.", periods: { "APR 16-30": { amount: 42928.00, status: "received" }, "MAY 1-15": { amount: 40160.00, status: "received" }, "MAY 16-31": { amount: 36160.00, status: "received" }, "JUNE 1-15": { amount: 40160.00, status: "received" }, "JUNE 16-30": { amount: 42160.00, status: "received" }, "JULY 1-15": { amount: 45160.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-2", gipName: "ABUTON, DAVIE C. et al.", periods: { "APR 16-30": { amount: 32196.00, status: "received" }, "MAY 1-15": { amount: 30120.00, status: "received" }, "MAY 16-31": { amount: 27120.00, status: "received" }, "JUNE 1-15": { amount: 30120.00, status: "received" }, "JUNE 16-30": { amount: 30120.00, status: "received" }, "JULY 1-15": { amount: 33120.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-3", gipName: "AGBALOG, JOAN T. et al.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 0, status: "na" }, "MAY 16-31": { amount: 7471.36, status: "received" }, "JUNE 1-15": { amount: 10027.52, status: "received" }, "JUNE 16-30": { amount: 9533.76, status: "received" }, "JULY 1-15": { amount: 10212.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-4", gipName: "ALEGA, ANGELYN A. et al.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 0, status: "na" }, "MAY 16-31": { amount: 0, status: "na" }, "JUNE 1-15": { amount: 0, status: "na" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-5", gipName: "ALFORQUE, JULIANA B. et al.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 0, status: "na" }, "MAY 16-31": { amount: 0, status: "na" }, "JUNE 1-15": { amount: 0, status: "na" }, "JUNE 16-30": { amount: 0, status: "na" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-6", gipName: "AGBONA, FRELYN L. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10540.00, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-7", gipName: "ALI, NOR-AIN D. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 9934.96, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 9784.16, status: "received" }, "JUNE 16-30": { amount: 10483.84, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-8", gipName: "ALIP, ALYANAH A. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 15060.00, status: "received" }, "MAY 16-31": { amount: 13560.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-9", gipName: "AMER, RAINISA C.", periods: { "APR 16-30": { amount: 5366.00, status: "received" }, "MAY 1-15": { amount: 5020.00, status: "received" }, "MAY 16-31": { amount: 4520.00, status: "received" }, "JUNE 1-15": { amount: 5020.00, status: "received" }, "JUNE 16-30": { amount: 5020.00, status: "received" }, "JULY 1-15": { amount: 5520.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-10", gipName: "ARNOCO, KAYLA JOY V. et al.", periods: { "APR 16-30": { amount: 5345.00, status: "received" }, "MAY 1-15": { amount: 5345.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10540.00, status: "received" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-11", gipName: "BALANG, RACMA B. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-12", gipName: "COLALO, JAMAIDA P. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-13", gipName: "CONCILIADO, CONSTANTINO LUIS C. et al.", periods: { "APR 16-30": { amount: 14147.94, status: "received" }, "MAY 1-15": { amount: 14010.08, status: "received" }, "MAY 16-31": { amount: 11058.96, status: "received" }, "JUNE 1-15": { amount: 12459.12, status: "received" }, "JUNE 16-30": { amount: 9019.20, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-14", gipName: "CORDERO, MAYA NIÑA D. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-15", gipName: "DATU, JOHANIE H. SERAD et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 0, status: "na" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-16", gipName: "DAYGAM, JOHN ALJHON C. et al.", periods: { "APR 16-30": { amount: 21464.00, status: "received" }, "MAY 1-15": { amount: 20080.00, status: "received" }, "MAY 16-31": { amount: 18080.00, status: "received" }, "JUNE 1-15": { amount: 20080.00, status: "received" }, "JUNE 16-30": { amount: 20080.00, status: "received" }, "JULY 1-15": { amount: 22080.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-17", gipName: "DIMAPORO, NORLIN B. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-18", gipName: "GENON, RHEA THERESS A. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-19", gipName: "GUMAMA, ADEL YASSIN G. et al.", periods: { "APR 16-30": { amount: 16098.00, status: "received" }, "MAY 1-15": { amount: 15060.00, status: "received" }, "MAY 16-31": { amount: 13560.00, status: "received" }, "JUNE 1-15": { amount: 15060.00, status: "received" }, "JUNE 16-30": { amount: 15810.00, status: "received" }, "JULY 1-15": { amount: 16935.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-20", gipName: "JUMALON, JEVI R. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 5020.00, status: "received" }, "JUNE 16-30": { amount: 5020.00, status: "received" }, "JULY 1-15": { amount: 5520.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-21", gipName: "NICDAO, ANN MARIE Y.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 0, status: "na" }, "MAY 16-31": { amount: 0, status: "na" }, "JUNE 1-15": { amount: 0, status: "na" }, "JUNE 16-30": { amount: 5020.00, status: "received" }, "JULY 1-15": { amount: 5520.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-22", gipName: "LACABA, LEO JAY B.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 5020.00, status: "received" }, "MAY 16-31": { amount: 4520.00, status: "received" }, "JUNE 1-15": { amount: 5020.00, status: "received" }, "JUNE 16-30": { amount: 5020.00, status: "received" }, "JULY 1-15": { amount: 5520.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-23", gipName: "LAGRECA, NAOMIE B. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-24", gipName: "LIPANTAS, AISAH O. et al.", periods: { "APR 16-30": { amount: 5366.00, status: "received" }, "MAY 1-15": { amount: 5020.00, status: "received" }, "MAY 16-31": { amount: 4520.00, status: "received" }, "JUNE 1-15": { amount: 5020.00, status: "received" }, "JUNE 16-30": { amount: 5020.00, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-25", gipName: "MABANING, JOHANNA P. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-26", gipName: "MAMANGCONI, ALYANA-HAMRA M. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10034.80, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-27", gipName: "MANOS, ESTHOR EMMANUEL et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-28", gipName: "MONSANTO, HIZEL G. et al.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 0, status: "na" }, "MAY 16-31": { amount: 0, status: "na" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10540.00, status: "received" }, "JULY 1-15": { amount: 11290.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-29", gipName: "OMAR, ABDUL JAME A.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 0, status: "na" }, "MAY 16-31": { amount: 4520.00, status: "received" }, "JUNE 1-15": { amount: 5020.00, status: "received" }, "JUNE 16-30": { amount: 0, status: "na" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-30", gipName: "PADILLA, THERESE MAE C.", periods: { "APR 16-30": { amount: 5345.00, status: "received" }, "MAY 1-15": { amount: 5003.36, status: "received" }, "MAY 16-31": { amount: 4520.00, status: "received" }, "JUNE 1-15": { amount: 5020.00, status: "received" }, "JUNE 16-30": { amount: 5020.00, status: "received" }, "JULY 1-15": { amount: 5520.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-31", gipName: "PATAD, ANALYN M. et al.", periods: { "APR 16-30": { amount: 10732.00, status: "received" }, "MAY 1-15": { amount: 10040.00, status: "received" }, "MAY 16-31": { amount: 9040.00, status: "received" }, "JUNE 1-15": { amount: 10040.00, status: "received" }, "JUNE 16-30": { amount: 10040.00, status: "received" }, "JULY 1-15": { amount: 11040.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-32", gipName: "RIVERA, JHOPAY JANE D.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 5020.00, status: "received" }, "MAY 16-31": { amount: 4520.00, status: "received" }, "JUNE 1-15": { amount: 5020.00, status: "received" }, "JUNE 16-30": { amount: 0, status: "na" }, "JULY 1-15": { amount: 0, status: "na" }, "JULY 16-31": { amount: 0, status: "na" } } },
+  { id: "sal-33", gipName: "SINGSON, CLYDENE FRANZ M.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 0, status: "na" }, "MAY 16-31": { amount: 0, status: "na" }, "JUNE 1-15": { amount: 0, status: "na" }, "JUNE 16-30": { amount: 5020.00, status: "received" }, "JULY 1-15": { amount: 5520.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } }
+];
+
 // Application State Object
 let appState = {
-  activeTab: 'dtr', // 'dtr' | 'transmittal' | 'trash' | 'contacts'
+  activeTab: 'dtr', // 'dtr' | 'transmittal' | 'trash' | 'contacts' | 'salary'
   searchQuery: '',
   sortColumn: 'createdAt',
   sortDirection: 'desc',
@@ -169,7 +206,8 @@ let appState = {
     dtrRecords: [],
     transmittalRecords: [],
     recycledRecords: [],
-    contactsRecords: []
+    contactsRecords: [],
+    salaryRecords: []
   }
 };
 
@@ -302,6 +340,9 @@ function loadLocalStorageData() {
       if (!parsed.contactsRecords || parsed.contactsRecords.length === 0) {
         parsed.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
       }
+      if (!parsed.salaryRecords || parsed.salaryRecords.length === 0) {
+        parsed.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
+      }
       appState.data = parsed;
       purgeExpiredRecycledRecords();
       saveToLocalStorage();
@@ -309,6 +350,7 @@ function loadLocalStorageData() {
       appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
       appState.data.recycledRecords = [];
       appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
+      appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
       saveToLocalStorage();
     }
   } catch (err) {
@@ -316,6 +358,7 @@ function loadLocalStorageData() {
     appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
     appState.data.recycledRecords = [];
     appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
+    appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
   }
 }
 
@@ -351,6 +394,11 @@ async function fetchRecordsFromSupabase() {
 
     const { data: cntData } = await supabaseClient
       .from('gip_contacts')
+      .select('*')
+      .order('gip_name', { ascending: true });
+
+    const { data: salData } = await supabaseClient
+      .from('gip_salary_records')
       .select('*')
       .order('gip_name', { ascending: true });
 
@@ -450,6 +498,22 @@ async function fetchRecordsFromSupabase() {
       }));
     }
 
+    // 5. Process Salary Records
+    if (salData && salData.length > 0) {
+      appState.data.salaryRecords = salData.map(r => ({
+        id: r.id,
+        gipName: formatEtAl(r.gip_name),
+        periods: r.periods || {},
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
+    } else {
+      if (!appState.data.salaryRecords || appState.data.salaryRecords.length === 0) {
+        appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
+      }
+      await pushLocalSalaryToSupabase();
+    }
+
     purgeExpiredRecycledRecords();
     saveToLocalStorage();
     renderApp();
@@ -461,12 +525,41 @@ async function fetchRecordsFromSupabase() {
 
 /**
  * Auto-sync Local Records to Supabase Cloud Database
- */
-async function pushLocalDataToSupabase() {
+ */async function pushLocalContactsToSupabase() {
   if (!isSupabaseConnected || !supabaseClient) return;
-
   try {
-    if (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) {
+    const contacts = appState.data.contactsRecords || DEFAULT_CONTACTS_SEED;
+    const payload = contacts.map(r => ({
+      id: r.id,
+      gip_name: r.gipName,
+      assignment: r.assignment || 'LDNPFO',
+      contact_number: r.contactNumber,
+      remarks: r.remarks || '',
+      created_at: r.createdAt || new Date().toISOString(),
+      updated_at: r.updatedAt || new Date().toISOString()
+    }));
+    await supabaseClient.from('gip_contacts').upsert(payload);
+  } catch (err) {
+    console.warn('Push contacts note:', err.message);
+  }
+}
+
+async function pushLocalSalaryToSupabase() {
+  if (!isSupabaseConnected || !supabaseClient) return;
+  try {
+    const salaries = appState.data.salaryRecords || DEFAULT_SALARY_SEED;
+    const payload = salaries.map(r => ({
+      id: r.id,
+      gip_name: r.gipName,
+      periods: r.periods || {},
+      created_at: r.createdAt || new Date().toISOString(),
+      updated_at: r.updatedAt || new Date().toISOString()
+    }));
+    await supabaseClient.from('gip_salary_records').upsert(payload);
+  } catch (err) {
+    console.warn('Push salary note:', err.message);
+  }
+}    if (appState.data.dtrRecords && appState.data.dtrRecords.length > 0) {
       const dtrPayload = appState.data.dtrRecords.map(r => ({
         id: r.id,
         gip_name: r.gipName,
@@ -537,6 +630,7 @@ function bindEvents() {
   document.getElementById('side-nav-dtr').addEventListener('click', () => switchTab('dtr'));
   document.getElementById('side-nav-transmittal').addEventListener('click', () => switchTab('transmittal'));
   document.getElementById('side-nav-contacts').addEventListener('click', () => switchTab('contacts'));
+  document.getElementById('side-nav-salary').addEventListener('click', () => switchTab('salary'));
   document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
   document.getElementById('side-nav-excel').addEventListener('click', openExcelExportModal);
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
@@ -763,6 +857,11 @@ function switchTab(tabName) {
     viewSubtitle.textContent = 'OFFICIAL MOBILE CONTACT NUMBERS & OFFICE ASSIGNMENTS DIRECTORY';
     btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
+  } else if (tabName === 'salary') {
+    viewTitle.textContent = 'GIP SALARY & PAYROLL TRACKING';
+    viewSubtitle.textContent = 'QUINCENA STIPENDS & RECEIVED/PENDING SALARY STATUS MONITORING';
+    btnAdd.style.display = 'none';
+    btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'trash') {
     viewTitle.textContent = 'RECYCLE BIN';
     viewSubtitle.textContent = 'DELETED RECORDS STORED FOR 30 DAYS BEFORE AUTOMATIC PERMANENT DELETION';
@@ -795,16 +894,19 @@ function updateCountsAndStats() {
   const trnCount = appState.data.transmittalRecords.length;
   const trashCount = (appState.data.recycledRecords || []).length;
   const contactsCount = (appState.data.contactsRecords || []).length;
+  const salaryCount = (appState.data.salaryRecords || []).length;
 
   document.getElementById('side-count-dtr').textContent = dtrCount;
   document.getElementById('side-count-transmittal').textContent = trnCount;
   document.getElementById('side-count-trash').textContent = trashCount;
   document.getElementById('side-count-contacts').textContent = contactsCount;
+  document.getElementById('side-count-salary').textContent = salaryCount;
 
   let currentDatasetLength = 0;
   if (appState.activeTab === 'dtr') currentDatasetLength = dtrCount;
   else if (appState.activeTab === 'transmittal') currentDatasetLength = trnCount;
   else if (appState.activeTab === 'contacts') currentDatasetLength = contactsCount;
+  else if (appState.activeTab === 'salary') currentDatasetLength = salaryCount;
   else if (appState.activeTab === 'trash') currentDatasetLength = trashCount;
 
   document.getElementById('stat-dtr-count').textContent = dtrCount;
@@ -853,6 +955,25 @@ function getFilteredAndSortedRecords() {
                (r.contactNumber || '').toLowerCase().includes(q) ||
                (r.remarks || '').toLowerCase().includes(q);
       });
+    }
+
+    records.sort((a, b) => {
+      let valA = a[appState.sortColumn] || a.gipName || '';
+      let valB = b[appState.sortColumn] || b.gipName || '';
+
+      if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return records;
+  }
+
+  if (appState.activeTab === 'salary') {
+    let records = appState.data.salaryRecords ? [...appState.data.salaryRecords] : [];
+    if (appState.searchQuery) {
+      const q = appState.searchQuery;
+      records = records.filter(r => (r.gipName || '').toLowerCase().includes(q));
     }
 
     records.sort((a, b) => {
@@ -1041,6 +1162,79 @@ function renderTable() {
                 <i data-lucide="trash-2"></i>
               </button>
             </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  if (appState.activeTab === 'salary') {
+    tableHead.innerHTML = `
+      <tr>
+        <th onclick="handleSort('gipName')">
+          <div class="th-content">GIP NAME / GROUP ${getSortIcon('gipName')}</div>
+        </th>
+        <th style="text-align: center;"><div class="th-content">APR 16-30</div></th>
+        <th style="text-align: center;"><div class="th-content">MAY 1-15</div></th>
+        <th style="text-align: center;"><div class="th-content">MAY 16-31</div></th>
+        <th style="text-align: center;"><div class="th-content">JUNE 1-15</div></th>
+        <th style="text-align: center;"><div class="th-content">JUNE 16-30</div></th>
+        <th style="text-align: center;"><div class="th-content">JULY 1-15</div></th>
+        <th style="text-align: center;"><div class="th-content">JULY 16-31</div></th>
+        <th style="text-align: right;"><div class="th-content">TOTAL RECEIVED</div></th>
+      </tr>
+    `;
+
+    const records = getFilteredAndSortedRecords();
+
+    if (records.length === 0) {
+      tableBody.innerHTML = '';
+      emptyState.style.display = 'block';
+      if (emptyMsg) emptyMsg.textContent = 'No salary records found.';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    const periodsList = ["APR 16-30", "MAY 1-15", "MAY 16-31", "JUNE 1-15", "JUNE 16-30", "JULY 1-15", "JULY 16-31"];
+
+    tableBody.innerHTML = records.map(record => {
+      let rowTotal = 0;
+      const periods = record.periods || {};
+
+      const periodCells = periodsList.map(periodKey => {
+        const item = periods[periodKey];
+        if (!item || item.amount <= 0 || item.status === 'na') {
+          return `<td style="text-align: center;"><span class="salary-pill na">-</span></td>`;
+        }
+
+        const amt = Number(item.amount || 0);
+        const isReceived = item.status === 'received';
+        if (isReceived) rowTotal += amt;
+
+        const pillClass = isReceived ? 'received' : 'pending';
+        const iconName = isReceived ? 'check-circle' : 'clock';
+        const labelText = isReceived ? 'Received' : 'Pending';
+
+        return `
+          <td style="text-align: center;">
+            <span class="salary-pill ${pillClass}" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" title="Click to toggle status between Received (Blue) and Pending (Red)">
+              <i data-lucide="${iconName}" style="width: 11px; height: 11px;"></i>
+              ₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${labelText}
+            </span>
+          </td>
+        `;
+      }).join('');
+
+      return `
+        <tr>
+          <td style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);">${escapeHtml(record.gipName)}</td>
+          ${periodCells}
+          <td style="text-align: right; font-weight: 700; font-family: monospace; color: #0284c7; font-size: 0.95rem;">
+            ₱${rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </td>
         </tr>
       `;
@@ -1948,6 +2142,29 @@ function handleExcelExportFormSubmit(e) {
       XLSX.utils.book_append_sheet(wb, wsCnt, 'GIP CONTACTS');
     }
 
+    const chkSalary = document.getElementById('export-chk-salary')?.checked;
+    if (chkSalary) {
+      const periodsList = ["APR 16-30", "MAY 1-15", "MAY 16-31", "JUNE 1-15", "JUNE 16-30", "JULY 1-15", "JULY 16-31"];
+      const salDataFormatted = (appState.data.salaryRecords || []).map(r => {
+        const row = { 'GIP NAME / GROUP': (r.gipName || '').toUpperCase() };
+        let totalReceived = 0;
+        periodsList.forEach(pKey => {
+          const item = (r.periods || {})[pKey];
+          if (!item || item.amount <= 0 || item.status === 'na') {
+            row[pKey] = '-';
+          } else {
+            const statusLabel = item.status === 'received' ? 'RECEIVED' : 'PENDING';
+            row[pKey] = `₱${item.amount.toLocaleString('en-US', {minimumFractionDigits: 2})} (${statusLabel})`;
+            if (item.status === 'received') totalReceived += item.amount;
+          }
+        });
+        row['TOTAL RECEIVED'] = `₱${totalReceived.toLocaleString('en-US', {minimumFractionDigits: 2})}`;
+        return row;
+      });
+      const wsSal = XLSX.utils.json_to_sheet(salDataFormatted);
+      XLSX.utils.book_append_sheet(wb, wsSal, 'SALARY MATRIX');
+    }
+
     if (chkTrash) {
       const trashDataFormatted = (appState.data.recycledRecords || []).map(r => {
         const isDtr = r.type === 'dtr';
@@ -2307,6 +2524,37 @@ function initOCRHandler() {
       fileInput.value = '';
     }
   });
+}
+
+/**
+ * 1-Click Toggle Salary Status (Received <-> Pending)
+ */
+async function toggleSalaryStatus(recordId, periodKey) {
+  if (!appState.data.salaryRecords) return;
+
+  const record = appState.data.salaryRecords.find(r => r.id === recordId);
+  if (!record || !record.periods || !record.periods[periodKey]) return;
+
+  const currentStatus = record.periods[periodKey].status;
+  if (currentStatus === 'na') return;
+
+  const newStatus = currentStatus === 'received' ? 'pending' : 'received';
+  record.periods[periodKey].status = newStatus;
+  record.updatedAt = new Date().toISOString();
+
+  saveToLocalStorage();
+  renderApp();
+
+  if (isSupabaseConnected && supabaseClient) {
+    await supabaseClient.from('gip_salary_records').upsert({
+      id: record.id,
+      gip_name: record.gipName,
+      periods: record.periods,
+      updated_at: new Date().toISOString()
+    });
+  }
+
+  showToast(`UPDATED SALARY STATUS FOR ${record.gipName} (${periodKey}): ${newStatus.toUpperCase()}`, 'info');
 }
 
 /**
