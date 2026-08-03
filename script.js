@@ -1464,6 +1464,82 @@ function formatEtAl(str) {
 }
 
 /**
+ * Intelligently parses and extracts Particulars, Prepared By, and Date from DOLE Transmittal OCR text
+ */
+function parseTransmittalOcrText(rawText) {
+  if (!rawText) return { particulars: '', preparedBy: '', dateTransmitted: '' };
+
+  const lines = String(rawText).split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+
+  let extractedPreparedBy = '';
+  let extractedDate = '';
+  let particularsLines = [];
+
+  const ignorePatterns = [
+    /^republic of the/i,
+    /^department of labor/i,
+    /^regional office/i,
+    /^lanao del norte/i,
+    /^oredc building/i,
+    /^http:\/\//i,
+    /^088\s*\d+/i,
+    /^tssd\/c\/o/i,
+    /^princess bael/i,
+    /^no\.\s+particulars/i,
+    /^responsibly$/i,
+    /^no\.$/i,
+    /^amount of\s*insurance/i
+  ];
+
+  lines.forEach(line => {
+    // Detect Prepared By
+    const prepMatch = line.match(/prepared\s+by:?\s*([^\n\r\t:]+?)(?=\s*date:|$)/i);
+    if (prepMatch && prepMatch[1]) {
+      let name = prepMatch[1].replace(/[\/\\].*$/, '').trim();
+      if (name) extractedPreparedBy = formatEtAl(name.toUpperCase());
+    }
+
+    // Detect Date
+    const dateMatch = line.match(/date:?\s*([a-z]+\s+\d{1,2},?\s*\d{4}|\d{4}-\d{2}-\d{2})/i);
+    if (dateMatch && dateMatch[1]) {
+      const parsedDate = parseOcrDateToYYYYMMDD(dateMatch[1]);
+      if (parsedDate) extractedDate = parsedDate;
+    }
+
+    // Filter out headers/footers/logos
+    const isIgnored = ignorePatterns.some(pattern => pattern.test(line)) || 
+                      /^prepared\s+by/i.test(line) ||
+                      /^date:/i.test(line);
+
+    if (!isIgnored) {
+      particularsLines.push(line);
+    }
+  });
+
+  let particularsText = particularsLines.join('\n');
+  particularsText = formatEtAl(particularsText.toUpperCase());
+
+  return {
+    particulars: particularsText,
+    preparedBy: extractedPreparedBy,
+    dateTransmitted: extractedDate
+  };
+}
+
+function parseOcrDateToYYYYMMDD(dateStr) {
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  } catch (e) {}
+  return '';
+}
+
+/**
  * Initialize Transmittal OCR Image Reader using Tesseract.js
  */
 function initOCRHandler() {
@@ -1506,18 +1582,30 @@ function initOCRHandler() {
         return;
       }
 
-      const cleanText = formatEtAl(rawExtracted.toUpperCase());
+      const parsed = parseTransmittalOcrText(rawExtracted);
       const textarea = document.getElementById('particulars');
+      const prepInput = document.getElementById('prepared-by-trn');
+      const dateInput = document.getElementById('date-transmitted');
 
-      if (textarea.value.trim()) {
-        textarea.value = textarea.value.trim() + '\n\n' + cleanText;
-      } else {
-        textarea.value = cleanText;
+      if (parsed.particulars) {
+        if (textarea.value.trim()) {
+          textarea.value = textarea.value.trim() + '\n\n' + parsed.particulars;
+        } else {
+          textarea.value = parsed.particulars;
+        }
+      }
+
+      if (parsed.preparedBy && prepInput) {
+        prepInput.value = parsed.preparedBy;
+      }
+
+      if (parsed.dateTransmitted && dateInput) {
+        dateInput.value = parsed.dateTransmitted;
       }
 
       handleParticularsLivePreview();
       statusBox.style.display = 'none';
-      showToast('TEXT EXTRACTED FROM TRANSMITTAL IMAGE SUCCESSFULLY!', 'success');
+      showToast('PARTICULARS EXTRACTED FROM TRANSMITTAL IMAGE SUCCESSFULLY!', 'success');
 
     } catch (err) {
       console.error('OCR Error:', err);
