@@ -203,8 +203,8 @@
       </section>
 
       <!-- Data Table Container -->
-      <section class="table-card">
-        <div class="table-responsive">
+      <section class="table-card" id="main-table-card">
+        <div class="table-responsive" id="table-responsive-wrapper">
           <table class="data-table" id="monitoring-table">
             <thead id="table-head">
               <!-- Rendered dynamically based on active module -->
@@ -214,6 +214,12 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Salary Executive Cards Grid View (No Side Scrolling) -->
+        <div id="salary-cards-grid" class="salary-cards-grid" style="display: none;">
+          <!-- Dynamically populated in script.js -->
+        </div>
+
         <!-- Empty state template -->
         <div class="empty-state" id="empty-state" style="display: none;">
           <i data-lucide="folder-open" class="empty-icon"></i>

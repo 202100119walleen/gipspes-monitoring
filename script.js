@@ -1009,187 +1009,38 @@ function renderTable() {
   const tableBody = document.getElementById('table-body');
   const emptyState = document.getElementById('empty-state');
   const emptyMsg = document.getElementById('empty-state-msg');
-
-  if (appState.activeTab === 'trash') {
-    tableHead.innerHTML = `
-      <tr>
-        <th onclick="handleSort('type')">
-          <div class="th-content">RECORD TYPE ${getSortIcon('type')}</div>
-        </th>
-        <th onclick="handleSort('title')">
-          <div class="th-content">RECORD DETAILS / TITLE ${getSortIcon('title')}</div>
-        </th>
-        <th onclick="handleSort('deletedAt')">
-          <div class="th-content">DATE DELETED ${getSortIcon('deletedAt')}</div>
-        </th>
-        <th>
-          <div class="th-content">RETENTION REMAINING</div>
-        </th>
-        <th style="text-align: right;">ACTIONS</th>
-      </tr>
-    `;
-
-    const records = getFilteredAndSortedRecords();
-
-    if (records.length === 0) {
-      tableBody.innerHTML = '';
-      emptyState.style.display = 'block';
-      if (emptyMsg) emptyMsg.textContent = 'Recycle bin is empty. No deleted records.';
-      return;
-    }
-
-    emptyState.style.display = 'none';
-
-    tableBody.innerHTML = records.map(item => {
-      const isDtr = item.type === 'dtr';
-      const typeBadge = isDtr
-        ? `<span class="quincena-pill quincena-q1"><i data-lucide="users" style="width: 12px; height: 12px;"></i> GIP DTR & AR</span>`
-        : `<span class="quincena-pill quincena-q2"><i data-lucide="send" style="width: 12px; height: 12px;"></i> TRANSMITTAL</span>`;
-
-      const orig = item.originalRecord || {};
-      const titleText = isDtr
-        ? `GIP NAME: ${escapeHtml(formatEtAl(orig.gipName))} (${formatMonth(orig.month)})`
-        : `PARTICULARS: ${escapeHtml(formatEtAl((orig.particulars || '').substring(0, 65)))}...`;
-
-      const daysRemaining = getRetentionDaysRemaining(item.deletedAt);
-      const dateDeletedFormatted = formatDate(item.deletedAt ? item.deletedAt.substring(0, 10) : '');
-
-      return `
-        <tr>
-          <td>${typeBadge}</td>
-          <td style="font-weight: 600; font-size: 0.9rem;">${titleText}</td>
-          <td>${dateDeletedFormatted}</td>
-          <td>
-            <span class="retention-pill">
-              <i data-lucide="clock" style="width: 12px; height: 12px;"></i>
-              ${daysRemaining} DAYS REMAINING
-            </span>
-          </td>
-          <td style="text-align: right;">
-            <div class="action-buttons" style="justify-content: flex-end;">
-              <button class="btn-action restore" onclick="restoreRecord('${item.id}')" title="Restore Record">
-                <i data-lucide="rotate-ccw"></i> Restore
-              </button>
-              <button class="btn-action delete" onclick="deletePermanently('${item.id}')" title="Delete Permanently">
-                <i data-lucide="trash-2"></i> Delete
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    if (window.lucide) lucide.createIcons();
-    return;
-  }
-
-  if (appState.activeTab === 'contacts') {
-    tableHead.innerHTML = `
-      <tr>
-        <th onclick="handleSort('gipName')">
-          <div class="th-content">GIP FULL NAME ${getSortIcon('gipName')}</div>
-        </th>
-        <th onclick="handleSort('assignment')">
-          <div class="th-content">ASSIGNMENT / OFFICE ${getSortIcon('assignment')}</div>
-        </th>
-        <th onclick="handleSort('contactNumber')">
-          <div class="th-content">CONTACT NUMBER ${getSortIcon('contactNumber')}</div>
-        </th>
-        <th>
-          <div class="th-content">REMARKS</div>
-        </th>
-        <th style="text-align: right;">ACTIONS</th>
-      </tr>
-    `;
-
-    const records = getFilteredAndSortedRecords();
-
-    if (records.length === 0) {
-      tableBody.innerHTML = '';
-      emptyState.style.display = 'block';
-      if (emptyMsg) emptyMsg.textContent = 'No GIP contacts found. Add a new contact.';
-      return;
-    }
-
-    emptyState.style.display = 'none';
-
-    tableBody.innerHTML = records.map(record => {
-      const formattedPhone = formatPhoneNumber(record.contactNumber);
-      return `
-        <tr>
-          <td style="font-weight: 600; font-size: 0.95rem; color: var(--primary-navy);">${escapeHtml(record.gipName)}</td>
-          <td>
-            <span class="quincena-pill quincena-q1">
-              <i data-lucide="building-2" style="width: 12px; height: 12px;"></i>
-              ${escapeHtml(record.assignment || 'LDNPFO')}
-            </span>
-          </td>
-          <td>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <a href="tel:${escapeHtml(record.contactNumber)}" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: var(--brand-accent); text-decoration: none;" title="Click to Call/SMS">
-                <i data-lucide="phone" style="width: 13px; height: 13px; vertical-align: middle;"></i> ${formattedPhone}
-              </a>
-              <button class="btn-action edit" onclick="copyContactNumber('${escapeHtml(record.contactNumber)}')" title="Copy Phone Number">
-                <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
-              </button>
-            </div>
-          </td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(record.remarks || '-')}</td>
-          <td style="text-align: right;">
-            <div class="action-buttons" style="justify-content: flex-end;">
-              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Contact">
-                <i data-lucide="edit-3"></i>
-              </button>
-              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Contact">
-                <i data-lucide="trash-2"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    if (window.lucide) lucide.createIcons();
-    return;
-  }
+  const tableWrapper = document.getElementById('table-responsive-wrapper');
+  const salaryCardsGrid = document.getElementById('salary-cards-grid');
 
   if (appState.activeTab === 'salary') {
-    const periodHeaders = (appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS).map(p => 
-      `<th style="text-align: center;"><div class="th-content">${escapeHtml(p)}</div></th>`
-    ).join('');
-
-    tableHead.innerHTML = `
-      <tr>
-        <th onclick="handleSort('gipName')">
-          <div class="th-content">GIP NAME / GROUP ${getSortIcon('gipName')}</div>
-        </th>
-        ${periodHeaders}
-        <th style="text-align: right;"><div class="th-content">TOTAL RECEIVED</div></th>
-        <th style="text-align: right;">ACTIONS</th>
-      </tr>
-    `;
+    if (tableWrapper) tableWrapper.style.display = 'none';
+    if (salaryCardsGrid) salaryCardsGrid.style.display = 'grid';
 
     const records = getFilteredAndSortedRecords();
 
     if (records.length === 0) {
-      tableBody.innerHTML = '';
+      if (salaryCardsGrid) salaryCardsGrid.innerHTML = '';
       emptyState.style.display = 'block';
       if (emptyMsg) emptyMsg.textContent = 'No salary records found. Click "+ Add New Record" to create one.';
       return;
     }
 
     emptyState.style.display = 'none';
-
     const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
 
-    tableBody.innerHTML = records.map(record => {
+    salaryCardsGrid.innerHTML = records.map(record => {
       let rowTotal = 0;
       const periods = record.periods || {};
 
-      const periodCells = periodsList.map(periodKey => {
+      const periodBoxes = periodsList.map(periodKey => {
         const item = periods[periodKey];
         if (!item || item.amount <= 0 || item.status === 'na') {
-          return `<td style="text-align: center;"><span class="salary-pill na" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" title="Click to set status">-</span></td>`;
+          return `
+            <div class="salary-card-period-box" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" style="cursor: pointer;" title="Click to set status">
+              <span class="salary-card-period-label">${escapeHtml(periodKey)}</span>
+              <span class="salary-pill na" style="width: fit-content; margin-top: 2px;">- N/A</span>
+            </div>
+          `;
         }
 
         const amt = Number(item.amount || 0);
@@ -1201,38 +1052,56 @@ function renderTable() {
         const labelText = isReceived ? 'Received' : 'Pending';
 
         return `
-          <td style="text-align: center;">
-            <span class="salary-pill ${pillClass}" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" title="Click to toggle status between Received (Blue) and Pending (Red)">
+          <div class="salary-card-period-box" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" style="cursor: pointer;" title="Click to toggle status between Received (Blue) and Pending (Red)">
+            <span class="salary-card-period-label">${escapeHtml(periodKey)}</span>
+            <span class="salary-pill ${pillClass}" style="width: fit-content; margin-top: 2px;">
               <i data-lucide="${iconName}" style="width: 11px; height: 11px;"></i>
               ₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${labelText}
             </span>
-          </td>
+          </div>
         `;
       }).join('');
 
       return `
-        <tr>
-          <td style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);">${escapeHtml(record.gipName)}</td>
-          ${periodCells}
-          <td style="text-align: right; font-weight: 700; font-family: monospace; color: #0284c7; font-size: 0.95rem;">
-            ₱${rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </td>
-          <td style="text-align: right;">
-            <div class="action-buttons" style="justify-content: flex-end;">
+        <div class="salary-card">
+          <div>
+            <div class="salary-card-header">
+              <div class="salary-card-name">
+                <i data-lucide="user-check" style="width: 15px; height: 15px; vertical-align: middle; color: var(--brand-accent); margin-right: 4px;"></i>
+                ${escapeHtml(record.gipName)}
+              </div>
+              <div class="salary-card-total" title="Total Received Salary">
+                ₱${rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+            </div>
+
+            <div class="salary-card-periods">
+              ${periodBoxes}
+            </div>
+          </div>
+
+          <div class="salary-card-footer">
+            <div style="font-size: 0.775rem; color: var(--text-muted); font-weight: 600;">
+              ${record.remarks ? `<i data-lucide="info" style="width: 12px; height: 12px; vertical-align: middle;"></i> ${escapeHtml(record.remarks.substring(0, 30))}` : ''}
+            </div>
+            <div class="action-buttons">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Salary Record">
-                <i data-lucide="edit-3"></i>
+                <i data-lucide="edit-3"></i> Edit
               </button>
               <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Salary Record">
-                <i data-lucide="trash-2"></i>
+                <i data-lucide="trash-2"></i> Delete
               </button>
             </div>
-          </td>
-        </tr>
+          </div>
+        </div>
       `;
     }).join('');
 
     if (window.lucide) lucide.createIcons();
     return;
+  } else {
+    if (tableWrapper) tableWrapper.style.display = 'block';
+    if (salaryCardsGrid) salaryCardsGrid.style.display = 'none';
   }
 
   const isDtr = appState.activeTab === 'dtr';
