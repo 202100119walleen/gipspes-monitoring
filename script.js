@@ -760,10 +760,10 @@ function bindEvents() {
   if (chkTrash) chkTrash.addEventListener('change', updateExportAuthVisibility);
 }
 
-const SYSTEM_MODULE_PASSWORD = '010826';
+const SYSTEM_MODULE_PASSWORD = 'dolegip2026';
 let authenticatedModules = {
-  trash: true,
-  contacts: true
+  trash: false,
+  contacts: false
 };
 let pendingTabName = null;
 
@@ -815,6 +815,19 @@ function handleAuthSubmit(e) {
  * Switch Active View Tab
  */
 function switchTab(tabName) {
+  // Password Protection for Recycle Bin ('trash') and GIP Contacts ('contacts')
+  if ((tabName === 'trash' || tabName === 'contacts') && !authenticatedModules[tabName]) {
+    openAuthModal(tabName);
+    return;
+  }
+
+  // Reset authentication when leaving a protected tab so it requires password again on return
+  if (appState.activeTab !== tabName) {
+    if (appState.activeTab === 'trash' || appState.activeTab === 'contacts') {
+      authenticatedModules[appState.activeTab] = false;
+    }
+  }
+
   if (appState.activeTab === tabName) return;
   appState.activeTab = tabName;
 
@@ -977,6 +990,30 @@ function getFilteredAndSortedRecords() {
     return records;
   }
 
+  if (appState.activeTab === 'contacts') {
+    let records = appState.data.contactsRecords ? [...appState.data.contactsRecords] : [];
+    if (appState.searchQuery) {
+      const q = appState.searchQuery;
+      records = records.filter(r => 
+        (r.gipName || '').toLowerCase().includes(q) || 
+        (r.assignment || '').toLowerCase().includes(q) || 
+        (r.contactNumber || '').includes(q) || 
+        (r.remarks || '').toLowerCase().includes(q)
+      );
+    }
+
+    records.sort((a, b) => {
+      let valA = a[appState.sortColumn] || a.gipName || '';
+      let valB = b[appState.sortColumn] || b.gipName || '';
+
+      if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return records;
+  }
+
   if (appState.activeTab === 'salary') {
     let records = appState.data.salaryRecords ? [...appState.data.salaryRecords] : [];
     if (appState.searchQuery) {
@@ -1113,6 +1150,79 @@ function renderTable() {
               </button>
               <button class="btn-action delete" onclick="deletePermanently('${item.id}')" title="Delete Permanently">
                 <i data-lucide="trash-2"></i> Delete
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  if (appState.activeTab === 'contacts') {
+    if (tableWrapper) tableWrapper.style.display = 'block';
+    if (salaryCardsGrid) salaryCardsGrid.style.display = 'none';
+
+    tableHead.innerHTML = `
+      <tr>
+        <th onclick="handleSort('gipName')">
+          <div class="th-content">GIP FULL NAME ${getSortIcon('gipName')}</div>
+        </th>
+        <th onclick="handleSort('assignment')">
+          <div class="th-content">ASSIGNMENT / OFFICE ${getSortIcon('assignment')}</div>
+        </th>
+        <th onclick="handleSort('contactNumber')">
+          <div class="th-content">CONTACT NUMBER ${getSortIcon('contactNumber')}</div>
+        </th>
+        <th>
+          <div class="th-content">REMARKS</div>
+        </th>
+        <th style="text-align: right;">ACTIONS</th>
+      </tr>
+    `;
+
+    const records = getFilteredAndSortedRecords();
+
+    if (records.length === 0) {
+      tableBody.innerHTML = '';
+      emptyState.style.display = 'block';
+      if (emptyMsg) emptyMsg.textContent = 'No GIP contacts found. Click "+ Add New Record" to create one.';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tableBody.innerHTML = records.map(record => {
+      const formattedPhone = formatPhoneNumber(record.contactNumber);
+      return `
+        <tr>
+          <td style="font-weight: 600; font-size: 0.95rem; color: var(--primary-navy);">${escapeHtml(record.gipName)}</td>
+          <td>
+            <span class="quincena-pill quincena-q1">
+              <i data-lucide="building-2" style="width: 12px; height: 12px;"></i>
+              ${escapeHtml(record.assignment || 'LDNPFO')}
+            </span>
+          </td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <a href="tel:${escapeHtml(record.contactNumber)}" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: var(--brand-accent); text-decoration: none;" title="Click to Call/SMS">
+                <i data-lucide="phone" style="width: 13px; height: 13px; vertical-align: middle;"></i> ${formattedPhone}
+              </a>
+              <button class="btn-action edit" onclick="copyContactNumber('${escapeHtml(record.contactNumber)}')" title="Copy Phone Number">
+                <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+              </button>
+            </div>
+          </td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(record.remarks || '-')}</td>
+          <td style="text-align: right;">
+            <div class="action-buttons" style="justify-content: flex-end;">
+              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Contact">
+                <i data-lucide="edit-3"></i>
+              </button>
+              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Contact">
+                <i data-lucide="trash-2"></i>
               </button>
             </div>
           </td>
@@ -1916,13 +2026,11 @@ function openDeleteModal(id) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
-  const isTrash = appState.activeTab === 'trash';
   appState.deletingRecordId = id;
 
   let dataset = appState.data.dtrRecords;
   if (isContacts) dataset = appState.data.contactsRecords;
   else if (isSalary) dataset = appState.data.salaryRecords;
-  else if (isTrash) dataset = appState.data.recycledRecords;
   else dataset = appState.data.transmittalRecords;
 
   const record = dataset.find(r => r.id === id);
@@ -1933,19 +2041,7 @@ function openDeleteModal(id) {
   if (isDtr) summary = `GIP NAME: ${record.gipName} (${formatMonth(record.month)})`;
   else if (isContacts) summary = `GIP CONTACT: ${record.gipName} (${record.assignment})`;
   else if (isSalary) summary = `SALARY RECORD: ${record.gipName}`;
-  else if (isTrash) {
-    const orig = record.originalRecord || {};
-    summary = `RECYCLE BIN ITEM: ${orig.gipName || orig.particulars?.substring(0, 40) || record.id}`;
-  }
   else summary = `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
-
-  const authContainer = document.getElementById('delete-auth-container');
-  const pwdInput = document.getElementById('delete-password-input');
-  if (pwdInput) pwdInput.value = '';
-
-  if (authContainer) {
-    authContainer.style.display = (isContacts || isTrash) ? 'block' : 'none';
-  }
 
   document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
   document.getElementById('delete-modal').classList.add('active');
@@ -1963,28 +2059,6 @@ async function confirmDeleteRecord() {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
-  const isTrash = appState.activeTab === 'trash';
-
-  // Password verification for protected deletions (Contacts Directory & Recycle Bin)
-  if (isContacts || isTrash) {
-    const pwdInput = document.getElementById('delete-password-input');
-    const pwdVal = pwdInput ? pwdInput.value.trim() : '';
-    if (pwdVal !== SYSTEM_MODULE_PASSWORD) {
-      showToast('INCORRECT PASSWORD! DELETE DENIED.', 'danger');
-      if (pwdInput) {
-        pwdInput.style.borderColor = '#ef4444';
-        pwdInput.focus();
-        setTimeout(() => { pwdInput.style.borderColor = ''; }, 2000);
-      }
-      return;
-    }
-  }
-
-  if (isTrash) {
-    await deletePermanently(id);
-    closeDeleteModal();
-    return;
-  }
   const type = isDtr ? 'dtr' : isContacts ? 'contacts' : isSalary ? 'salary' : 'transmittal';
 
   let dataset = appState.data.dtrRecords;
@@ -2201,12 +2275,6 @@ async function deletePermanently(trashId) {
 async function handleEmptyTrash() {
   if (!appState.data.recycledRecords || appState.data.recycledRecords.length === 0) {
     showToast('RECYCLE BIN IS ALREADY EMPTY', 'info');
-    return;
-  }
-
-  const pwdPrompt = prompt('SECURITY CHECK: Enter password (010826) to permanently empty the Recycle Bin:');
-  if (pwdPrompt !== SYSTEM_MODULE_PASSWORD) {
-    if (pwdPrompt !== null) showToast('INCORRECT PASSWORD! EMPTY RECYCLE BIN CANCELLED.', 'danger');
     return;
   }
 
