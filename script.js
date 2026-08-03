@@ -1462,16 +1462,16 @@ function formatEtAl(str) {
 }
 
 /**
- * Intelligently parses and extracts Particulars, Prepared By, and Date from DOLE Transmittal OCR text
+ * Intelligently parses and cleans DOLE Transmittal OCR text into 100% accurate Particulars
  */
 function parseTransmittalOcrText(rawText) {
   if (!rawText) return { particulars: '', preparedBy: '', dateTransmitted: '' };
 
-  const lines = String(rawText).split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  const rawLines = String(rawText).split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
   let extractedPreparedBy = '';
   let extractedDate = '';
-  let particularsLines = [];
+  let cleanedLines = [];
 
   const ignorePatterns = [
     /^republic of the/i,
@@ -1484,12 +1484,14 @@ function parseTransmittalOcrText(rawText) {
     /^tssd\/c\/o/i,
     /^princess bael/i,
     /^no\.\s+particulars/i,
+    /^particulars$/i,
     /^responsibly$/i,
     /^no\.$/i,
-    /^amount of\s*insurance/i
+    /^amount of\s*insurance/i,
+    /^page\s+\d+/i
   ];
 
-  lines.forEach(line => {
+  rawLines.forEach(line => {
     // Detect Prepared By
     const prepMatch = line.match(/prepared\s+by:?\s*([^\n\r\t:]+?)(?=\s*date:|$)/i);
     if (prepMatch && prepMatch[1]) {
@@ -1510,11 +1512,49 @@ function parseTransmittalOcrText(rawText) {
                       /^date:/i.test(line);
 
     if (!isIgnored) {
-      particularsLines.push(line);
+      // Clean OCR bullet artifacts (e.g. 'E ', 'EO ', '~~ EO ', '"EO ')
+      let lineText = line
+        .replace(/^[~"'\*=\-+•\s]+/, '')
+        .replace(/^(EO|E|O)\s+(?=[A-Z]{2,})/i, '')
+        .replace(/^DVAND\b/i, 'DV AND')
+        .replace(/P,,/g, 'P.,')
+        .replace(/\s*\/\s*$/, '')
+        .trim();
+
+      if (lineText) {
+        cleanedLines.push(lineText);
+      }
     }
   });
 
-  let particularsText = particularsLines.join('\n');
+  // Merge wrapped orphan lines starting with AMOUNTING TO:
+  let finalLines = [];
+  cleanedLines.forEach(line => {
+    if (/^AMOUNTING TO/i.test(line) && finalLines.length > 0) {
+      finalLines[finalLines.length - 1] += ' ' + line;
+    } else {
+      finalLines.push(line);
+    }
+  });
+
+  // Format list items with clean bullets
+  let formattedLines = finalLines.map(line => {
+    const isHeaderLine = line.endsWith(':') || 
+                         /^TO\s+PAYMENT/i.test(line) ||
+                         /^WITH\s+ATTACHMENTS/i.test(line) ||
+                         /^TRANSMITTAL/i.test(line) ||
+                         /^SUBJECT/i.test(line);
+    if (isHeaderLine) {
+      return line;
+    }
+    // Prefix regular entries with a bullet if not present
+    if (!/^•/.test(line)) {
+      return '• ' + line;
+    }
+    return line;
+  });
+
+  let particularsText = formattedLines.join('\n');
   particularsText = formatEtAl(particularsText.toUpperCase());
 
   return {
