@@ -701,6 +701,13 @@ function switchTab(tabName) {
     return;
   }
 
+  // Reset authentication when leaving a protected tab so it requires password again on return
+  if (appState.activeTab !== tabName) {
+    if (appState.activeTab === 'trash' || appState.activeTab === 'contacts') {
+      authenticatedModules[appState.activeTab] = false;
+    }
+  }
+
   if (appState.activeTab === tabName) return;
   appState.activeTab = tabName;
 
