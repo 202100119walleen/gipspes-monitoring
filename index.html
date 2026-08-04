@@ -82,6 +82,14 @@
           <span class="sidebar-badge" id="side-count-salary">0</span>
         </button>
 
+        <button class="sidebar-item" id="side-nav-compiled" data-tab="compiled">
+          <div class="sidebar-item-content">
+            <i data-lucide="folder-check"></i>
+            <span>Documents Received</span>
+          </div>
+          <span class="sidebar-badge" id="side-count-compiled">0</span>
+        </button>
+
         <button class="sidebar-item" id="side-nav-trash" data-tab="trash">
           <div class="sidebar-item-content">
             <i data-lucide="trash-2"></i>
@@ -168,7 +176,16 @@
             <div class="stat-value" id="stat-active-count">0</div>
           </div>
           <div class="stat-icon completed">
-            <i data-lucide="files"></i>
+            <i data-lucide="file-check"></i>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <div class="stat-label">Documents Received</div>
+            <div class="stat-value" id="stat-compiled-count">0</div>
+          </div>
+          <div class="stat-icon received">
+            <i data-lucide="folder-check"></i>
           </div>
         </div>
         <div class="stat-card">
@@ -449,6 +466,27 @@
 
             <div id="salary-quincena-inputs-container" class="salary-inputs-grid">
               <!-- Dynamically populated per active quincena period -->
+            </div>
+          </div>
+
+          <!-- Fields for Documents Received Module -->
+          <div id="fields-compiled" class="module-fields" style="display: none;">
+            <div class="form-group">
+              <label for="compiled-title">Compiled Documents / Title <span class="required">*</span></label>
+              <textarea id="compiled-title" class="form-control" rows="3" placeholder="e.g. COMPLIED GIP DTRs & ARs, ACKNOWLEDGEMENT RECEIPTS, ETC."></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="compiled-received-from">Received From / Sender <span class="required">*</span></label>
+                <input type="text" id="compiled-received-from" class="form-control" placeholder="e.g. DOLE REGIONAL OFFICE / LGU TUBOD / GIP">
+              </div>
+              <div class="form-group">
+                <label for="compiled-date-received">Date Received <span class="required">*</span></label>
+                <input type="date" id="compiled-date-received" class="form-control">
+                <button type="button" class="btn btn-secondary btn-today" data-target="compiled-date-received">
+                  <i data-lucide="calendar-check" style="width: 13px; height: 13px;"></i> Set Today
+                </button>
+              </div>
             </div>
           </div>
 

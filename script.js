@@ -76,9 +76,19 @@ const DEFAULT_SEED_DATA = {
       remarks: 'DISPATCHED VIA COURIER SERVICES. TRACKING #PH982341.',
       createdAt: '2026-07-25T15:20:00.000Z'
     }
+  ],
+  compiledRecords: [
+    {
+      id: 'doc-101',
+      documentTitle: 'COMPLIED GIP DTRs & ARs FOR THE MONTH OF MAY 2026',
+      receivedFrom: 'DOLE REGIONAL OFFICE X',
+      dateReceived: '2026-05-25',
+      remarks: 'OFFICIALLY RECEIVED AND STAMPED',
+      createdAt: '2026-05-25T08:30:00.000Z',
+      updatedAt: '2026-05-25T08:30:00.000Z'
+    }
   ]
 };
-
 // Initial GIP Contacts Directory Seed Data from CSV
 const DEFAULT_CONTACTS_SEED = [
   { id: "cnt-1", gipName: "ABBAS, EXSAN S.", assignment: "LDNPFO", contactNumber: "09094708118", remarks: "" },
@@ -351,6 +361,9 @@ function loadLocalStorageData() {
       if (!parsed.salaryRecords || parsed.salaryRecords.length === 0) {
         parsed.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
       }
+      if (!parsed.compiledRecords || parsed.compiledRecords.length === 0) {
+        parsed.compiledRecords = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA.compiledRecords || []));
+      }
       if (parsed.quincenaPeriods && Array.isArray(parsed.quincenaPeriods)) {
         appState.quincenaPeriods = parsed.quincenaPeriods;
       } else {
@@ -364,6 +377,7 @@ function loadLocalStorageData() {
       appState.data.recycledRecords = [];
       appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
       appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
+      appState.data.compiledRecords = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA.compiledRecords || []));
       saveToLocalStorage();
     }
   } catch (err) {
@@ -414,6 +428,11 @@ async function fetchRecordsFromSupabase() {
       .from('gip_salary_records')
       .select('*')
       .order('gip_name', { ascending: true });
+
+    const { data: docData } = await supabaseClient
+      .from('gip_compiled_documents')
+      .select('*')
+      .order('created_at', { ascending: false });
 
     // Smart Merge Helper: Preserves local records if not yet in Supabase or if updated locally
     const mergeData = (cloudList, localList) => {
@@ -505,6 +524,20 @@ async function fetchRecordsFromSupabase() {
       appState.data.salaryRecords = mergeData(formattedCloudSal, appState.data.salaryRecords);
     }
 
+    // 6. Process Compiled Documents Records
+    if (docData) {
+      const formattedCloudDoc = docData.map(r => ({
+        id: r.id,
+        documentTitle: formatEtAl(r.document_title),
+        receivedFrom: formatEtAl(r.received_from),
+        dateReceived: r.date_received,
+        remarks: formatEtAl(r.remarks),
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
+      appState.data.compiledRecords = mergeData(formattedCloudDoc, appState.data.compiledRecords || []);
+    }
+
     purgeExpiredRecycledRecords();
     saveToLocalStorage();
     renderApp();
@@ -562,6 +595,19 @@ async function pushLocalDataToSupabase() {
         updated_at: r.updatedAt || new Date().toISOString()
       }));
       await supabaseClient.from('gip_contacts').upsert(cntPayload);
+    }
+
+    if (appState.data.compiledRecords && appState.data.compiledRecords.length > 0) {
+      const docPayload = appState.data.compiledRecords.map(r => ({
+        id: r.id,
+        document_title: r.documentTitle,
+        received_from: r.receivedFrom || '',
+        date_received: r.dateReceived || '',
+        remarks: r.remarks || '',
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_compiled_documents').upsert(docPayload);
     }
   } catch (err) {
     console.warn('Auto-push local data note:', err.message);
@@ -932,6 +978,11 @@ function switchTab(tabName) {
     viewSubtitle.textContent = 'QUINCENA STIPENDS & RECEIVED/PENDING SALARY STATUS MONITORING';
     btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
+  } else if (tabName === 'compiled') {
+    viewTitle.textContent = 'DOCUMENTS RECEIVED MONITORING';
+    viewSubtitle.textContent = 'TRACKING & MONITORING OF COMPLIED DOCUMENTS RECEIVED BY DOLE LDNPFO';
+    btnAdd.style.display = 'inline-flex';
+    btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'trash') {
     viewTitle.textContent = 'RECYCLE BIN';
     viewSubtitle.textContent = 'DELETED RECORDS STORED FOR 30 DAYS BEFORE AUTOMATIC PERMANENT DELETION';
@@ -965,6 +1016,7 @@ function updateCountsAndStats() {
   const trashCount = (appState.data.recycledRecords || []).length;
   const contactsCount = (appState.data.contactsRecords || []).length;
   const salaryCount = (appState.data.salaryRecords || []).length;
+  const compiledCount = (appState.data.compiledRecords || []).length;
 
   document.getElementById('side-count-dtr').textContent = dtrCount;
   document.getElementById('side-count-transmittal').textContent = trnCount;
@@ -972,18 +1024,23 @@ function updateCountsAndStats() {
   document.getElementById('side-count-contacts').textContent = contactsCount;
   const sideSalCount = document.getElementById('side-count-salary');
   if (sideSalCount) sideSalCount.textContent = salaryCount;
+  const sideCompCount = document.getElementById('side-count-compiled');
+  if (sideCompCount) sideCompCount.textContent = compiledCount;
 
   let currentDatasetLength = 0;
   if (appState.activeTab === 'dtr') currentDatasetLength = dtrCount;
   else if (appState.activeTab === 'transmittal') currentDatasetLength = trnCount;
   else if (appState.activeTab === 'contacts') currentDatasetLength = contactsCount;
   else if (appState.activeTab === 'salary') currentDatasetLength = salaryCount;
+  else if (appState.activeTab === 'compiled') currentDatasetLength = compiledCount;
   else if (appState.activeTab === 'trash') currentDatasetLength = trashCount;
 
   document.getElementById('stat-dtr-count').textContent = dtrCount;
   document.getElementById('stat-trn-count').textContent = trnCount;
   document.getElementById('stat-trash-count').textContent = trashCount;
   document.getElementById('stat-contacts-count').textContent = contactsCount;
+  const statCompCount = document.getElementById('stat-compiled-count');
+  if (statCompCount) statCompCount.textContent = compiledCount;
   document.getElementById('stat-active-count').textContent = currentDatasetLength;
 
   // Calculate Grand Total Paid Disbursed across all GIP Salary Records cleanly
@@ -1057,6 +1114,30 @@ function getFilteredAndSortedRecords() {
     records.sort((a, b) => {
       let valA = a[appState.sortColumn] || a.gipName || '';
       let valB = b[appState.sortColumn] || b.gipName || '';
+
+      if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return records;
+  }
+
+  if (appState.activeTab === 'compiled') {
+    let records = appState.data.compiledRecords ? [...appState.data.compiledRecords] : [];
+    if (appState.searchQuery) {
+      const q = appState.searchQuery;
+      records = records.filter(r =>
+        (r.documentTitle || '').toLowerCase().includes(q) ||
+        (r.receivedFrom || '').toLowerCase().includes(q) ||
+        (r.dateReceived || '').toLowerCase().includes(q) ||
+        (r.remarks || '').toLowerCase().includes(q)
+      );
+    }
+
+    records.sort((a, b) => {
+      let valA = a[appState.sortColumn] || a.createdAt || '';
+      let valB = b[appState.sortColumn] || b.createdAt || '';
 
       if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
       if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
@@ -1806,6 +1887,7 @@ function openRecordModal(id = null) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
+  const isCompiled = appState.activeTab === 'compiled';
   appState.editingRecordId = id;
 
   const modalTitle = document.getElementById('modal-title');
@@ -1813,6 +1895,7 @@ function openRecordModal(id = null) {
   const trnFields = document.getElementById('fields-transmittal');
   const cntFields = document.getElementById('fields-contacts');
   const salFields = document.getElementById('fields-salary');
+  const compiledFields = document.getElementById('fields-compiled');
   const form = document.getElementById('record-form');
 
   form.reset();
@@ -1834,6 +1917,7 @@ function openRecordModal(id = null) {
     trnFields.style.display = 'none';
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'none';
+    if (compiledFields) compiledFields.style.display = 'none';
     setReq('gip-name', true);
     setReq('record-month', true);
     setReq('record-quincena', true);
@@ -1842,11 +1926,15 @@ function openRecordModal(id = null) {
     setReq('contact-assignment', false);
     setReq('contact-number', false);
     setReq('salary-gip-name', false);
+    setReq('compiled-title', false);
+    setReq('compiled-received-from', false);
+    setReq('compiled-date-received', false);
   } else if (isContacts) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
     cntFields.style.display = 'block';
     if (salFields) salFields.style.display = 'none';
+    if (compiledFields) compiledFields.style.display = 'none';
     setReq('gip-name', false);
     setReq('record-month', false);
     setReq('record-quincena', false);
@@ -1855,11 +1943,15 @@ function openRecordModal(id = null) {
     setReq('contact-assignment', true);
     setReq('contact-number', true);
     setReq('salary-gip-name', false);
+    setReq('compiled-title', false);
+    setReq('compiled-received-from', false);
+    setReq('compiled-date-received', false);
   } else if (isSalary) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'block';
+    if (compiledFields) compiledFields.style.display = 'none';
     setReq('gip-name', false);
     setReq('record-month', false);
     setReq('record-quincena', false);
@@ -1868,12 +1960,33 @@ function openRecordModal(id = null) {
     setReq('contact-assignment', false);
     setReq('contact-number', false);
     setReq('salary-gip-name', true);
+    setReq('compiled-title', false);
+    setReq('compiled-received-from', false);
+    setReq('compiled-date-received', false);
     renderSalaryModalInputs(id ? appState.data.salaryRecords.find(r => r.id === id) : null);
+  } else if (isCompiled) {
+    dtrFields.style.display = 'none';
+    trnFields.style.display = 'none';
+    cntFields.style.display = 'none';
+    if (salFields) salFields.style.display = 'none';
+    if (compiledFields) compiledFields.style.display = 'block';
+    setReq('gip-name', false);
+    setReq('record-month', false);
+    setReq('record-quincena', false);
+    setReq('particulars', false);
+    setReq('contact-gip-name', false);
+    setReq('contact-assignment', false);
+    setReq('contact-number', false);
+    setReq('salary-gip-name', false);
+    setReq('compiled-title', true);
+    setReq('compiled-received-from', true);
+    setReq('compiled-date-received', true);
   } else {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'block';
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'none';
+    if (compiledFields) compiledFields.style.display = 'none';
     setReq('gip-name', false);
     setReq('record-month', false);
     setReq('record-quincena', false);
@@ -1882,18 +1995,23 @@ function openRecordModal(id = null) {
     setReq('contact-assignment', false);
     setReq('contact-number', false);
     setReq('salary-gip-name', false);
+    setReq('compiled-title', false);
+    setReq('compiled-received-from', false);
+    setReq('compiled-date-received', false);
   }
 
   if (id) {
     if (isDtr) modalTitle.textContent = 'EDIT GIP DTR & AR RECORD';
     else if (isContacts) modalTitle.textContent = 'EDIT GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'EDIT GIP SALARY RECORD';
+    else if (isCompiled) modalTitle.textContent = 'EDIT COMPILED DOCUMENT RECORD';
     else modalTitle.textContent = 'EDIT TRANSMITTAL RECORD';
 
     let dataset;
     if (isDtr) dataset = appState.data.dtrRecords;
     else if (isContacts) dataset = appState.data.contactsRecords;
     else if (isSalary) dataset = appState.data.salaryRecords;
+    else if (isCompiled) dataset = appState.data.compiledRecords;
     else dataset = appState.data.transmittalRecords;
 
     const record = dataset.find(r => r.id === id);
@@ -1913,10 +2031,8 @@ function openRecordModal(id = null) {
           );
           if (matchedOpt) {
             qSelect.value = matchedOpt.value;
-          } else if (/2ND|16-31|16TH/i.test(recQuincena)) {
-            qSelect.value = '2nd Quincena (16-31)';
           } else {
-            qSelect.value = '1st Quincena (1-15)';
+            qSelect.value = recQuincena;
           }
         }
         document.getElementById('dtr-ar-date-received').value = record.dtrArDateReceived || '';
@@ -1927,6 +2043,10 @@ function openRecordModal(id = null) {
       } else if (isSalary) {
         document.getElementById('salary-gip-name').value = (record.gipName || '').toUpperCase();
         renderSalaryModalInputs(record);
+      } else if (isCompiled) {
+        document.getElementById('compiled-title').value = (record.documentTitle || '').toUpperCase();
+        document.getElementById('compiled-received-from').value = (record.receivedFrom || '').toUpperCase();
+        document.getElementById('compiled-date-received').value = record.dateReceived || '';
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         const recProg = (record.program || '').toUpperCase();
@@ -1956,6 +2076,7 @@ function openRecordModal(id = null) {
     if (isDtr) modalTitle.textContent = 'ADD NEW GIP DTR & AR RECORD';
     else if (isContacts) modalTitle.textContent = 'ADD NEW GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'ADD NEW GIP SALARY RECORD';
+    else if (isCompiled) modalTitle.textContent = 'ADD NEW COMPILED DOCUMENT RECORD';
     else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
 
     document.getElementById('form-record-id').value = '';
@@ -1983,10 +2104,79 @@ async function handleFormSubmit(e) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
+  const isCompiled = appState.activeTab === 'compiled';
   const recordId = document.getElementById('form-record-id').value;
   const remarks = formatEtAl(document.getElementById('record-remarks').value.trim().toUpperCase());
 
   const nowISO = new Date().toISOString();
+
+  if (isCompiled) {
+    const documentTitle = formatEtAl(document.getElementById('compiled-title').value.trim().toUpperCase());
+    const receivedFrom = formatEtAl(document.getElementById('compiled-received-from').value.trim().toUpperCase());
+    const dateReceived = document.getElementById('compiled-date-received').value;
+
+    if (!documentTitle || !receivedFrom || !dateReceived) {
+      showToast('ALL REQUIRED FIELDS FOR COMPILED DOCUMENTS MUST BE FILLED', 'danger');
+      return;
+    }
+
+    const payload = {
+      documentTitle,
+      receivedFrom,
+      dateReceived,
+      remarks,
+      updatedAt: nowISO
+    };
+
+    if (!appState.data.compiledRecords) appState.data.compiledRecords = [];
+
+    if (recordId) {
+      const index = appState.data.compiledRecords.findIndex(r => r.id === recordId);
+      if (index !== -1) {
+        appState.data.compiledRecords[index] = { ...appState.data.compiledRecords[index], ...payload };
+      }
+      saveToLocalStorage();
+
+      if (isSupabaseConnected && supabaseClient) {
+        const { error: sbErr } = await supabaseClient.from('gip_compiled_documents').upsert({
+          id: recordId,
+          document_title: documentTitle,
+          received_from: receivedFrom,
+          date_received: dateReceived,
+          remarks,
+          updated_at: nowISO
+        });
+        if (sbErr) console.warn('Supabase update note:', sbErr.message);
+      }
+
+      showToast('COMPILED DOCUMENT RECORD UPDATED SUCCESSFULLY!', 'success');
+    } else {
+      const newId = 'doc-' + Date.now();
+      const newRecord = { id: newId, ...payload, createdAt: nowISO };
+      appState.data.compiledRecords.unshift(newRecord);
+      saveToLocalStorage();
+
+      if (isSupabaseConnected && supabaseClient) {
+        const { error: sbErr } = await supabaseClient.from('gip_compiled_documents').upsert({
+          id: newId,
+          document_title: documentTitle,
+          received_from: receivedFrom,
+          date_received: dateReceived,
+          remarks,
+          created_at: nowISO,
+          updated_at: nowISO
+        });
+        if (sbErr) console.warn('Supabase insert note:', sbErr.message);
+      }
+
+      showToast('NEW COMPILED DOCUMENT RECORD ADDED SUCCESSFULLY!', 'success');
+    }
+
+    closeRecordModal();
+    saveToLocalStorage();
+    renderApp();
+    return;
+  }
 
   if (isSalary) {
     const gipName = formatEtAl(document.getElementById('salary-gip-name').value.trim().toUpperCase());
@@ -2275,12 +2465,14 @@ function openDeleteModal(id) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
+  const isCompiled = appState.activeTab === 'compiled';
   appState.deletingRecordId = id;
 
   let dataset;
   if (isDtr) dataset = appState.data.dtrRecords;
   else if (isContacts) dataset = appState.data.contactsRecords;
   else if (isSalary) dataset = appState.data.salaryRecords;
+  else if (isCompiled) dataset = appState.data.compiledRecords;
   else dataset = appState.data.transmittalRecords;
 
   const record = dataset.find(r => r.id === id);
@@ -2291,6 +2483,7 @@ function openDeleteModal(id) {
   if (isDtr) summary = `GIP NAME: ${record.gipName} (${formatMonth(record.month)})`;
   else if (isContacts) summary = `GIP CONTACT: ${record.gipName} (${record.assignment})`;
   else if (isSalary) summary = `SALARY RECORD: ${record.gipName}`;
+  else if (isCompiled) summary = `DOCUMENT: ${record.documentTitle.substring(0, 50)}...`;
   else summary = `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
 
   document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
@@ -2340,11 +2533,13 @@ async function confirmDeleteRecord(e) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
-  const type = isDtr ? 'dtr' : isContacts ? 'contacts' : isSalary ? 'salary' : 'transmittal';
+  const isCompiled = appState.activeTab === 'compiled';
+  const type = isDtr ? 'dtr' : isContacts ? 'contacts' : isSalary ? 'salary' : isCompiled ? 'compiled' : 'transmittal';
 
   let dataset = appState.data.dtrRecords;
   if (isContacts) dataset = appState.data.contactsRecords;
   else if (isSalary) dataset = appState.data.salaryRecords;
+  else if (isCompiled) dataset = appState.data.compiledRecords;
   else if (!isDtr) dataset = appState.data.transmittalRecords;
 
   const targetRecord = dataset.find(r => r.id === id);
@@ -2380,6 +2575,11 @@ async function confirmDeleteRecord(e) {
     appState.data.salaryRecords = appState.data.salaryRecords.filter(r => r.id !== id);
     if (isSupabaseConnected && supabaseClient) {
       await supabaseClient.from('gip_salary_records').delete().eq('id', id);
+    }
+  } else if (isCompiled) {
+    appState.data.compiledRecords = appState.data.compiledRecords.filter(r => r.id !== id);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_compiled_documents').delete().eq('id', id);
     }
   } else {
     appState.data.transmittalRecords = appState.data.transmittalRecords.filter(r => r.id !== id);
@@ -2453,6 +2653,20 @@ async function restoreRecord(trashId) {
         id: orig.id,
         gip_name: orig.gipName,
         periods: orig.periods,
+        updated_at: new Date().toISOString()
+      });
+    }
+  } else if (type === 'compiled') {
+    if (!appState.data.compiledRecords) appState.data.compiledRecords = [];
+    appState.data.compiledRecords.unshift(orig);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_compiled_documents').upsert({
+        id: orig.id,
+        document_title: orig.documentTitle,
+        received_from: orig.receivedFrom,
+        date_received: orig.dateReceived,
+        remarks: orig.remarks,
+        created_at: orig.createdAt || new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
     }

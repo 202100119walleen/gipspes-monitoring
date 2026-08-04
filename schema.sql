@@ -58,6 +58,17 @@ CREATE TABLE IF NOT EXISTS gip_salary_records (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 6. Create Compiled Documents Received Monitoring Table
+CREATE TABLE IF NOT EXISTS gip_compiled_documents (
+  id TEXT PRIMARY KEY,
+  document_title TEXT NOT NULL,
+  received_from TEXT,
+  date_received TEXT,
+  remarks TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 6. Ensure all columns exist (Migration fix for existing tables)
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS prepared_by TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS particulars TEXT;
