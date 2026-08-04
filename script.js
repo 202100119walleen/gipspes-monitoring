@@ -1775,63 +1775,64 @@ function openRecordModal(id = null) {
 
   document.getElementById('particulars-preview-wrapper').style.display = 'none';
 
+  const setReq = (id, req) => {
+    const el = document.getElementById(id);
+    if (el) el.required = req;
+  };
+
   if (isDtr) {
     dtrFields.style.display = 'block';
     trnFields.style.display = 'none';
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'none';
-    document.getElementById('gip-name').required = true;
-    document.getElementById('record-month').required = true;
-    document.getElementById('record-quincena').required = true;
-    document.getElementById('particulars').required = false;
-    document.getElementById('prepared-by-trn').required = false;
-    document.getElementById('contact-gip-name').required = false;
-    document.getElementById('contact-assignment').required = false;
-    document.getElementById('contact-number').required = false;
-    if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = false;
+    setReq('gip-name', true);
+    setReq('record-month', true);
+    setReq('record-quincena', true);
+    setReq('particulars', false);
+    setReq('contact-gip-name', false);
+    setReq('contact-assignment', false);
+    setReq('contact-number', false);
+    setReq('salary-gip-name', false);
   } else if (isContacts) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
     cntFields.style.display = 'block';
     if (salFields) salFields.style.display = 'none';
-    document.getElementById('gip-name').required = false;
-    document.getElementById('record-month').required = false;
-    document.getElementById('record-quincena').required = false;
-    document.getElementById('particulars').required = false;
-    document.getElementById('prepared-by-trn').required = false;
-    document.getElementById('contact-gip-name').required = true;
-    document.getElementById('contact-assignment').required = true;
-    document.getElementById('contact-number').required = true;
-    if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = false;
+    setReq('gip-name', false);
+    setReq('record-month', false);
+    setReq('record-quincena', false);
+    setReq('particulars', false);
+    setReq('contact-gip-name', true);
+    setReq('contact-assignment', true);
+    setReq('contact-number', true);
+    setReq('salary-gip-name', false);
   } else if (isSalary) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'block';
-    document.getElementById('gip-name').required = false;
-    document.getElementById('record-month').required = false;
-    document.getElementById('record-quincena').required = false;
-    document.getElementById('particulars').required = false;
-    document.getElementById('prepared-by-trn').required = false;
-    document.getElementById('contact-gip-name').required = false;
-    document.getElementById('contact-assignment').required = false;
-    document.getElementById('contact-number').required = false;
-    if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = true;
+    setReq('gip-name', false);
+    setReq('record-month', false);
+    setReq('record-quincena', false);
+    setReq('particulars', false);
+    setReq('contact-gip-name', false);
+    setReq('contact-assignment', false);
+    setReq('contact-number', false);
+    setReq('salary-gip-name', true);
     renderSalaryModalInputs(id ? appState.data.salaryRecords.find(r => r.id === id) : null);
   } else {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'block';
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'none';
-    document.getElementById('gip-name').required = false;
-    document.getElementById('record-month').required = false;
-    document.getElementById('record-quincena').required = false;
-    document.getElementById('particulars').required = true;
-    document.getElementById('prepared-by-trn').required = true;
-    document.getElementById('contact-gip-name').required = false;
-    document.getElementById('contact-assignment').required = false;
-    document.getElementById('contact-number').required = false;
-    if (document.getElementById('salary-gip-name')) document.getElementById('salary-gip-name').required = false;
+    setReq('gip-name', false);
+    setReq('record-month', false);
+    setReq('record-quincena', false);
+    setReq('particulars', true);
+    setReq('contact-gip-name', false);
+    setReq('contact-assignment', false);
+    setReq('contact-number', false);
+    setReq('salary-gip-name', false);
   }
 
   if (id) {
