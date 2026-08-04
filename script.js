@@ -642,6 +642,8 @@ function bindEvents() {
   document.getElementById('side-nav-contacts').addEventListener('click', () => switchTab('contacts'));
   const sideSalary = document.getElementById('side-nav-salary');
   if (sideSalary) sideSalary.addEventListener('click', () => switchTab('salary'));
+  const sideCompiled = document.getElementById('side-nav-compiled');
+  if (sideCompiled) sideCompiled.addEventListener('click', () => switchTab('compiled'));
   document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
   document.getElementById('side-nav-excel').addEventListener('click', openExcelExportModal);
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
@@ -670,11 +672,13 @@ function bindEvents() {
   const statCardTrn = document.querySelector('#stat-trn-count')?.closest('.stat-card');
   const statCardCnt = document.querySelector('#stat-contacts-count')?.closest('.stat-card');
   const statCardTrash = document.querySelector('#stat-trash-count')?.closest('.stat-card');
+  const statCardCompiled = document.querySelector('#stat-compiled-count')?.closest('.stat-card');
 
   if (statCardDtr) { statCardDtr.style.cursor = 'pointer'; statCardDtr.addEventListener('click', () => switchTab('dtr')); }
   if (statCardTrn) { statCardTrn.style.cursor = 'pointer'; statCardTrn.addEventListener('click', () => switchTab('transmittal')); }
   if (statCardCnt) { statCardCnt.style.cursor = 'pointer'; statCardCnt.addEventListener('click', () => switchTab('contacts')); }
   if (statCardTrash) { statCardTrash.style.cursor = 'pointer'; statCardTrash.addEventListener('click', () => switchTab('trash')); }
+  if (statCardCompiled) { statCardCompiled.style.cursor = 'pointer'; statCardCompiled.addEventListener('click', () => switchTab('compiled')); }
 
   // Mobile Menu Toggle
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
