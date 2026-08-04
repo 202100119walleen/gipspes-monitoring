@@ -382,17 +382,18 @@
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px;">
+            <div style="display: grid; grid-template-columns: 160px 1fr; gap: 12px;">
               <div class="form-group">
-                <label for="transmittal-program-select">Program <span class="required">*</span></label>
+                <label for="transmittal-program-select">Program <span style="font-weight: 400; color: var(--text-muted); font-size: 0.75rem;">(Optional)</span></label>
                 <select id="transmittal-program-select" class="form-control">
+                  <option value="">-- None --</option>
                   <option value="GIP">GIP</option>
                   <option value="SPES">SPES</option>
                   <option value="TUPAD">TUPAD</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="prepared-by-trn">Prepared By <span class="required">*</span></label>
+                <label for="prepared-by-trn">Prepared By <span style="font-weight: 400; color: var(--text-muted); font-size: 0.75rem;">(Optional)</span></label>
                 <input type="text" id="prepared-by-trn" class="form-control"
                   placeholder="e.g. Juan De La Cruz / Administrative Assistant">
               </div>

@@ -449,11 +449,11 @@ async function fetchRecordsFromSupabase() {
       appState.data.dtrRecords = mergeData(formattedCloudDtr, appState.data.dtrRecords);
     }
 
-    // 2. Process Transmittal Records (with image_url & program mapping)
+    // 2. Process Transmittal Records (with image_url & optional program mapping)
     if (trnData) {
       const formattedCloudTrn = trnData.map(r => ({
         id: r.id,
-        program: (r.program || 'GIP').toUpperCase(),
+        program: (r.program || '').toUpperCase(),
         particulars: formatEtAl(r.particulars),
         preparedBy: formatEtAl(r.prepared_by),
         dateTransmitted: r.date_transmitted,
@@ -1526,16 +1526,29 @@ function renderTable() {
       `;
     } else {
       const memoFormatted = formatParticularsMemoCard(formatEtAl(record.particulars), false, null, record.imageUrl);
-      const programTag = (record.program || 'GIP').toUpperCase();
-      const badgeClass = programTag === 'SPES' ? 'badge-spes' : (programTag === 'TUPAD' ? 'badge-tupad' : 'badge-gip');
+      const programTag = (record.program || '').toUpperCase();
+      const preparedByText = formatEtAl(record.preparedBy || '');
+      let preparedByCellHtml = '';
+
+      if (programTag && preparedByText) {
+        const badgeClass = programTag === 'SPES' ? 'badge-spes' : (programTag === 'TUPAD' ? 'badge-tupad' : 'badge-gip');
+        preparedByCellHtml = `
+          <span class="program-badge ${badgeClass}">${escapeHtml(programTag)}</span>
+          <div style="font-weight: 600; color: var(--text-main); margin-top: 4px;">${escapeHtml(preparedByText)}</div>
+        `;
+      } else if (programTag) {
+        const badgeClass = programTag === 'SPES' ? 'badge-spes' : (programTag === 'TUPAD' ? 'badge-tupad' : 'badge-gip');
+        preparedByCellHtml = `<span class="program-badge ${badgeClass}">${escapeHtml(programTag)}</span>`;
+      } else if (preparedByText) {
+        preparedByCellHtml = `<span style="font-weight: 600; color: var(--text-main);">${escapeHtml(preparedByText)}</span>`;
+      } else {
+        preparedByCellHtml = `<span style="color: var(--text-light); font-style: italic;">-</span>`;
+      }
 
       return `
         <tr>
           <td>${memoFormatted}</td>
-          <td>
-            <span class="program-badge ${badgeClass}">${escapeHtml(programTag)}</span>
-            <div style="font-weight: 600; color: var(--text-main); margin-top: 4px;">${escapeHtml(formatEtAl(record.preparedBy || '-'))}</div>
-          </td>
+          <td>${preparedByCellHtml}</td>
           <td>${formatDate(record.dateTransmitted)}</td>
           <td>${formatDate(record.regionalDateReceived)}</td>
           <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(formatEtAl(record.remarks || '-'))}</td>
@@ -1859,7 +1872,7 @@ function openRecordModal(id = null) {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         document.getElementById('prepared-by-trn').value = (record.preparedBy || '').toUpperCase();
         const progSelect = document.getElementById('transmittal-program-select');
-        if (progSelect) progSelect.value = (record.program || 'GIP').toUpperCase();
+        if (progSelect) progSelect.value = (record.program || '').toUpperCase();
         document.getElementById('date-transmitted').value = record.dateTransmitted || '';
         document.getElementById('regional-date-received-trn').value = record.regionalDateReceived || '';
         currentTransmittalImageUrl = record.imageUrl || null;
@@ -1875,7 +1888,7 @@ function openRecordModal(id = null) {
 
     document.getElementById('form-record-id').value = '';
     const progSelect = document.getElementById('transmittal-program-select');
-    if (progSelect) progSelect.value = 'GIP';
+    if (progSelect) progSelect.value = '';
     currentTransmittalImageUrl = null;
     updateTransmittalModalImagePreview();
   }
@@ -2083,16 +2096,12 @@ async function handleFormSubmit(e) {
     const particulars = formatEtAl(document.getElementById('particulars').value.trim().toUpperCase());
     const preparedBy = formatEtAl(document.getElementById('prepared-by-trn').value.trim().toUpperCase());
     const programSelect = document.getElementById('transmittal-program-select');
-    const program = programSelect ? programSelect.value.toUpperCase() : 'GIP';
+    const program = programSelect ? programSelect.value.toUpperCase() : '';
     const dateTransmitted = document.getElementById('date-transmitted').value;
     const regionalDateReceived = document.getElementById('regional-date-received-trn').value;
 
     if (!particulars) {
       showToast('PARTICULARS FIELD IS REQUIRED', 'danger');
-      return;
-    }
-    if (!preparedBy) {
-      showToast('PREPARED BY FIELD IS REQUIRED', 'danger');
       return;
     }
 
