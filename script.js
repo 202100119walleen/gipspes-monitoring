@@ -2974,6 +2974,20 @@ function formatEtAl(str) {
 }
 
 /**
+ * Strips all special characters EXCEPT allowed: (,) (:) (-) (.) letters, numbers, and spaces
+ */
+function sanitizeSpecialCharacters(text) {
+  if (!text) return '';
+  return String(text)
+    // Strip out all characters except A-Z, a-z, 0-9, Ñ, ñ, comma (,), colon (:), hyphen (-), period (.), and whitespace
+    .replace(/[^a-zA-Z0-9Ññ,\.:\-\s\r\n]/g, '')
+    // Collapse multiple colons to 1
+    .replace(/::+/g, ':')
+    // Collapse multiple spaces
+    .replace(/[ \t]+/g, ' ');
+}
+
+/**
  * Advanced Name & Word OCR Precision Corrector
  * Fixes OCR misread characters in names (e.g. E¢ AGBONA -> AGBONA, SOHAIY% M. -> SOHAIYA M., AMOUNTING TO:::::: -> AMOUNTING TO:)
  */
@@ -2981,55 +2995,58 @@ function cleanOcrNameAndWordText(text) {
   if (!text) return '';
   let str = String(text);
 
-  // 1. Fix multiple colons (e.g. TO:::::: 11,290.00 -> TO: 11,290.00)
+  // 1. Strip disallowed special characters except (,) (:) (-) (.)
+  str = sanitizeSpecialCharacters(str);
+
+  // 2. Fix multiple colons (e.g. TO:::::: 11,290.00 -> TO: 11,290.00)
   str = str.replace(/::+/g, ':');
   str = str.replace(/:\s*:\s*:+/g, ':');
   str = str.replace(/\bAMOUNTING\s*TO\s*[:\.\s]+/gi, 'AMOUNTING TO: ');
 
-  // 2. Fix lead OCR bullet/symbol artifacts before names (e.g. "OE MAMANGCONI" -> "MAMANGCONI", "EO AGBONA" -> "AGBONA")
+  // 3. Fix lead OCR bullet/symbol artifacts before names (e.g. "OE MAMANGCONI" -> "MAMANGCONI", "EO AGBONA" -> "AGBONA")
   str = str.replace(/^[~"'\*=\-+•>§«»#\$\&¢€£©®0-9\s]+/, '');
   str = str.replace(/\b(EO|OE|E0|0E|EC|CE|E¢|EQ|QE|E\.|O\.)\s+(?=[A-Z]{3,})/gi, '');
   str = str.replace(/^(EO|OE|E0|0E|EC|CE|E¢|EQ|QE|E|O|0|¢|©|®)\b\s*/gi, '');
   str = str.replace(/\b(EO|OE|E0|0E|EC|CE|E¢|EQ|QE)\b\s+(?=[A-Z]{3,})/gi, '');
 
-  // 3. Fix stray symbols in names & words
-  // % inside or at end of words (e.g. SOHAIY% -> SOHAIYA, SOHAIY% M. -> SOHAIYA M.)
+  // 4. Fix stray symbols in names & words
   str = str.replace(/([A-Z]{2,})%\b/gi, '$1A');
   str = str.replace(/([A-Z]+)%([A-Z]+)/gi, '$1A$2');
   str = str.replace(/\b%\s+([A-Z]\.)/gi, 'A. $1');
   str = str.replace(/%/g, '');
 
-  // 4. Fix 0 (zero) inside names (e.g. AMER0L -> AMEROL, ALF0RQUE -> ALFORQUE, R0DRIGUEZ -> RODRIGUEZ)
+  // 5. Fix 0 (zero) inside names (e.g. AMER0L -> AMEROL, ALF0RQUE -> ALFORQUE, R0DRIGUEZ -> RODRIGUEZ)
   str = str.replace(/\b([A-Z]+)0([A-Z]+)\b/gi, '$1O$2');
   str = str.replace(/\b0([A-Z]{2,})\b/gi, 'O$1');
   str = str.replace(/\b([A-Z]{2,})0\b/gi, '$1O');
 
-  // 5. Fix 1 (one) inside names (e.g. JUL1ANA -> JULIANA, M1CHAEL -> MICHAEL)
+  // 6. Fix 1 (one) inside names (e.g. JUL1ANA -> JULIANA, M1CHAEL -> MICHAEL)
   str = str.replace(/\b([A-Z]+)1([A-Z]+)\b/gi, '$1I$2');
 
-  // 6. Fix 5 (five) inside names (e.g. 5ANTOS -> SANTOS)
+  // 7. Fix 5 (five) inside names (e.g. 5ANTOS -> SANTOS)
   str = str.replace(/\b([A-Z]+)5([A-Z]+)\b/gi, '$1S$2');
 
-  // 7. Fix 4 (four) in place of A (e.g. JULI4NA -> JULIANA, C4BAÑOG -> CABAÑOG)
+  // 8. Fix 4 (four) in place of A (e.g. JULI4NA -> JULIANA, C4BAÑOG -> CABAÑOG)
   str = str.replace(/\b([A-Z]+)4([A-Z]+)\b/gi, '$1A$2');
 
-  // 8. Fix misread middle initials (e.g. B8 -> B., C8 -> C., M8 -> M.)
+  // 9. Fix misread middle initials (e.g. B8 -> B., C8 -> C., M8 -> M.)
   str = str.replace(/\b([A-Z])8\b/gi, '$1.');
 
-  // 9. Fix | or / inside names (e.g. JUL|ANA -> JULIANA, SUL|ANA -> SULIANA)
+  // 10. Fix | or / inside names (e.g. JUL|ANA -> JULIANA, SUL|ANA -> SULIANA)
   str = str.replace(/([A-Z])[\|\/]([A-Z])/gi, '$1I$2');
 
-  // 10. Fix middle initial formatting (e.g. "SOHAIYA M" at end of line -> "SOHAIYA M.")
+  // 11. Fix middle initial formatting (e.g. "SOHAIYA M" at end of line -> "SOHAIYA M.")
   str = str.replace(/,\s*([A-Z\s]+)\s+([A-Z])$/gi, ', $1 $2.');
   str = str.replace(/\b([A-Z])\s*$/gi, '$1.');
 
-  // 11. Fix stray quotes/brackets/double punctuation
+  // 12. Fix stray quotes/brackets/double punctuation
   str = str.replace(/\.\.+/g, '.');
   str = str.replace(/::+/g, ':');
   str = str.replace(/[,;]\s*[,;]/g, ',');
   str = str.replace(/\s+/g, ' ').trim();
 
-  return str;
+  // Final pass through sanitizer to guarantee zero forbidden special characters remain
+  return sanitizeSpecialCharacters(str);
 }
 
 /**
@@ -3255,6 +3272,34 @@ function initDragAndDropHandler() {
           processTransmittalImageFile(files[0]);
         }, 150);
       }
+    }
+  });
+
+  initPasteSanitizer();
+}
+
+/**
+ * Prevents pasting disallowed special characters into text fields in real-time
+ * Allows ONLY: comma (,), colon (:), hyphen (-), period (.), letters, numbers, and spaces
+ */
+function initPasteSanitizer() {
+  document.addEventListener('paste', (e) => {
+    const target = e.target;
+    if (!target || !(target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+    if (['date', 'month', 'file', 'password', 'hidden'].includes(target.type)) return;
+
+    e.preventDefault();
+    const rawPaste = (e.clipboardData || window.clipboardData).getData('text') || '';
+    const sanitized = sanitizeSpecialCharacters(rawPaste);
+
+    const start = target.selectionStart || 0;
+    const end = target.selectionEnd || 0;
+    const val = target.value || '';
+    target.value = val.substring(0, start) + sanitized + val.substring(end);
+    target.selectionStart = target.selectionEnd = start + sanitized.length;
+
+    if (target.id === 'particulars') {
+      handleParticularsLivePreview();
     }
   });
 }
