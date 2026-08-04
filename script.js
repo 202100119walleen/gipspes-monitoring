@@ -1856,7 +1856,20 @@ function openRecordModal(id = null) {
       if (isDtr) {
         document.getElementById('gip-name').value = (record.gipName || '').toUpperCase();
         document.getElementById('record-month').value = record.month || currentMonthStr;
-        document.getElementById('record-quincena').value = record.quincena || '1st Quincena (1-15)';
+        const qSelect = document.getElementById('record-quincena');
+        const recQuincena = (record.quincena || '').trim();
+        if (qSelect) {
+          const matchedOpt = Array.from(qSelect.options).find(opt => 
+            opt.value.trim().toUpperCase() === recQuincena.toUpperCase()
+          );
+          if (matchedOpt) {
+            qSelect.value = matchedOpt.value;
+          } else if (/2ND|16-31|16TH/i.test(recQuincena)) {
+            qSelect.value = '2nd Quincena (16-31)';
+          } else {
+            qSelect.value = '1st Quincena (1-15)';
+          }
+        }
         document.getElementById('dtr-ar-date-received').value = record.dtrArDateReceived || '';
       } else if (isContacts) {
         document.getElementById('contact-gip-name').value = (record.gipName || '').toUpperCase();
