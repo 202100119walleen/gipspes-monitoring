@@ -2953,14 +2953,17 @@ function cleanOcrNameAndWordText(text) {
   // 5. Fix 4 (four) in place of A (e.g. JULI4NA -> JULIANA, C4BAÑOG -> CABAÑOG)
   str = str.replace(/\b([A-Z]+)4([A-Z]+)\b/gi, '$1A$2');
 
-  // 6. Fix | or / inside names (e.g. JUL|ANA -> JULIANA, SUL|ANA -> SULIANA)
+  // 6. Fix misread middle initials (e.g. B8 -> B., C8 -> C., M8 -> M.)
+  str = str.replace(/\b([A-Z])8\b/gi, '$1.');
+
+  // 7. Fix | or / inside names (e.g. JUL|ANA -> JULIANA, SUL|ANA -> SULIANA)
   str = str.replace(/([A-Z])[\|\/]([A-Z])/gi, '$1I$2');
 
-  // 7. Fix middle initial formatting (e.g. "SOHAIYA M" at end of line -> "SOHAIYA M.")
+  // 8. Fix middle initial formatting (e.g. "SOHAIYA M" at end of line -> "SOHAIYA M.")
   str = str.replace(/,\s*([A-Z\s]+)\s+([A-Z])$/gi, ', $1 $2.');
   str = str.replace(/\b([A-Z])\s*$/gi, '$1.');
 
-  // 8. Fix stray quotes/brackets/double punctuation
+  // 9. Fix stray quotes/brackets/double punctuation
   str = str.replace(/\.\.+/g, '.');
   str = str.replace(/[,;]\s*[,;]/g, ',');
   str = str.replace(/\s+/g, ' ').trim();
@@ -2969,7 +2972,7 @@ function cleanOcrNameAndWordText(text) {
 }
 
 /**
- * Intelligently parses and cleans DOLE Transmittal OCR text into 100% accurate Particulars
+ * Intelligently parses, filters, and auto-corrects DOLE Transmittal OCR text into 100% clean Particulars
  */
 function parseTransmittalOcrText(rawText) {
   if (!rawText) return { particulars: '', preparedBy: '', dateTransmitted: '' };
@@ -2977,13 +2980,15 @@ function parseTransmittalOcrText(rawText) {
   // Phase 1: Fix common OCR character & spelling mistakes specific to DOLE Transmittals
   let cleanedRaw = String(rawText)
     .replace(/\b(DTR5|DTRS?[\s&\/]+ARS?|DTR\s*AND\s*AR|DTR\s*&\s*ARs?|DTRAAR|DTRGARS)\b/gi, 'DTR & AR')
-    .replace(/\b(QUINCEN[A4]|QU1NCENA|QUINCEMA|QUINCENAS)\b/gi, 'QUINCENA')
-    .replace(/\b(TRANSM1TTAL|TRANSMITLL|TRANSM1TAL|TRANSMITTALS)\b/gi, 'TRANSMITTAL')
-    .replace(/\b(AMOUNTNG|AMOUNTTNG|AMOUNTING\s*T0|AMOUNTING\s*TO:?)\b/gi, 'AMOUNTING TO:')
+    .replace(/\b(QUINCEN[A4]|QU1NCENA|QUINCEMA|QUINCENAS|QUICENA)\b/gi, 'QUINCENA')
+    .replace(/\b(TRANSM1TTAL|TRANSMITLL|TRANSM1TAL|TRANSMITTALS|TRANSMITL)\b/gi, 'TRANSMITTAL')
+    .replace(/\b(AMOUNTNG|AMOUNTTNG|AMOUNTING\s*T0|AMOUNTTING|AMOUNTING\s*TO:?)\b/gi, 'AMOUNTING TO:')
     .replace(/\b(BATC1|BATC\|\|?|BATC)\b/gi, 'BATCH')
+    .replace(/\b(ACCOMPLISHMNT|ACCOMPLISH)\b/gi, 'ACCOMPLISHMENT')
+    .replace(/\b(DISBURSEMNT)\b/gi, 'DISBURSEMENT')
     .replace(/\b(PARTICULAR|PARTICULARS:?)\b/gi, 'PARTICULARS:')
-    .replace(/\b(PREPARED\s+BY:?)\b/gi, 'PREPARED BY:')
-    .replace(/\b(REGION[A4]L\s+OFFICE|REG\s+OFFICE)\b/gi, 'REGIONAL OFFICE')
+    .replace(/\b(PREPARED\s+BY:?|PREPAREDBY:?)\b/gi, 'PREPARED BY:')
+    .replace(/\b(REGION[A4]L\s+OFFICE|REG\s+OFFICE|REGIONAL\s+OFF)\b/gi, 'REGIONAL OFFICE')
     .replace(/\b(L[A4]NAO\s+DEL\s+NORTE)\b/gi, 'LANAO DEL NORTE')
     .replace(/\b(LDNPF0|LDNPF1|LDN\s+PFO)\b/gi, 'LDNPFO')
     .replace(/\b(PES0|PESOS?)\b/gi, 'P.')
@@ -2998,6 +3003,7 @@ function parseTransmittalOcrText(rawText) {
   let extractedDate = '';
   let cleanedLines = [];
 
+  // Patterns for unnecessary document headers, footers, logos, page numbers, and stamp noise
   const ignorePatterns = [
     /^republic of the/i,
     /^department of labor/i,
@@ -3005,6 +3011,8 @@ function parseTransmittalOcrText(rawText) {
     /^lanao del norte/i,
     /^oredc building/i,
     /^http:\/\//i,
+    /^www\./i,
+    /^tel(efax)?\s*no/i,
     /^088\s*\d+/i,
     /^tssd\/c\/o/i,
     /^princess bael/i,
@@ -3012,8 +3020,16 @@ function parseTransmittalOcrText(rawText) {
     /^particulars$/i,
     /^responsibly$/i,
     /^no\.$/i,
+    /^sl\.?\s*no\.?/i,
+    /^item\s*no\.?/i,
+    /^name\s+of\s+gip/i,
+    /^name\s+of\s+beneficiary/i,
     /^amount of\s*insurance/i,
-    /^page\s+\d+/i
+    /^page\s+\d+/i,
+    /^received\s+by/i,
+    /^released\s+by/i,
+    /^signature/i,
+    /^date\s*&\s*time/i
   ];
 
   rawLines.forEach(line => {
@@ -3031,10 +3047,12 @@ function parseTransmittalOcrText(rawText) {
       if (parsedDate) extractedDate = parsedDate;
     }
 
-    // Filter out headers/footers/logos
+    // Filter out headers/footers/logos/stamps
     const isIgnored = ignorePatterns.some(pattern => pattern.test(line)) ||
       /^prepared\s+by/i.test(line) ||
-      /^date:/i.test(line);
+      /^date:/i.test(line) ||
+      /^[0-9\s\-]+$/.test(line) || // Discard lines containing only standalone numbers
+      /^[^a-zA-Z0-9]+$/.test(line); // Discard lines with no alphanumeric characters
 
     if (!isIgnored) {
       // Clean OCR bullet artifacts (e.g. 'E ', 'EO ', '~~ EO ', '"EO ', '* ', '> ')
