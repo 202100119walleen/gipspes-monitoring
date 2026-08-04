@@ -2925,6 +2925,50 @@ function formatEtAl(str) {
 }
 
 /**
+ * Advanced Name & Word OCR Precision Corrector
+ * Fixes OCR misread characters in names (e.g. SOHAIY% M. -> SOHAIYA M., ALF0RQUE -> ALFORQUE, JUL1ANA -> JULIANA)
+ */
+function cleanOcrNameAndWordText(text) {
+  if (!text) return '';
+  let str = String(text);
+
+  // 1. Fix stray symbols in names & words
+  // % inside or at end of words (e.g. SOHAIY% -> SOHAIYA, SOHAIY% M. -> SOHAIYA M.)
+  str = str.replace(/([A-Z]{2,})%\b/gi, '$1A');
+  str = str.replace(/([A-Z]+)%([A-Z]+)/gi, '$1A$2');
+  str = str.replace(/\b%\s+([A-Z]\.)/gi, 'A. $1');
+  str = str.replace(/%/g, '');
+
+  // 2. Fix 0 (zero) inside names (e.g. AMER0L -> AMEROL, ALF0RQUE -> ALFORQUE, R0DRIGUEZ -> RODRIGUEZ)
+  str = str.replace(/\b([A-Z]+)0([A-Z]+)\b/gi, '$1O$2');
+  str = str.replace(/\b0([A-Z]{2,})\b/gi, 'O$1');
+  str = str.replace(/\b([A-Z]{2,})0\b/gi, '$1O');
+
+  // 3. Fix 1 (one) inside names (e.g. JUL1ANA -> JULIANA, M1CHAEL -> MICHAEL)
+  str = str.replace(/\b([A-Z]+)1([A-Z]+)\b/gi, '$1I$2');
+
+  // 4. Fix 5 (five) inside names (e.g. 5ANTOS -> SANTOS)
+  str = str.replace(/\b([A-Z]+)5([A-Z]+)\b/gi, '$1S$2');
+
+  // 5. Fix 4 (four) in place of A (e.g. JULI4NA -> JULIANA, C4BAÑOG -> CABAÑOG)
+  str = str.replace(/\b([A-Z]+)4([A-Z]+)\b/gi, '$1A$2');
+
+  // 6. Fix | or / inside names (e.g. JUL|ANA -> JULIANA, SUL|ANA -> SULIANA)
+  str = str.replace(/([A-Z])[\|\/]([A-Z])/gi, '$1I$2');
+
+  // 7. Fix middle initial formatting (e.g. "SOHAIYA M" at end of line -> "SOHAIYA M.")
+  str = str.replace(/,\s*([A-Z\s]+)\s+([A-Z])$/gi, ', $1 $2.');
+  str = str.replace(/\b([A-Z])\s*$/gi, '$1.');
+
+  // 8. Fix stray quotes/brackets/double punctuation
+  str = str.replace(/\.\.+/g, '.');
+  str = str.replace(/[,;]\s*[,;]/g, ',');
+  str = str.replace(/\s+/g, ' ').trim();
+
+  return str;
+}
+
+/**
  * Intelligently parses and cleans DOLE Transmittal OCR text into 100% accurate Particulars
  */
 function parseTransmittalOcrText(rawText) {
@@ -2946,7 +2990,7 @@ function parseTransmittalOcrText(rawText) {
     .replace(/P,,/g, 'P.,')
     .replace(/DVAND\b/gi, 'DV AND')
     .replace(/([0-9]+)\s*,\s*([0-9]{2})\b/g, '$1.$2')
-    .replace(/[\|\{\}\[\]]/g, ' ');
+    .replace(/[\{\}\[\]]/g, ' ');
 
   const rawLines = cleanedRaw.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
@@ -2977,7 +3021,7 @@ function parseTransmittalOcrText(rawText) {
     const prepMatch = line.match(/prepared\s+by:?\s*([^\n\r\t:]+?)(?=\s*date:|$)/i);
     if (prepMatch && prepMatch[1]) {
       let name = prepMatch[1].replace(/[\/\\].*$/, '').trim();
-      if (name) extractedPreparedBy = formatEtAl(name.toUpperCase());
+      if (name) extractedPreparedBy = formatEtAl(cleanOcrNameAndWordText(name.toUpperCase()));
     }
 
     // Detect Date
@@ -2999,6 +3043,9 @@ function parseTransmittalOcrText(rawText) {
         .replace(/^(EO|E|O|0)\s+(?=[A-Z]{2,})/i, '')
         .replace(/\s*\/\s*$/, '')
         .trim();
+
+      // Run Name & Word OCR Precision Corrector
+      lineText = cleanOcrNameAndWordText(lineText);
 
       if (lineText && lineText.length > 2) {
         cleanedLines.push(lineText);
