@@ -1499,23 +1499,30 @@ function renderTable() {
   emptyState.style.display = 'none';
 
   tableBody.innerHTML = records.map(record => {
+    const searchQuery = appState.searchQuery ? appState.searchQuery.trim() : '';
+
     if (isDtr) {
       const quincenaLabel = (record.quincena || '1ST QUINCENA (1-15)').toUpperCase();
       const monthFormatted = formatMonth(record.month).toUpperCase();
       const isQ2 = String(quincenaLabel).includes('2ND');
       const qClass = isQ2 ? 'quincena-q2' : 'quincena-q1';
 
+      const gipNameFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.gipName)), searchQuery);
+      const periodLabelFormatted = highlightTextInHtml(escapeHtml(`${monthFormatted} - ${quincenaLabel}`), searchQuery);
+      const dateRecFormatted = highlightTextInHtml(escapeHtml(formatDate(record.dtrArDateReceived)), searchQuery);
+      const remarksFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.remarks || '-')), searchQuery);
+
       return `
         <tr>
-          <td style="font-weight: 600; font-size: 0.95rem;">${escapeHtml(formatEtAl(record.gipName))}</td>
+          <td style="font-weight: 600; font-size: 0.95rem;">${gipNameFormatted}</td>
           <td>
             <span class="quincena-pill ${qClass}">
               <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
-              ${monthFormatted} - ${escapeHtml(quincenaLabel)}
+              ${periodLabelFormatted}
             </span>
           </td>
-          <td>${formatDate(record.dtrArDateReceived)}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${escapeHtml(formatEtAl(record.remarks || '-'))}</td>
+          <td>${dateRecFormatted}</td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${remarksFormatted}</td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Record">
@@ -1529,29 +1536,37 @@ function renderTable() {
         </tr>
       `;
     } else {
-      const memoFormatted = formatParticularsMemoCard(formatEtAl(record.particulars), false, null, record.imageUrl);
+      const memoFormatted = formatParticularsMemoCard(formatEtAl(record.particulars), false, null, record.imageUrl, searchQuery);
       const programTag = (record.program || '').toUpperCase();
       let programCellHtml = '';
 
       if (programTag === 'GIP') {
-        programCellHtml = `<span class="program-badge badge-gip">GIP</span>`;
+        programCellHtml = `<span class="program-badge badge-gip">${highlightTextInHtml('GIP', searchQuery)}</span>`;
       } else if (programTag === 'SPES') {
-        programCellHtml = `<span class="program-badge badge-spes">SPES</span>`;
+        programCellHtml = `<span class="program-badge badge-spes">${highlightTextInHtml('SPES', searchQuery)}</span>`;
       } else if (programTag === 'TUPAD') {
-        programCellHtml = `<span class="program-badge badge-tupad">TUPAD</span>`;
+        programCellHtml = `<span class="program-badge badge-tupad">${highlightTextInHtml('TUPAD', searchQuery)}</span>`;
       } else if (programTag) {
-        programCellHtml = `<span class="program-badge badge-custom">${escapeHtml(programTag)}</span>`;
+        programCellHtml = `<span class="program-badge badge-custom">${highlightTextInHtml(escapeHtml(programTag), searchQuery)}</span>`;
       } else {
         programCellHtml = `<span style="color: var(--text-light); font-style: italic;">-</span>`;
       }
+
+      const dateTrnStr = formatDate(record.dateTransmitted);
+      const dateRegStr = formatDate(record.regionalDateReceived);
+      const remarksStr = escapeHtml(formatEtAl(record.remarks || '-'));
+
+      const highlightedDateTrn = highlightTextInHtml(dateTrnStr, searchQuery);
+      const highlightedDateReg = highlightTextInHtml(dateRegStr, searchQuery);
+      const highlightedRemarks = highlightTextInHtml(remarksStr, searchQuery);
 
       return `
         <tr>
           <td>${memoFormatted}</td>
           <td>${programCellHtml}</td>
-          <td>${formatDate(record.dateTransmitted)}</td>
-          <td>${formatDate(record.regionalDateReceived)}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(formatEtAl(record.remarks || '-'))}</td>
+          <td>${highlightedDateTrn}</td>
+          <td>${highlightedDateReg}</td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${highlightedRemarks}</td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Record">
@@ -1573,9 +1588,31 @@ function renderTable() {
 }
 
 /**
+ * Safely highlights matching search query terms inside HTML text while avoiding HTML tags
+ */
+function highlightTextInHtml(htmlText, query) {
+  if (!htmlText || !query || !query.trim()) return htmlText;
+  const terms = query.trim().split(/\s+/).filter(t => t.length > 0);
+  if (terms.length === 0) return htmlText;
+
+  // Build regex matching any of the search terms
+  const escapedTerms = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+
+  // Split HTML string into text nodes and HTML tags to prevent breaking tags
+  const parts = htmlText.split(/(<[^>]+>)/g);
+  return parts.map(part => {
+    if (part.startsWith('<') && part.endsWith('>')) {
+      return part; // Return HTML tag intact
+    }
+    return part.replace(regex, '<mark class="search-highlight">$1</mark>');
+  }).join('');
+}
+
+/**
  * Formats Transmittal Particulars into an Executive Document Card with Collapsible Dropdown
  */
-function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, imageUrl = null) {
+function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, imageUrl = null, highlightQuery = '') {
   if (!rawText || !rawText.trim()) {
     return `<span style="color: var(--text-light); font-style: italic;">NO PARTICULARS SPECIFIED</span>`;
   }
@@ -1612,6 +1649,10 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
     .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b|\bAMOUNTING TO:\s*[\d,\.]+\b)/gi,
       '<span class="inline-tag">$1</span>');
 
+  if (highlightQuery) {
+    htmlBody = highlightTextInHtml(htmlBody, highlightQuery);
+  }
+
   const totalLines = bodyLines.length + (titleHeader ? 1 : 0);
   const isCollapsible = !isPreview && totalLines > 3;
   const boxId = cardId || ('memo-card-' + Math.random().toString(36).substr(2, 9));
@@ -1619,10 +1660,14 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
   let html = `<div class="particulars-memo-box ${isCollapsible ? 'collapsible collapsed' : ''}" id="${boxId}">`;
 
   if (titleHeader) {
+    let titleHtml = escapeHtml(titleHeader);
+    if (highlightQuery) {
+      titleHtml = highlightTextInHtml(titleHtml, highlightQuery);
+    }
     html += `
       <div class="particulars-memo-title">
         <i data-lucide="file-text" style="width: 14px; height: 14px; color: var(--primary-blue); flex-shrink: 0;"></i>
-        <span>${escapeHtml(titleHeader)}</span>
+        <span>${titleHtml}</span>
       </div>
     `;
   }

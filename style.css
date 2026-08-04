@@ -1475,3 +1475,22 @@ textarea.form-control {
 .btn-fix-text:active {
   transform: translateY(0);
 }
+
+/* Search Query Highlight Badge */
+mark.search-highlight, .search-highlight {
+  background: #fef08a !important;
+  color: #854d0e !important;
+  font-weight: 800 !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 0 1.5px #eab308 !important;
+  display: inline-block !important;
+  line-height: 1.25 !important;
+}
+
+body.dark-mode mark.search-highlight, body.dark-mode .search-highlight {
+  background: rgba(234, 179, 8, 0.4) !important;
+  color: #fef08a !important;
+  border: 1px solid rgba(250, 204, 21, 0.7) !important;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.3) !important;
+}
