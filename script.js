@@ -2926,45 +2926,56 @@ function formatEtAl(str) {
 
 /**
  * Advanced Name & Word OCR Precision Corrector
- * Fixes OCR misread characters in names (e.g. SOHAIY% M. -> SOHAIYA M., ALF0RQUE -> ALFORQUE, JUL1ANA -> JULIANA)
+ * Fixes OCR misread characters in names (e.g. E¢ AGBONA -> AGBONA, SOHAIY% M. -> SOHAIYA M., AMOUNTING TO:::::: -> AMOUNTING TO:)
  */
 function cleanOcrNameAndWordText(text) {
   if (!text) return '';
   let str = String(text);
 
-  // 1. Fix stray symbols in names & words
+  // 1. Fix multiple colons (e.g. TO:::::: 11,290.00 -> TO: 11,290.00)
+  str = str.replace(/::+/g, ':');
+  str = str.replace(/:\s*:\s*:+/g, ':');
+  str = str.replace(/\bAMOUNTING\s*TO\s*[:\.\s]+/gi, 'AMOUNTING TO: ');
+
+  // 2. Fix lead OCR bullet/symbol artifacts before names (e.g. "E¢ AGBONA" -> "AGBONA", "E¢ " -> "")
+  str = str.replace(/^[~"'\*=\-+•>§«»#\$\&¢€£©®0-9\s]+/, '');
+  str = str.replace(/^(EO|E¢|E|O|0|¢|©|®)\s+(?=[A-Z]{3,})/i, '');
+  str = str.replace(/\b(EO|E¢|E|O|0|¢|©|®)\s+(?=[A-Z]{3,},\s*[A-Z]{3,})/gi, '');
+
+  // 3. Fix stray symbols in names & words
   // % inside or at end of words (e.g. SOHAIY% -> SOHAIYA, SOHAIY% M. -> SOHAIYA M.)
   str = str.replace(/([A-Z]{2,})%\b/gi, '$1A');
   str = str.replace(/([A-Z]+)%([A-Z]+)/gi, '$1A$2');
   str = str.replace(/\b%\s+([A-Z]\.)/gi, 'A. $1');
   str = str.replace(/%/g, '');
 
-  // 2. Fix 0 (zero) inside names (e.g. AMER0L -> AMEROL, ALF0RQUE -> ALFORQUE, R0DRIGUEZ -> RODRIGUEZ)
+  // 4. Fix 0 (zero) inside names (e.g. AMER0L -> AMEROL, ALF0RQUE -> ALFORQUE, R0DRIGUEZ -> RODRIGUEZ)
   str = str.replace(/\b([A-Z]+)0([A-Z]+)\b/gi, '$1O$2');
   str = str.replace(/\b0([A-Z]{2,})\b/gi, 'O$1');
   str = str.replace(/\b([A-Z]{2,})0\b/gi, '$1O');
 
-  // 3. Fix 1 (one) inside names (e.g. JUL1ANA -> JULIANA, M1CHAEL -> MICHAEL)
+  // 5. Fix 1 (one) inside names (e.g. JUL1ANA -> JULIANA, M1CHAEL -> MICHAEL)
   str = str.replace(/\b([A-Z]+)1([A-Z]+)\b/gi, '$1I$2');
 
-  // 4. Fix 5 (five) inside names (e.g. 5ANTOS -> SANTOS)
+  // 6. Fix 5 (five) inside names (e.g. 5ANTOS -> SANTOS)
   str = str.replace(/\b([A-Z]+)5([A-Z]+)\b/gi, '$1S$2');
 
-  // 5. Fix 4 (four) in place of A (e.g. JULI4NA -> JULIANA, C4BAÑOG -> CABAÑOG)
+  // 7. Fix 4 (four) in place of A (e.g. JULI4NA -> JULIANA, C4BAÑOG -> CABAÑOG)
   str = str.replace(/\b([A-Z]+)4([A-Z]+)\b/gi, '$1A$2');
 
-  // 6. Fix misread middle initials (e.g. B8 -> B., C8 -> C., M8 -> M.)
+  // 8. Fix misread middle initials (e.g. B8 -> B., C8 -> C., M8 -> M.)
   str = str.replace(/\b([A-Z])8\b/gi, '$1.');
 
-  // 7. Fix | or / inside names (e.g. JUL|ANA -> JULIANA, SUL|ANA -> SULIANA)
+  // 9. Fix | or / inside names (e.g. JUL|ANA -> JULIANA, SUL|ANA -> SULIANA)
   str = str.replace(/([A-Z])[\|\/]([A-Z])/gi, '$1I$2');
 
-  // 8. Fix middle initial formatting (e.g. "SOHAIYA M" at end of line -> "SOHAIYA M.")
+  // 10. Fix middle initial formatting (e.g. "SOHAIYA M" at end of line -> "SOHAIYA M.")
   str = str.replace(/,\s*([A-Z\s]+)\s+([A-Z])$/gi, ', $1 $2.');
   str = str.replace(/\b([A-Z])\s*$/gi, '$1.');
 
-  // 9. Fix stray quotes/brackets/double punctuation
+  // 11. Fix stray quotes/brackets/double punctuation
   str = str.replace(/\.\.+/g, '.');
+  str = str.replace(/::+/g, ':');
   str = str.replace(/[,;]\s*[,;]/g, ',');
   str = str.replace(/\s+/g, ' ').trim();
 
@@ -2979,10 +2990,12 @@ function parseTransmittalOcrText(rawText) {
 
   // Phase 1: Fix common OCR character & spelling mistakes specific to DOLE Transmittals
   let cleanedRaw = String(rawText)
+    .replace(/::+/g, ':')
+    .replace(/:\s*:\s*:+/g, ':')
     .replace(/\b(DTR5|DTRS?[\s&\/]+ARS?|DTR\s*AND\s*AR|DTR\s*&\s*ARs?|DTRAAR|DTRGARS)\b/gi, 'DTR & AR')
     .replace(/\b(QUINCEN[A4]|QU1NCENA|QUINCEMA|QUINCENAS|QUICENA)\b/gi, 'QUINCENA')
     .replace(/\b(TRANSM1TTAL|TRANSMITLL|TRANSM1TAL|TRANSMITTALS|TRANSMITL)\b/gi, 'TRANSMITTAL')
-    .replace(/\b(AMOUNTNG|AMOUNTTNG|AMOUNTING\s*T0|AMOUNTTING|AMOUNTING\s*TO:?)\b/gi, 'AMOUNTING TO:')
+    .replace(/\b(AMOUNTNG|AMOUNTTNG|AMOUNTING\s*T0|AMOUNTTING|AMOUNTING\s*TO[:\.\s]*)\b/gi, 'AMOUNTING TO: ')
     .replace(/\b(BATC1|BATC\|\|?|BATC)\b/gi, 'BATCH')
     .replace(/\b(ACCOMPLISHMNT|ACCOMPLISH)\b/gi, 'ACCOMPLISHMENT')
     .replace(/\b(DISBURSEMNT)\b/gi, 'DISBURSEMENT')
