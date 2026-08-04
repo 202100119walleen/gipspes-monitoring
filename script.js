@@ -3332,30 +3332,50 @@ function initDragAndDropHandler() {
   initPasteSanitizer();
 }
 
+let isPasteSanitizerInitialized = false;
+
 /**
  * Prevents pasting disallowed special characters into text fields in real-time
  * Allows ONLY: comma (,), colon (:), hyphen (-), period (.), letters, numbers, and spaces
+ * Guarantees single initialization and prevents text doubling on paste
  */
 function initPasteSanitizer() {
+  if (isPasteSanitizerInitialized) return;
+  isPasteSanitizerInitialized = true;
+
   document.addEventListener('paste', (e) => {
     const target = e.target;
     if (!target || !(target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
     if (['date', 'month', 'file', 'password', 'hidden'].includes(target.type)) return;
 
     e.preventDefault();
+    e.stopImmediatePropagation();
+
     const rawPaste = (e.clipboardData || window.clipboardData).getData('text') || '';
     const sanitized = sanitizeSpecialCharacters(rawPaste);
 
-    const start = target.selectionStart || 0;
-    const end = target.selectionEnd || 0;
+    let start = 0;
+    let end = 0;
+    try {
+      start = target.selectionStart !== null ? target.selectionStart : target.value.length;
+      end = target.selectionEnd !== null ? target.selectionEnd : target.value.length;
+    } catch (err) {
+      start = end = (target.value || '').length;
+    }
+
     const val = target.value || '';
-    target.value = val.substring(0, start) + sanitized + val.substring(end);
-    target.selectionStart = target.selectionEnd = start + sanitized.length;
+    const newValue = val.substring(0, start) + sanitized + val.substring(end);
+    target.value = newValue;
+
+    const newCursorPos = start + sanitized.length;
+    try {
+      target.selectionStart = target.selectionEnd = newCursorPos;
+    } catch (err) {}
 
     if (target.id === 'particulars') {
       handleParticularsLivePreview();
     }
-  });
+  }, true);
 }
 
 let isOcrScanningActive = false;
