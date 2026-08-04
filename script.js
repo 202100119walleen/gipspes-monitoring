@@ -415,9 +415,28 @@ async function fetchRecordsFromSupabase() {
       .select('*')
       .order('gip_name', { ascending: true });
 
+    // Smart Merge Helper: Preserves local records if not yet in Supabase or if updated locally
+    const mergeData = (cloudList, localList) => {
+      if (!cloudList || cloudList.length === 0) return localList || [];
+      if (!localList || localList.length === 0) return cloudList;
+      const map = new Map();
+      cloudList.forEach(r => map.set(r.id, r));
+      localList.forEach(r => {
+        if (!map.has(r.id)) {
+          map.set(r.id, r);
+        } else {
+          const cloudItem = map.get(r.id);
+          const cloudTime = new Date(cloudItem.updatedAt || cloudItem.createdAt || 0).getTime();
+          const localTime = new Date(r.updatedAt || r.createdAt || 0).getTime();
+          if (localTime > cloudTime) map.set(r.id, r);
+        }
+      });
+      return Array.from(map.values());
+    };
+
     // 1. Process DTR Records
-    if (dtrData && dtrData.length > 0) {
-      appState.data.dtrRecords = dtrData.map(r => ({
+    if (dtrData) {
+      const formattedCloudDtr = dtrData.map(r => ({
         id: r.id,
         gipName: formatEtAl(r.gip_name),
         month: r.month,
@@ -427,55 +446,28 @@ async function fetchRecordsFromSupabase() {
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
-    } else {
-      if (!appState.data.dtrRecords || appState.data.dtrRecords.length === 0) {
-        appState.data.dtrRecords = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA.dtrRecords));
-      }
-      const dtrPayload = appState.data.dtrRecords.map(r => ({
-        id: r.id,
-        gip_name: r.gipName,
-        month: r.month,
-        quincena: r.quincena,
-        dtr_ar_date_received: r.dtrArDateReceived,
-        remarks: r.remarks,
-        created_at: r.createdAt || new Date().toISOString(),
-        updated_at: r.updatedAt || new Date().toISOString()
-      }));
-      await supabaseClient.from('gip_dtr_ar_records').upsert(dtrPayload);
+      appState.data.dtrRecords = mergeData(formattedCloudDtr, appState.data.dtrRecords);
     }
 
-    // 2. Process Transmittal Records
-    if (trnData && trnData.length > 0) {
-      appState.data.transmittalRecords = trnData.map(r => ({
+    // 2. Process Transmittal Records (with image_url mapping)
+    if (trnData) {
+      const formattedCloudTrn = trnData.map(r => ({
         id: r.id,
         particulars: formatEtAl(r.particulars),
         preparedBy: formatEtAl(r.prepared_by),
         dateTransmitted: r.date_transmitted,
         regionalDateReceived: r.regional_date_received,
+        imageUrl: r.image_url || r.imageUrl || null,
         remarks: formatEtAl(r.remarks),
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
-    } else {
-      if (!appState.data.transmittalRecords || appState.data.transmittalRecords.length === 0) {
-        appState.data.transmittalRecords = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA.transmittalRecords));
-      }
-      const trnPayload = appState.data.transmittalRecords.map(r => ({
-        id: r.id,
-        particulars: r.particulars,
-        prepared_by: r.preparedBy,
-        date_transmitted: r.dateTransmitted,
-        regional_date_received: r.regionalDateReceived,
-        remarks: r.remarks,
-        created_at: r.createdAt || new Date().toISOString(),
-        updated_at: r.updatedAt || new Date().toISOString()
-      }));
-      await supabaseClient.from('transmittal_records').upsert(trnPayload);
+      appState.data.transmittalRecords = mergeData(formattedCloudTrn, appState.data.transmittalRecords);
     }
 
     // 3. Process Contacts Records
-    if (cntData && cntData.length > 0) {
-      appState.data.contactsRecords = cntData.map(r => ({
+    if (cntData) {
+      const formattedCloudCnt = cntData.map(r => ({
         id: r.id,
         gipName: formatEtAl(r.gip_name),
         assignment: (r.assignment || '').toUpperCase(),
@@ -484,20 +476,7 @@ async function fetchRecordsFromSupabase() {
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
-    } else {
-      if (!appState.data.contactsRecords || appState.data.contactsRecords.length === 0) {
-        appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
-      }
-      const cntPayload = appState.data.contactsRecords.map(r => ({
-        id: r.id,
-        gip_name: r.gipName,
-        assignment: r.assignment || 'LDNPFO',
-        contact_number: r.contactNumber,
-        remarks: r.remarks || '',
-        created_at: r.createdAt || new Date().toISOString(),
-        updated_at: r.updatedAt || new Date().toISOString()
-      }));
-      await supabaseClient.from('gip_contacts').upsert(cntPayload);
+      appState.data.contactsRecords = mergeData(formattedCloudCnt, appState.data.contactsRecords);
     }
 
     // 4. Process Recycled Records
@@ -512,19 +491,15 @@ async function fetchRecordsFromSupabase() {
     }
 
     // 5. Process Salary Records
-    if (salData && salData.length > 0) {
-      appState.data.salaryRecords = salData.map(r => ({
+    if (salData) {
+      const formattedCloudSal = salData.map(r => ({
         id: r.id,
         gipName: formatEtAl(r.gip_name),
         periods: r.periods || {},
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
-    } else {
-      if (!appState.data.salaryRecords || appState.data.salaryRecords.length === 0) {
-        appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
-      }
-      await pushLocalSalaryToSupabase();
+      appState.data.salaryRecords = mergeData(formattedCloudSal, appState.data.salaryRecords);
     }
 
     purgeExpiredRecycledRecords();
