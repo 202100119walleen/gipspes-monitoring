@@ -2958,14 +2958,14 @@ function escapeHtml(str) {
 }
 
 /**
- * Formats any variation of "ET AL", "ETAL", "ET AL.,", "ETAL.", "et al.", etc.
+ * Formats any variation of "ET.AL", "ETAL", "ET AL", "ET. AL.", "ET AL.,", "ET-AL", etc.
  * into "et al." (lowercase with dot), while keeping all surrounding text in CAPSLOCK and preserving line breaks.
  */
 function formatEtAl(str) {
   if (!str) return '';
-  let text = String(str).toUpperCase();
+  let text = String(str);
   return text
-    .replace(/\b(ET\s*AL|ETAL)[\.,\s]*/gi, ' et al.')
+    .replace(/\bET[\.\s\-]*AL[\.,\s]*/gi, 'et al. ')
     .replace(/[ \t]+/g, ' ')
     .split(/\r?\n/)
     .map(line => line.trim())
@@ -3039,7 +3039,10 @@ function cleanOcrNameAndWordText(text) {
   str = str.replace(/,\s*([A-Z\s]+)\s+([A-Z])$/gi, ', $1 $2.');
   str = str.replace(/\b([A-Z])\s*$/gi, '$1.');
 
-  // 12. Fix stray quotes/brackets/double punctuation
+  // 12. Auto-format ET.AL, ETAL, ET AL, ET-AL to "et al."
+  str = formatEtAl(str);
+
+  // 13. Fix stray quotes/brackets/double punctuation
   str = str.replace(/\.\.+/g, '.');
   str = str.replace(/::+/g, ':');
   str = str.replace(/[,;]\s*[,;]/g, ',');
