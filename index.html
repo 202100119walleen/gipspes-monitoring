@@ -308,29 +308,53 @@
 
           <!-- Fields for Transmittal Module -->
           <div id="fields-transmittal" class="module-fields" style="display: none;">
-            <!-- OCR Image Upload Scanner Box -->
-            <div class="ocr-scan-card" id="ocr-scan-zone">
+            <!-- Drag & Drop Transmittal Photo Upload & OCR Scanner Card -->
+            <div class="ocr-scan-card transmittal-dropzone" id="ocr-scan-zone">
               <div
-                style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <i data-lucide="scan-line" style="width: 20px; height: 20px; color: var(--brand-accent);"></i>
+                style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand-accent); flex-shrink: 0;">
+                    <i data-lucide="upload-cloud" style="width: 22px; height: 22px;"></i>
+                  </div>
                   <div>
-                    <span style="font-weight: 600; font-size: 0.85rem; color: var(--text-main);">Auto-Extract from
-                      Transmittal Photo / Scan (OCR)</span>
-                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1px;">Upload a photo or scan of
-                      your transmittal letter to convert image text into Particulars automatically.</p>
+                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Drag &amp; Drop Transmittal Picture / Auto-OCR Scan</span>
+                    <p style="font-size: 0.775rem; color: var(--text-muted); margin-top: 2px;">
+                      Drag &amp; drop an image here or click upload. Auto-attaches document photo and extracts text into Particulars.
+                    </p>
                   </div>
                 </div>
                 <label for="transmittal-ocr-file" class="btn btn-secondary btn-icon"
-                  style="font-size: 0.8rem; cursor: pointer; white-space: nowrap;">
-                  <i data-lucide="upload-cloud"></i> Upload Transmittal Image
+                  style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: var(--brand-accent); color: var(--brand-accent);">
+                  <i data-lucide="image-plus"></i> Select / Drop Image
                 </label>
                 <input type="file" id="transmittal-ocr-file" accept="image/*" style="display: none;">
               </div>
+
+              <!-- OCR Scanning Progress Banner -->
               <div id="ocr-status-box"
-                style="display: none; margin-top: 10px; padding: 8px 12px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--brand-accent); font-weight: 600; align-items: center; gap: 8px;">
-                <i data-lucide="loader-2" class="spin-icon" style="width: 14px; height: 14px;"></i>
-                <span id="ocr-status-text">Scanning image & extracting text... 0%</span>
+                style="display: none; margin-top: 12px; padding: 10px 14px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-sm); font-size: 0.825rem; color: var(--brand-accent); font-weight: 600; align-items: center; gap: 10px;">
+                <i data-lucide="loader-2" class="spin-icon" style="width: 16px; height: 16px;"></i>
+                <span id="ocr-status-text">Uploading image &amp; scanning text... 0%</span>
+              </div>
+
+              <!-- Uploaded Attachment Preview Box (Preserves Original Image Aspect Ratio) -->
+              <div id="transmittal-image-preview-container" style="display: none; margin-top: 14px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-medium); border-radius: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <span style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> TRANSMITTAL IMAGE ATTACHED
+                  </span>
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" id="btn-view-modal-image" style="padding: 4px 10px; font-size: 0.75rem;">
+                      <i data-lucide="maximize-2" style="width: 12px; height: 12px;"></i> Full Screen
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btn-remove-modal-image" style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
+                      <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Remove
+                    </button>
+                  </div>
+                </div>
+                <div style="text-align: center; background: #0f172a; border-radius: 6px; padding: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; max-height: 240px;">
+                  <img id="transmittal-modal-img-preview" src="" alt="Transmittal Preview" style="max-height: 220px; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">
+                </div>
               </div>
             </div>
 
@@ -706,6 +730,32 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- High-Resolution Image Lightbox Modal -->
+  <div class="modal-backdrop" id="image-lightbox-modal" style="z-index: 1200; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
+    <div class="modal-container" style="max-width: 90vw; width: 900px; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+      <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 14px 20px;">
+        <h2 style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 1rem;" id="lightbox-modal-title">
+          <i data-lucide="image" style="width: 20px; height: 20px; color: var(--brand-accent);"></i> Transmittal Document Attachment
+        </h2>
+        <button class="modal-close" id="lightbox-modal-close" style="color: #94a3b8;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px; text-align: center; background: #090d16; min-height: 300px; max-height: 75vh; overflow: auto; display: flex; justify-content: center; align-items: center;">
+        <img id="lightbox-modal-img" src="" alt="Full Attachment" style="max-width: 100%; max-height: 70vh; height: auto; width: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+      </div>
+      <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; justify-content: space-between;">
+        <span style="font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="info" style="width: 14px; height: 14px;"></i> Original image aspect ratio preserved
+        </span>
+        <div style="display: flex; gap: 10px;">
+          <a id="lightbox-modal-download-btn" href="#" download="Transmittal_Document.png" class="btn btn-primary" style="font-size: 0.85rem; text-decoration: none;">
+            <i data-lucide="download"></i> Download Image
+          </a>
+          <button type="button" class="btn btn-secondary" id="lightbox-modal-close-btn" style="font-size: 0.85rem;">Close</button>
+        </div>
+      </div>
     </div>
   </div>
 

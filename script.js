@@ -725,8 +725,8 @@ function bindEvents() {
     });
   });
 
-  // Transmittal OCR Image Scanner Handler
-  initOCRHandler();
+  // Transmittal Drag & Drop Upload & OCR Scanner Handler
+  initDragAndDropHandler();
 
   // Header Action Buttons
   document.getElementById('btn-add-record').addEventListener('click', () => openRecordModal());
@@ -778,6 +778,28 @@ function bindEvents() {
     });
   }
 
+  // Transmittal Image Attachment & Lightbox Listeners
+  const btnRemoveImg = document.getElementById('btn-remove-modal-image');
+  if (btnRemoveImg) btnRemoveImg.addEventListener('click', removeTransmittalModalImage);
+
+  const btnViewImg = document.getElementById('btn-view-modal-image');
+  if (btnViewImg) btnViewImg.addEventListener('click', viewTransmittalModalImage);
+
+  const lightboxCloseBtn = document.getElementById('lightbox-modal-close');
+  if (lightboxCloseBtn) lightboxCloseBtn.addEventListener('click', closeImageLightbox);
+
+  const lightboxCloseBtn2 = document.getElementById('lightbox-modal-close-btn');
+  if (lightboxCloseBtn2) lightboxCloseBtn2.addEventListener('click', closeImageLightbox);
+
+  const lightboxModal = document.getElementById('image-lightbox-modal');
+  if (lightboxModal) {
+    lightboxModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeImageLightbox();
+    });
+  }
+
+  initDragAndDropHandler();
+
   const chkTrn = document.getElementById('export-chk-trn');
   if (chkTrn) chkTrn.addEventListener('change', updateExportAuthVisibility);
 
@@ -819,6 +841,7 @@ let authenticatedModules = {
   contacts: false
 };
 let pendingTabName = null;
+let currentTransmittalImageUrl = null;
 
 function openAuthModal(targetTab) {
   pendingTabName = targetTab;
@@ -1526,7 +1549,7 @@ function renderTable() {
         </tr>
       `;
     } else {
-      const memoFormatted = formatParticularsMemoCard(formatEtAl(record.particulars));
+      const memoFormatted = formatParticularsMemoCard(formatEtAl(record.particulars), false, null, record.imageUrl);
       return `
         <tr>
           <td>${memoFormatted}</td>
@@ -1557,7 +1580,7 @@ function renderTable() {
 /**
  * Formats Transmittal Particulars into an Executive Document Card with Collapsible Dropdown
  */
-function formatParticularsMemoCard(rawText, isPreview = false, cardId = null) {
+function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, imageUrl = null) {
   if (!rawText || !rawText.trim()) {
     return `<span style="color: var(--text-light); font-style: italic;">NO PARTICULARS SPECIFIED</span>`;
   }
@@ -1610,6 +1633,18 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null) {
   }
 
   html += `<div class="particulars-memo-body">${htmlBody}</div>`;
+
+  // Render Attached Document Picture formatted to preserve exact aspect ratio
+  if (imageUrl) {
+    html += `
+      <div class="transmittal-img-thumbnail-card" onclick="openImageLightbox('${escapeHtml(imageUrl)}', 'TRANSMITTAL ATTACHED DOCUMENT PHOTO')" title="Click to view full screen picture">
+        <img src="${escapeHtml(imageUrl)}" alt="Transmittal Attachment Document" style="max-height: 140px; width: 100%; object-fit: contain; border-radius: 4px;" />
+        <div class="img-badge">
+          <i data-lucide="maximize-2" style="width: 11px; height: 11px;"></i> CLICK FOR FULL PHOTO
+        </div>
+      </div>
+    `;
+  }
 
   if (isCollapsible) {
     html += `
@@ -1843,6 +1878,8 @@ function openRecordModal(id = null) {
         document.getElementById('prepared-by-trn').value = (record.preparedBy || '').toUpperCase();
         document.getElementById('date-transmitted').value = record.dateTransmitted || '';
         document.getElementById('regional-date-received-trn').value = record.regionalDateReceived || '';
+        currentTransmittalImageUrl = record.imageUrl || null;
+        updateTransmittalModalImagePreview();
         handleParticularsLivePreview();
       }
     }
@@ -1853,6 +1890,8 @@ function openRecordModal(id = null) {
     else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
 
     document.getElementById('form-record-id').value = '';
+    currentTransmittalImageUrl = null;
+    updateTransmittalModalImagePreview();
   }
 
   document.getElementById('record-modal').classList.add('active');
@@ -2074,6 +2113,7 @@ async function handleFormSubmit(e) {
       preparedBy,
       dateTransmitted,
       regionalDateReceived,
+      imageUrl: currentTransmittalImageUrl || null,
       remarks,
       updatedAt: nowISO
     };
@@ -2091,6 +2131,7 @@ async function handleFormSubmit(e) {
           prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
           regional_date_received: regionalDateReceived,
+          image_url: payload.imageUrl,
           remarks,
           updated_at: nowISO
         });
@@ -2110,6 +2151,7 @@ async function handleFormSubmit(e) {
           prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
           regional_date_received: regionalDateReceived,
+          image_url: payload.imageUrl,
           remarks,
           created_at: nowISO,
           updated_at: nowISO
@@ -3001,79 +3043,238 @@ function parseOcrDateToYYYYMMDD(dateStr) {
 /**
  * Initialize Transmittal OCR Image Reader using Tesseract.js
  */
-function initOCRHandler() {
+/**
+ * Initialize Drag & Drop and File Selection Handlers for Transmittal Image Upload
+ */
+function initDragAndDropHandler() {
+  const dropzone = document.getElementById('ocr-scan-zone');
   const fileInput = document.getElementById('transmittal-ocr-file');
-  if (!fileInput) return;
 
-  fileInput.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  if (dropzone) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('drag-over');
+      }, false);
+    });
 
-    const statusBox = document.getElementById('ocr-status-box');
-    const statusText = document.getElementById('ocr-status-text');
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('drag-over');
+      }, false);
+    });
 
-    try {
-      statusBox.style.display = 'flex';
-      statusText.textContent = 'Initializing OCR engine...';
-
-      if (!window.Tesseract) {
-        throw new Error('OCR library is loading, please try again in a moment');
+    dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      if (files && files.length > 0) {
+        processTransmittalImageFile(files[0]);
       }
+    });
+  }
 
-      showToast('SCANNING TRANSMITTAL IMAGE...', 'info');
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      const files = e.target.files;
+      if (files && files.length > 0) {
+        processTransmittalImageFile(files[0]);
+      }
+    });
+  }
 
-      const result = await Tesseract.recognize(file, 'eng', {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            const pct = Math.round((m.progress || 0) * 100);
-            statusText.textContent = `Scanning image & extracting text... ${pct}%`;
-          } else if (m.status) {
-            statusText.textContent = `${m.status.toUpperCase()}...`;
-          }
+  // Global window drop listener for Transmittal tab
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => {
+    if (appState.activeTab === 'transmittal') {
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0 && files[0].type.startsWith('image/')) {
+        e.preventDefault();
+        const recordModal = document.getElementById('record-modal');
+        if (!recordModal.classList.contains('active')) {
+          openRecordModal();
         }
-      });
-
-      const rawExtracted = (result && result.data && result.data.text) ? result.data.text.trim() : '';
-
-      if (!rawExtracted) {
-        showToast('NO CLEAR TEXT WAS FOUND IN IMAGE', 'warning');
-        statusBox.style.display = 'none';
-        return;
+        setTimeout(() => {
+          processTransmittalImageFile(files[0]);
+        }, 150);
       }
-
-      const parsed = parseTransmittalOcrText(rawExtracted);
-      const textarea = document.getElementById('particulars');
-      const prepInput = document.getElementById('prepared-by-trn');
-      const dateInput = document.getElementById('date-transmitted');
-
-      if (parsed.particulars) {
-        if (textarea.value.trim()) {
-          textarea.value = textarea.value.trim() + '\n\n' + parsed.particulars;
-        } else {
-          textarea.value = parsed.particulars;
-        }
-      }
-
-      if (parsed.preparedBy && prepInput) {
-        prepInput.value = parsed.preparedBy;
-      }
-
-      if (parsed.dateTransmitted && dateInput) {
-        dateInput.value = parsed.dateTransmitted;
-      }
-
-      handleParticularsLivePreview();
-      statusBox.style.display = 'none';
-      showToast('PARTICULARS EXTRACTED FROM TRANSMITTAL IMAGE SUCCESSFULLY!', 'success');
-
-    } catch (err) {
-      console.error('OCR Error:', err);
-      statusBox.style.display = 'none';
-      showToast('OCR SCAN FAILED: ' + err.message.toUpperCase(), 'danger');
-    } finally {
-      fileInput.value = '';
     }
   });
+}
+
+function processTransmittalImageFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    showToast('PLEASE UPLOAD A VALID IMAGE FILE (PNG, JPG, WEBP)', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const rawDataUrl = e.target.result;
+    
+    // Scale and compress image preserving exact format and aspect ratio
+    const optimizedDataUrl = await compressImagePreservingFormat(rawDataUrl, 1600, 0.88);
+    currentTransmittalImageUrl = optimizedDataUrl;
+    updateTransmittalModalImagePreview();
+
+    // Auto-trigger OCR scanning
+    scanTransmittalImageOCR(file);
+  };
+  reader.readAsDataURL(file);
+}
+
+function compressImagePreservingFormat(dataUrl, maxDimension = 1600, quality = 0.88) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+function updateTransmittalModalImagePreview() {
+  const container = document.getElementById('transmittal-image-preview-container');
+  const img = document.getElementById('transmittal-modal-img-preview');
+  if (!container || !img) return;
+
+  if (currentTransmittalImageUrl) {
+    img.src = currentTransmittalImageUrl;
+    container.style.display = 'block';
+  } else {
+    img.src = '';
+    container.style.display = 'none';
+  }
+}
+
+function removeTransmittalModalImage() {
+  currentTransmittalImageUrl = null;
+  updateTransmittalModalImagePreview();
+  const fileInput = document.getElementById('transmittal-ocr-file');
+  if (fileInput) fileInput.value = '';
+  showToast('TRANSMITTAL ATTACHMENT REMOVED', 'info');
+}
+
+function viewTransmittalModalImage() {
+  if (currentTransmittalImageUrl) {
+    openImageLightbox(currentTransmittalImageUrl, 'TRANSMITTAL DOCUMENT ATTACHMENT');
+  }
+}
+
+function openImageLightbox(imageUrl, titleText = 'TRANSMITTAL DOCUMENT ATTACHMENT') {
+  if (!imageUrl) return;
+  const modal = document.getElementById('image-lightbox-modal');
+  const img = document.getElementById('lightbox-modal-img');
+  const title = document.getElementById('lightbox-modal-title');
+  const downloadBtn = document.getElementById('lightbox-modal-download-btn');
+
+  if (!modal || !img) return;
+
+  img.src = imageUrl;
+  if (title) {
+    title.innerHTML = `<i data-lucide="image" style="width: 20px; height: 20px; color: var(--brand-accent);"></i> ${escapeHtml(titleText).toUpperCase()}`;
+  }
+  if (downloadBtn) {
+    downloadBtn.href = imageUrl;
+  }
+
+  modal.classList.add('active');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeImageLightbox() {
+  const modal = document.getElementById('image-lightbox-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+/**
+ * Executes Tesseract.js OCR scan on provided image file
+ */
+async function scanTransmittalImageOCR(file) {
+  const statusBox = document.getElementById('ocr-status-box');
+  const statusText = document.getElementById('ocr-status-text');
+
+  try {
+    statusBox.style.display = 'flex';
+    statusText.textContent = 'Initializing OCR engine...';
+
+    if (!window.Tesseract) {
+      throw new Error('OCR engine library loading...');
+    }
+
+    showToast('SCANNING & EXTRACTING TRANSMITTAL PHOTO...', 'info');
+
+    const result = await Tesseract.recognize(file, 'eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round((m.progress || 0) * 100);
+          statusText.textContent = `Scanning image & extracting text... ${pct}%`;
+        } else if (m.status) {
+          statusText.textContent = `${m.status.toUpperCase()}...`;
+        }
+      }
+    });
+
+    const rawExtracted = (result && result.data && result.data.text) ? result.data.text.trim() : '';
+
+    if (!rawExtracted) {
+      showToast('IMAGE ATTACHED! (NO CLEAR TEXT FOUND FOR OCR)', 'info');
+      statusBox.style.display = 'none';
+      return;
+    }
+
+    const parsed = parseTransmittalOcrText(rawExtracted);
+    const textarea = document.getElementById('particulars');
+    const prepInput = document.getElementById('prepared-by-trn');
+    const dateInput = document.getElementById('date-transmitted');
+
+    if (parsed.particulars) {
+      if (textarea.value.trim()) {
+        textarea.value = textarea.value.trim() + '\n\n' + parsed.particulars;
+      } else {
+        textarea.value = parsed.particulars;
+      }
+    }
+
+    if (parsed.preparedBy && prepInput && !prepInput.value) {
+      prepInput.value = parsed.preparedBy;
+    }
+
+    if (parsed.dateTransmitted && dateInput && !dateInput.value) {
+      dateInput.value = parsed.dateTransmitted;
+    }
+
+    handleParticularsLivePreview();
+    statusBox.style.display = 'none';
+    showToast('TRANSMITTAL PHOTO ATTACHED & PARTICULARS EXTRACTED!', 'success');
+
+  } catch (err) {
+    console.error('OCR Error:', err);
+    statusBox.style.display = 'none';
+    showToast('IMAGE ATTACHED SUCCESSFULLY!', 'success');
+  }
 }
 
 /**

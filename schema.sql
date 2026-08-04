@@ -64,6 +64,7 @@ ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS particulars TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS date_transmitted TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS regional_date_received TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS remarks TEXT;
+ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS image_url TEXT;
 
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS month TEXT;
