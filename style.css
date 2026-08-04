@@ -1504,3 +1504,192 @@ body.dark-mode mark.search-highlight, body.dark-mode .search-highlight {
   border: 1px solid rgba(250, 204, 21, 0.7) !important;
   box-shadow: 0 0 8px rgba(250, 204, 21, 0.3) !important;
 }
+
+/* ==========================================================================
+   Comprehensive Mobile & All-Device Responsive Stylesheet Optimization
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  /* Mobile Sidebar Drawer */
+  .app-sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    z-index: 1000 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0) !important;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    backdrop-filter: blur(4px) !important;
+    z-index: 999 !important;
+  }
+
+  .sidebar-overlay.mobile-open {
+    display: block !important;
+  }
+
+  /* Main workspace padding adjustments */
+  .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 16px 14px !important;
+    gap: 16px !important;
+  }
+
+  /* Top Bar Header */
+  .main-top-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: var(--primary-navy) !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 8px 14px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2) !important;
+    cursor: pointer !important;
+  }
+
+  #btn-add-record {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* Stats overview grid */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .stat-card {
+    padding: 12px !important;
+  }
+
+  .stat-label {
+    font-size: 0.7rem !important;
+  }
+
+  .stat-value {
+    font-size: 1.2rem !important;
+  }
+
+  /* Filter Toolbar Grid */
+  .toolbar-card {
+    padding: 12px !important;
+  }
+
+  .toolbar-grid {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .search-box {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .search-box input {
+    height: 44px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .toolbar-actions {
+    width: 100% !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .toolbar-actions .btn,
+  .toolbar-actions select,
+  .toolbar-actions .form-control {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 42px !important;
+  }
+
+  /* Data Table Responsiveness */
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .data-table {
+    min-width: 650px !important;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 10px 12px !important;
+    font-size: 0.825rem !important;
+  }
+
+  /* Modal Dialog Responsiveness */
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 10px auto !important;
+    padding: 20px 16px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+  }
+
+  .form-grid,
+  .form-row {
+    grid-template-columns: 1fr !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse !important;
+    gap: 10px !important;
+  }
+
+  .modal-footer .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    height: 44px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-title-group h2 {
+    font-size: 1.15rem !important;
+  }
+
+  .page-title-group p {
+    font-size: 0.75rem !important;
+  }
+}
