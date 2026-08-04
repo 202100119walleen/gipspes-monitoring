@@ -3440,6 +3440,40 @@ async function scanTransmittalImageOCR(file) {
 }
 
 /**
+ * 1-Click FIX Button Handler: Auto-corrects all character errors, names, and document formatting in Particulars field
+ */
+function autoFixParticularsField() {
+  const textarea = document.getElementById('particulars');
+  if (!textarea) return;
+
+  const currentText = textarea.value;
+  if (!currentText || !currentText.trim()) {
+    showToast('PLEASE ENTER OR EXTRACT TEXT IN PARTICULARS FIRST', 'warning');
+    return;
+  }
+
+  // Run Master OCR Auto-Correction & Cleaning Engine
+  const parsed = parseTransmittalOcrText(currentText);
+
+  if (parsed.particulars) {
+    textarea.value = parsed.particulars;
+  }
+
+  const prepInput = document.getElementById('prepared-by-trn');
+  if (parsed.preparedBy && prepInput && !prepInput.value.trim()) {
+    prepInput.value = parsed.preparedBy;
+  }
+
+  if (parsed.dateTransmitted) {
+    const dateInput = document.getElementById('date-transmitted');
+    if (dateInput && !dateInput.value) dateInput.value = parsed.dateTransmitted;
+  }
+
+  handleParticularsLivePreview();
+  showToast('PARTICULARS TEXT AUTO-FIXED & CLEANED SUCCESSFULLY!', 'success');
+}
+
+/**
  * 1-Click Toggle Salary Status (Received <-> Pending)
  */
 async function toggleSalaryStatus(recordId, periodKey) {
