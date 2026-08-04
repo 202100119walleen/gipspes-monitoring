@@ -740,6 +740,10 @@ function bindEvents() {
   document.getElementById('delete-modal-close').addEventListener('click', closeDeleteModal);
   document.getElementById('delete-cancel-btn').addEventListener('click', closeDeleteModal);
   document.getElementById('delete-confirm-btn').addEventListener('click', confirmDeleteRecord);
+  const deleteForm = document.getElementById('delete-form');
+  if (deleteForm) {
+    deleteForm.addEventListener('submit', confirmDeleteRecord);
+  }
 
   // Modal Backdrop Click to Close
   document.getElementById('record-modal').addEventListener('click', (e) => {
@@ -864,16 +868,16 @@ function handleAuthSubmit(e) {
  * Switch Active View Tab
  */
 function switchTab(tabName) {
-  // Password Protection for Recycle Bin ('trash') and GIP Contacts ('contacts')
-  if ((tabName === 'trash' || tabName === 'contacts') && !authenticatedModules[tabName]) {
+  // Password Protection for Recycle Bin ('trash')
+  if (tabName === 'trash' && !authenticatedModules.trash) {
     openAuthModal(tabName);
     return;
   }
 
   // Reset authentication when leaving a protected tab so it requires password again on return
   if (appState.activeTab !== tabName) {
-    if (appState.activeTab === 'trash' || appState.activeTab === 'contacts') {
-      authenticatedModules[appState.activeTab] = false;
+    if (appState.activeTab === 'trash') {
+      authenticatedModules.trash = false;
     }
   }
 
@@ -2148,17 +2152,48 @@ function openDeleteModal(id) {
   else summary = `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
 
   document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
+  
+  const pwdInput = document.getElementById('delete-password-input');
+  if (pwdInput) {
+    pwdInput.value = '';
+    pwdInput.style.borderColor = '';
+  }
+
   document.getElementById('delete-modal').classList.add('active');
+  setTimeout(() => {
+    if (pwdInput) pwdInput.focus();
+  }, 100);
 }
 
 function closeDeleteModal() {
   document.getElementById('delete-modal').classList.remove('active');
   appState.deletingRecordId = null;
+  const pwdInput = document.getElementById('delete-password-input');
+  if (pwdInput) {
+    pwdInput.value = '';
+    pwdInput.style.borderColor = '';
+  }
 }
 
-async function confirmDeleteRecord() {
+async function confirmDeleteRecord(e) {
+  if (e && e.preventDefault) e.preventDefault();
   const id = appState.deletingRecordId;
   if (!id) return;
+
+  const pwdInput = document.getElementById('delete-password-input');
+  const password = pwdInput ? pwdInput.value.trim() : '';
+
+  if (password !== SYSTEM_MODULE_PASSWORD) {
+    showToast('INCORRECT PASSWORD! DELETION CANCELLED.', 'danger');
+    if (pwdInput) {
+      pwdInput.style.borderColor = '#ef4444';
+      pwdInput.select();
+      setTimeout(() => {
+        pwdInput.style.borderColor = '';
+      }, 2000);
+    }
+    return;
+  }
 
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
@@ -2363,6 +2398,13 @@ async function restoreRecord(trashId) {
 async function deletePermanently(trashId) {
   if (!appState.data.recycledRecords) return;
 
+  const pwd = prompt('SECURITY PASSWORD REQUIRED TO PERMANENTLY DELETE THIS RECORD:\nEnter Password:');
+  if (pwd === null) return;
+  if (pwd.trim() !== SYSTEM_MODULE_PASSWORD) {
+    showToast('INCORRECT PASSWORD! PERMANENT DELETION CANCELLED.', 'danger');
+    return;
+  }
+
   appState.data.recycledRecords = appState.data.recycledRecords.filter(r => r.id !== trashId);
   if (isSupabaseConnected && supabaseClient) {
     await supabaseClient.from('recycled_records').delete().eq('id', trashId);
@@ -2379,6 +2421,13 @@ async function deletePermanently(trashId) {
 async function handleEmptyTrash() {
   if (!appState.data.recycledRecords || appState.data.recycledRecords.length === 0) {
     showToast('RECYCLE BIN IS ALREADY EMPTY', 'info');
+    return;
+  }
+
+  const pwd = prompt('SECURITY PASSWORD REQUIRED TO PERMANENTLY EMPTY RECYCLE BIN:\nEnter Password:');
+  if (pwd === null) return;
+  if (pwd.trim() !== SYSTEM_MODULE_PASSWORD) {
+    showToast('INCORRECT PASSWORD! EMPTY RECYCLE BIN CANCELLED.', 'danger');
     return;
   }
 
@@ -2464,7 +2513,6 @@ function closeExcelExportModal() {
 
 function updateExportAuthVisibility() {
   const chkTrn = document.getElementById('export-chk-trn');
-  const chkCnt = document.getElementById('export-chk-cnt');
   const chkTrash = document.getElementById('export-chk-trash');
   const authContainer = document.getElementById('export-auth-container');
   const trnFilterBox = document.getElementById('export-trn-filter-box');
@@ -2473,11 +2521,10 @@ function updateExportAuthVisibility() {
     trnFilterBox.style.display = chkTrn && chkTrn.checked ? 'block' : 'none';
   }
 
-  const requiresCntAuth = chkCnt && chkCnt.checked && !authenticatedModules.contacts;
   const requiresTrashAuth = chkTrash && chkTrash.checked && !authenticatedModules.trash;
 
   if (authContainer) {
-    if (requiresCntAuth || requiresTrashAuth) {
+    if (requiresTrashAuth) {
       authContainer.style.display = 'block';
     } else {
       authContainer.style.display = 'none';
@@ -2490,20 +2537,19 @@ function handleExcelExportFormSubmit(e) {
 
   const chkDtr = document.getElementById('export-chk-dtr')?.checked;
   const chkTrn = document.getElementById('export-chk-trn')?.checked;
-  const chkSalary = document.getElementById('export-chk-salary')?.checked;
   const chkCnt = document.getElementById('export-chk-cnt')?.checked;
+  const chkSalary = document.getElementById('export-chk-salary')?.checked;
   const chkTrash = document.getElementById('export-chk-trash')?.checked;
 
-  if (!chkDtr && !chkTrn && !chkSalary && !chkCnt && !chkTrash) {
+  if (!chkDtr && !chkTrn && !chkCnt && !chkSalary && !chkTrash) {
     showToast('PLEASE SELECT AT LEAST ONE SHEET TO EXPORT', 'warning');
     return;
   }
 
-  // Verify password if protected sheets are selected and not authenticated
-  const requiresCntAuth = chkCnt && !authenticatedModules.contacts;
+  // Verify password if protected sheets (Trash) are selected and not authenticated
   const requiresTrashAuth = chkTrash && !authenticatedModules.trash;
 
-  if (requiresCntAuth || requiresTrashAuth) {
+  if (requiresTrashAuth) {
     const pwdInput = document.getElementById('export-password-input');
     const pwd = pwdInput ? pwdInput.value.trim() : '';
 
@@ -2517,7 +2563,6 @@ function handleExcelExportFormSubmit(e) {
       return;
     }
 
-    if (chkCnt) authenticatedModules.contacts = true;
     if (chkTrash) authenticatedModules.trash = true;
   }
 
