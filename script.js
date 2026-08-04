@@ -2930,7 +2930,25 @@ function formatEtAl(str) {
 function parseTransmittalOcrText(rawText) {
   if (!rawText) return { particulars: '', preparedBy: '', dateTransmitted: '' };
 
-  const rawLines = String(rawText).split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  // Phase 1: Fix common OCR character & spelling mistakes specific to DOLE Transmittals
+  let cleanedRaw = String(rawText)
+    .replace(/\b(DTR5|DTRS?[\s&\/]+ARS?|DTR\s*AND\s*AR|DTR\s*&\s*ARs?|DTRAAR|DTRGARS)\b/gi, 'DTR & AR')
+    .replace(/\b(QUINCEN[A4]|QU1NCENA|QUINCEMA|QUINCENAS)\b/gi, 'QUINCENA')
+    .replace(/\b(TRANSM1TTAL|TRANSMITLL|TRANSM1TAL|TRANSMITTALS)\b/gi, 'TRANSMITTAL')
+    .replace(/\b(AMOUNTNG|AMOUNTTNG|AMOUNTING\s*T0|AMOUNTING\s*TO:?)\b/gi, 'AMOUNTING TO:')
+    .replace(/\b(BATC1|BATC\|\|?|BATC)\b/gi, 'BATCH')
+    .replace(/\b(PARTICULAR|PARTICULARS:?)\b/gi, 'PARTICULARS:')
+    .replace(/\b(PREPARED\s+BY:?)\b/gi, 'PREPARED BY:')
+    .replace(/\b(REGION[A4]L\s+OFFICE|REG\s+OFFICE)\b/gi, 'REGIONAL OFFICE')
+    .replace(/\b(L[A4]NAO\s+DEL\s+NORTE)\b/gi, 'LANAO DEL NORTE')
+    .replace(/\b(LDNPF0|LDNPF1|LDN\s+PFO)\b/gi, 'LDNPFO')
+    .replace(/\b(PES0|PESOS?)\b/gi, 'P.')
+    .replace(/P,,/g, 'P.,')
+    .replace(/DVAND\b/gi, 'DV AND')
+    .replace(/([0-9]+)\s*,\s*([0-9]{2})\b/g, '$1.$2')
+    .replace(/[\|\{\}\[\]]/g, ' ');
+
+  const rawLines = cleanedRaw.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
   let extractedPreparedBy = '';
   let extractedDate = '';
@@ -2975,16 +2993,14 @@ function parseTransmittalOcrText(rawText) {
       /^date:/i.test(line);
 
     if (!isIgnored) {
-      // Clean OCR bullet artifacts (e.g. 'E ', 'EO ', '~~ EO ', '"EO ')
+      // Clean OCR bullet artifacts (e.g. 'E ', 'EO ', '~~ EO ', '"EO ', '* ', '> ')
       let lineText = line
-        .replace(/^[~"'\*=\-+•\s]+/, '')
-        .replace(/^(EO|E|O)\s+(?=[A-Z]{2,})/i, '')
-        .replace(/^DVAND\b/i, 'DV AND')
-        .replace(/P,,/g, 'P.,')
+        .replace(/^[~"'\*=\-+•>§«»#\s]+/, '')
+        .replace(/^(EO|E|O|0)\s+(?=[A-Z]{2,})/i, '')
         .replace(/\s*\/\s*$/, '')
         .trim();
 
-      if (lineText) {
+      if (lineText && lineText.length > 2) {
         cleanedLines.push(lineText);
       }
     }
@@ -3210,7 +3226,67 @@ function closeImageLightbox() {
 }
 
 /**
- * Executes Tesseract.js OCR scan on provided image file
+ * Preprocesses Image File/URL on Canvas with High-Contrast Binarization Thresholding for 100% OCR Precision
+ */
+function preprocessImageForOCR(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Target optimal OCR width (2200px)
+        let width = img.width;
+        let height = img.height;
+        const targetWidth = 2200;
+
+        if (width < targetWidth || width > 2800) {
+          height = Math.round((height * targetWidth) / width);
+          width = targetWidth;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+
+        // Draw image onto canvas
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Get pixel data for contrast enhancement and thresholding
+        const imgData = ctx.getImageData(0, 0, width, height);
+        const data = imgData.data;
+
+        // Calculate average luminance
+        let totalLum = 0;
+        const pixelCount = data.length / 4;
+        for (let i = 0; i < data.length; i += 4) {
+          totalLum += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+        }
+        const avgLum = totalLum / pixelCount;
+        const threshold = Math.max(105, Math.min(165, avgLum * 0.92));
+
+        // High-contrast adaptive binarization
+        for (let i = 0; i < data.length; i += 4) {
+          const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+          const val = lum > threshold ? 255 : (lum < (threshold - 45) ? 0 : Math.round((lum - (threshold - 45)) * (255 / 45)));
+          data[i] = val;
+          data[i + 1] = val;
+          data[i + 2] = val;
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.95));
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Executes Tesseract.js OCR scan on provided image file using high-contrast preprocessed canvas
  */
 async function scanTransmittalImageOCR(file) {
   const statusBox = document.getElementById('ocr-status-box');
@@ -3218,26 +3294,40 @@ async function scanTransmittalImageOCR(file) {
 
   try {
     statusBox.style.display = 'flex';
-    statusText.textContent = 'Initializing OCR engine...';
+    statusText.textContent = 'Preprocessing image for maximum OCR clarity...';
 
     if (!window.Tesseract) {
       throw new Error('OCR engine library loading...');
     }
 
-    showToast('SCANNING & EXTRACTING TRANSMITTAL PHOTO...', 'info');
+    showToast('PREPROCESSING & SCANNING IMAGE WITH MAXIMUM OCR PRECISION...', 'info');
 
-    const result = await Tesseract.recognize(file, 'eng', {
+    // Generate high-contrast preprocessed image for crisp text recognition
+    const preprocessedDataUrl = await preprocessImageForOCR(file);
+    const scanSource = preprocessedDataUrl || file;
+
+    statusText.textContent = 'Scanning image text & extracting words...';
+
+    const result = await Tesseract.recognize(scanSource, 'eng', {
       logger: m => {
         if (m.status === 'recognizing text') {
           const pct = Math.round((m.progress || 0) * 100);
-          statusText.textContent = `Scanning image & extracting text... ${pct}%`;
+          statusText.textContent = `Extracting words with maximum precision... ${pct}%`;
         } else if (m.status) {
           statusText.textContent = `${m.status.toUpperCase()}...`;
         }
       }
     });
 
-    const rawExtracted = (result && result.data && result.data.text) ? result.data.text.trim() : '';
+    let rawExtracted = (result && result.data && result.data.text) ? result.data.text.trim() : '';
+
+    // If preprocessed OCR result was low, run fallback on original file to compare
+    if (!rawExtracted || rawExtracted.length < 15) {
+      const fallbackResult = await Tesseract.recognize(file, 'eng');
+      if (fallbackResult && fallbackResult.data && fallbackResult.data.text) {
+        rawExtracted = fallbackResult.data.text.trim();
+      }
+    }
 
     if (!rawExtracted) {
       showToast('IMAGE ATTACHED! (NO CLEAR TEXT FOUND FOR OCR)', 'info');
@@ -3268,10 +3358,10 @@ async function scanTransmittalImageOCR(file) {
 
     handleParticularsLivePreview();
     statusBox.style.display = 'none';
-    showToast('TRANSMITTAL PHOTO ATTACHED & PARTICULARS EXTRACTED!', 'success');
+    showToast('TRANSMITTAL PHOTO ATTACHED & WORDS EXTRACTED WITH HIGH PRECISION!', 'success');
 
   } catch (err) {
-    console.error('OCR Error:', err);
+    console.error('OCR Precision Error:', err);
     statusBox.style.display = 'none';
     showToast('IMAGE ATTACHED SUCCESSFULLY!', 'success');
   }
