@@ -420,15 +420,17 @@ async function fetchRecordsFromSupabase() {
       if (!cloudList || cloudList.length === 0) return localList || [];
       if (!localList || localList.length === 0) return cloudList;
       const map = new Map();
-      cloudList.forEach(r => map.set(r.id, r));
-      localList.forEach(r => {
+      // Put local list in map first so local edits and newly added records are prioritized
+      localList.forEach(r => map.set(r.id, r));
+      // Merge cloud list entries, updating only if cloud record timestamp is newer
+      cloudList.forEach(r => {
         if (!map.has(r.id)) {
           map.set(r.id, r);
         } else {
-          const cloudItem = map.get(r.id);
-          const cloudTime = new Date(cloudItem.updatedAt || cloudItem.createdAt || 0).getTime();
-          const localTime = new Date(r.updatedAt || r.createdAt || 0).getTime();
-          if (localTime > cloudTime) map.set(r.id, r);
+          const localItem = map.get(r.id);
+          const cloudTime = new Date(r.updatedAt || r.createdAt || 0).getTime();
+          const localTime = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
+          if (cloudTime > localTime) map.set(r.id, r);
         }
       });
       return Array.from(map.values());
