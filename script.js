@@ -2986,10 +2986,11 @@ function cleanOcrNameAndWordText(text) {
   str = str.replace(/:\s*:\s*:+/g, ':');
   str = str.replace(/\bAMOUNTING\s*TO\s*[:\.\s]+/gi, 'AMOUNTING TO: ');
 
-  // 2. Fix lead OCR bullet/symbol artifacts before names (e.g. "E¢ AGBONA" -> "AGBONA", "E¢ " -> "")
+  // 2. Fix lead OCR bullet/symbol artifacts before names (e.g. "OE MAMANGCONI" -> "MAMANGCONI", "EO AGBONA" -> "AGBONA")
   str = str.replace(/^[~"'\*=\-+•>§«»#\$\&¢€£©®0-9\s]+/, '');
-  str = str.replace(/^(EO|E¢|E|O|0|¢|©|®)\s+(?=[A-Z]{3,})/i, '');
-  str = str.replace(/\b(EO|E¢|E|O|0|¢|©|®)\s+(?=[A-Z]{3,},\s*[A-Z]{3,})/gi, '');
+  str = str.replace(/\b(EO|OE|E0|0E|EC|CE|E¢|EQ|QE|E\.|O\.)\s+(?=[A-Z]{3,})/gi, '');
+  str = str.replace(/^(EO|OE|E0|0E|EC|CE|E¢|EQ|QE|E|O|0|¢|©|®)\b\s*/gi, '');
+  str = str.replace(/\b(EO|OE|E0|0E|EC|CE|E¢|EQ|QE)\b\s+(?=[A-Z]{3,})/gi, '');
 
   // 3. Fix stray symbols in names & words
   // % inside or at end of words (e.g. SOHAIY% -> SOHAIYA, SOHAIY% M. -> SOHAIYA M.)
@@ -3117,10 +3118,11 @@ function parseTransmittalOcrText(rawText) {
       /^[^a-zA-Z0-9]+$/.test(line); // Discard lines with no alphanumeric characters
 
     if (!isIgnored) {
-      // Clean OCR bullet artifacts (e.g. 'E ', 'EO ', '~~ EO ', '"EO ', '* ', '> ')
+      // Clean OCR bullet artifacts (e.g. 'EO ', 'OE ', 'E¢ ', 'E0 ', '0E ', 'EC ', 'CE ', 'EQ ', 'QE ')
       let lineText = line
         .replace(/^[~"'\*=\-+•>§«»#\s]+/, '')
-        .replace(/^(EO|E|O|0)\s+(?=[A-Z]{2,})/i, '')
+        .replace(/\b(EO|OE|E0|0E|EC|CE|E¢|EQ|QE)\b\s*/gi, '')
+        .replace(/^(EO|OE|E0|0E|EC|CE|E|O|0)\s+(?=[A-Z]{2,})/i, '')
         .replace(/\s*\/\s*$/, '')
         .trim();
 
