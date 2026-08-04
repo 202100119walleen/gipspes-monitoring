@@ -536,11 +536,13 @@ async function pushLocalDataToSupabase() {
     if (appState.data.transmittalRecords && appState.data.transmittalRecords.length > 0) {
       const trnPayload = appState.data.transmittalRecords.map(r => ({
         id: r.id,
+        program: r.program || '',
         particulars: r.particulars,
-        prepared_by: r.preparedBy,
-        date_transmitted: r.dateTransmitted,
-        regional_date_received: r.regionalDateReceived,
-        remarks: r.remarks,
+        prepared_by: r.preparedBy || '',
+        date_transmitted: r.dateTransmitted || '',
+        regional_date_received: r.regionalDateReceived || '',
+        image_url: r.imageUrl || null,
+        remarks: r.remarks || '',
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
@@ -2155,16 +2157,17 @@ async function handleFormSubmit(e) {
       if (index !== -1) {
         appState.data.transmittalRecords[index] = { ...appState.data.transmittalRecords[index], ...payload };
       }
+      saveToLocalStorage();
 
       if (isSupabaseConnected && supabaseClient) {
         const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
           id: recordId,
-          program,
+          program: program || '',
           particulars,
-          date_transmitted: dateTransmitted,
-          regional_date_received: regionalDateReceived,
-          image_url: payload.imageUrl,
-          remarks,
+          date_transmitted: dateTransmitted || '',
+          regional_date_received: regionalDateReceived || '',
+          image_url: payload.imageUrl || null,
+          remarks: remarks || '',
           updated_at: nowISO
         });
         if (sbErr) console.warn('Supabase update note:', sbErr.message);
@@ -2175,16 +2178,17 @@ async function handleFormSubmit(e) {
       const newId = 'trn-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
       appState.data.transmittalRecords.unshift(newRecord);
+      saveToLocalStorage();
 
       if (isSupabaseConnected && supabaseClient) {
         const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
           id: newId,
-          program,
+          program: program || '',
           particulars,
-          date_transmitted: dateTransmitted,
-          regional_date_received: regionalDateReceived,
-          image_url: payload.imageUrl,
-          remarks,
+          date_transmitted: dateTransmitted || '',
+          regional_date_received: regionalDateReceived || '',
+          image_url: payload.imageUrl || null,
+          remarks: remarks || '',
           created_at: nowISO,
           updated_at: nowISO
         });
