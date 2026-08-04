@@ -449,10 +449,11 @@ async function fetchRecordsFromSupabase() {
       appState.data.dtrRecords = mergeData(formattedCloudDtr, appState.data.dtrRecords);
     }
 
-    // 2. Process Transmittal Records (with image_url mapping)
+    // 2. Process Transmittal Records (with image_url & program mapping)
     if (trnData) {
       const formattedCloudTrn = trnData.map(r => ({
         id: r.id,
+        program: (r.program || 'GIP').toUpperCase(),
         particulars: formatEtAl(r.particulars),
         preparedBy: formatEtAl(r.prepared_by),
         dateTransmitted: r.date_transmitted,
@@ -1525,10 +1526,16 @@ function renderTable() {
       `;
     } else {
       const memoFormatted = formatParticularsMemoCard(formatEtAl(record.particulars), false, null, record.imageUrl);
+      const programTag = (record.program || 'GIP').toUpperCase();
+      const badgeClass = programTag === 'SPES' ? 'badge-spes' : (programTag === 'TUPAD' ? 'badge-tupad' : 'badge-gip');
+
       return `
         <tr>
           <td>${memoFormatted}</td>
-          <td><span style="font-weight: 600; color: var(--text-main);">${escapeHtml(formatEtAl(record.preparedBy || '-'))}</span></td>
+          <td>
+            <span class="program-badge ${badgeClass}">${escapeHtml(programTag)}</span>
+            <div style="font-weight: 600; color: var(--text-main); margin-top: 4px;">${escapeHtml(formatEtAl(record.preparedBy || '-'))}</div>
+          </td>
           <td>${formatDate(record.dateTransmitted)}</td>
           <td>${formatDate(record.regionalDateReceived)}</td>
           <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(formatEtAl(record.remarks || '-'))}</td>
@@ -1851,6 +1858,8 @@ function openRecordModal(id = null) {
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         document.getElementById('prepared-by-trn').value = (record.preparedBy || '').toUpperCase();
+        const progSelect = document.getElementById('transmittal-program-select');
+        if (progSelect) progSelect.value = (record.program || 'GIP').toUpperCase();
         document.getElementById('date-transmitted').value = record.dateTransmitted || '';
         document.getElementById('regional-date-received-trn').value = record.regionalDateReceived || '';
         currentTransmittalImageUrl = record.imageUrl || null;
@@ -1865,6 +1874,8 @@ function openRecordModal(id = null) {
     else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
 
     document.getElementById('form-record-id').value = '';
+    const progSelect = document.getElementById('transmittal-program-select');
+    if (progSelect) progSelect.value = 'GIP';
     currentTransmittalImageUrl = null;
     updateTransmittalModalImagePreview();
   }
@@ -2071,6 +2082,8 @@ async function handleFormSubmit(e) {
   } else {
     const particulars = formatEtAl(document.getElementById('particulars').value.trim().toUpperCase());
     const preparedBy = formatEtAl(document.getElementById('prepared-by-trn').value.trim().toUpperCase());
+    const programSelect = document.getElementById('transmittal-program-select');
+    const program = programSelect ? programSelect.value.toUpperCase() : 'GIP';
     const dateTransmitted = document.getElementById('date-transmitted').value;
     const regionalDateReceived = document.getElementById('regional-date-received-trn').value;
 
@@ -2084,6 +2097,7 @@ async function handleFormSubmit(e) {
     }
 
     const payload = {
+      program,
       particulars,
       preparedBy,
       dateTransmitted,
@@ -2102,6 +2116,7 @@ async function handleFormSubmit(e) {
       if (isSupabaseConnected && supabaseClient) {
         const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
           id: recordId,
+          program,
           particulars,
           prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
@@ -2122,6 +2137,7 @@ async function handleFormSubmit(e) {
       if (isSupabaseConnected && supabaseClient) {
         const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
           id: newId,
+          program,
           particulars,
           prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
