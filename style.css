@@ -1383,3 +1383,28 @@ textarea.form-control {
   gap: 4px;
   border: 1px solid rgba(56, 189, 248, 0.3);
 }
+
+/* Small Button to Show Uploaded Image */
+.btn-show-attached-img {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1px solid #7dd3fc;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-show-attached-img:hover {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
+}

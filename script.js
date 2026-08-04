@@ -1634,14 +1634,14 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
 
   html += `<div class="particulars-memo-body">${htmlBody}</div>`;
 
-  // Render Attached Document Picture formatted to preserve exact aspect ratio
+  // Small Button for Attached Document Picture (hidden inline by default)
   if (imageUrl) {
     html += `
-      <div class="transmittal-img-thumbnail-card" onclick="openImageLightbox('${escapeHtml(imageUrl)}', 'TRANSMITTAL ATTACHED DOCUMENT PHOTO')" title="Click to view full screen picture">
-        <img src="${escapeHtml(imageUrl)}" alt="Transmittal Attachment Document" style="max-height: 140px; width: 100%; object-fit: contain; border-radius: 4px;" />
-        <div class="img-badge">
-          <i data-lucide="maximize-2" style="width: 11px; height: 11px;"></i> CLICK FOR FULL PHOTO
-        </div>
+      <div style="margin-top: 10px;">
+        <button type="button" class="btn-show-attached-img" onclick="openImageLightbox('${escapeHtml(imageUrl)}', 'TRANSMITTAL ATTACHED DOCUMENT PHOTO')" title="Click to view attached document photo in full size">
+          <i data-lucide="image" style="width: 13px; height: 13px;"></i>
+          <span>Show Uploaded Image</span>
+        </button>
       </div>
     `;
   }
