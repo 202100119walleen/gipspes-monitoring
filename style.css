@@ -1441,6 +1441,12 @@ textarea.form-control {
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
+.program-badge.badge-custom {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
 /* FIX Button for Particulars Field */
 .btn-fix-text {
   display: inline-flex;

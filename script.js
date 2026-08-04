@@ -1467,8 +1467,8 @@ function renderTable() {
         <th onclick="handleSort('particulars')">
           <div class="th-content">PARTICULARS (DOCUMENTS TRANSMITTED) ${getSortIcon('particulars')}</div>
         </th>
-        <th onclick="handleSort('preparedBy')">
-          <div class="th-content">PREPARED BY ${getSortIcon('preparedBy')}</div>
+        <th onclick="handleSort('program')">
+          <div class="th-content">PROGRAM / CATEGORY ${getSortIcon('program')}</div>
         </th>
         <th onclick="handleSort('dateTransmitted')">
           <div class="th-content">DATE TRANSMITTED ${getSortIcon('dateTransmitted')}</div>
@@ -1527,28 +1527,24 @@ function renderTable() {
     } else {
       const memoFormatted = formatParticularsMemoCard(formatEtAl(record.particulars), false, null, record.imageUrl);
       const programTag = (record.program || '').toUpperCase();
-      const preparedByText = formatEtAl(record.preparedBy || '');
-      let preparedByCellHtml = '';
+      let programCellHtml = '';
 
-      if (programTag && preparedByText) {
-        const badgeClass = programTag === 'SPES' ? 'badge-spes' : (programTag === 'TUPAD' ? 'badge-tupad' : 'badge-gip');
-        preparedByCellHtml = `
-          <span class="program-badge ${badgeClass}">${escapeHtml(programTag)}</span>
-          <div style="font-weight: 600; color: var(--text-main); margin-top: 4px;">${escapeHtml(preparedByText)}</div>
-        `;
+      if (programTag === 'GIP') {
+        programCellHtml = `<span class="program-badge badge-gip">GIP</span>`;
+      } else if (programTag === 'SPES') {
+        programCellHtml = `<span class="program-badge badge-spes">SPES</span>`;
+      } else if (programTag === 'TUPAD') {
+        programCellHtml = `<span class="program-badge badge-tupad">TUPAD</span>`;
       } else if (programTag) {
-        const badgeClass = programTag === 'SPES' ? 'badge-spes' : (programTag === 'TUPAD' ? 'badge-tupad' : 'badge-gip');
-        preparedByCellHtml = `<span class="program-badge ${badgeClass}">${escapeHtml(programTag)}</span>`;
-      } else if (preparedByText) {
-        preparedByCellHtml = `<span style="font-weight: 600; color: var(--text-main);">${escapeHtml(preparedByText)}</span>`;
+        programCellHtml = `<span class="program-badge badge-custom">${escapeHtml(programTag)}</span>`;
       } else {
-        preparedByCellHtml = `<span style="color: var(--text-light); font-style: italic;">-</span>`;
+        programCellHtml = `<span style="color: var(--text-light); font-style: italic;">-</span>`;
       }
 
       return `
         <tr>
           <td>${memoFormatted}</td>
-          <td>${preparedByCellHtml}</td>
+          <td>${programCellHtml}</td>
           <td>${formatDate(record.dateTransmitted)}</td>
           <td>${formatDate(record.regionalDateReceived)}</td>
           <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(formatEtAl(record.remarks || '-'))}</td>
@@ -1870,9 +1866,22 @@ function openRecordModal(id = null) {
         renderSalaryModalInputs(record);
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
-        document.getElementById('prepared-by-trn').value = (record.preparedBy || '').toUpperCase();
+        const recProg = (record.program || '').toUpperCase();
         const progSelect = document.getElementById('transmittal-program-select');
-        if (progSelect) progSelect.value = (record.program || '').toUpperCase();
+        const customInput = document.getElementById('transmittal-custom-program');
+
+        if (progSelect && customInput) {
+          if (['GIP', 'SPES', 'TUPAD', ''].includes(recProg)) {
+            progSelect.value = recProg;
+            customInput.style.display = 'none';
+            customInput.value = '';
+          } else {
+            progSelect.value = 'CUSTOM';
+            customInput.style.display = 'block';
+            customInput.value = recProg;
+          }
+        }
+
         document.getElementById('date-transmitted').value = record.dateTransmitted || '';
         document.getElementById('regional-date-received-trn').value = record.regionalDateReceived || '';
         currentTransmittalImageUrl = record.imageUrl || null;
@@ -1888,7 +1897,12 @@ function openRecordModal(id = null) {
 
     document.getElementById('form-record-id').value = '';
     const progSelect = document.getElementById('transmittal-program-select');
+    const customInput = document.getElementById('transmittal-custom-program');
     if (progSelect) progSelect.value = '';
+    if (customInput) {
+      customInput.value = '';
+      customInput.style.display = 'none';
+    }
     currentTransmittalImageUrl = null;
     updateTransmittalModalImagePreview();
   }
@@ -2094,9 +2108,16 @@ async function handleFormSubmit(e) {
     }
   } else {
     const particulars = formatEtAl(document.getElementById('particulars').value.trim().toUpperCase());
-    const preparedBy = formatEtAl(document.getElementById('prepared-by-trn').value.trim().toUpperCase());
     const programSelect = document.getElementById('transmittal-program-select');
-    const program = programSelect ? programSelect.value.toUpperCase() : '';
+    const customProgramInput = document.getElementById('transmittal-custom-program');
+    let program = '';
+
+    if (programSelect && programSelect.value === 'CUSTOM') {
+      program = customProgramInput ? customProgramInput.value.trim().toUpperCase() : '';
+    } else if (programSelect) {
+      program = programSelect.value.trim().toUpperCase();
+    }
+
     const dateTransmitted = document.getElementById('date-transmitted').value;
     const regionalDateReceived = document.getElementById('regional-date-received-trn').value;
 
@@ -2108,7 +2129,6 @@ async function handleFormSubmit(e) {
     const payload = {
       program,
       particulars,
-      preparedBy,
       dateTransmitted,
       regionalDateReceived,
       imageUrl: currentTransmittalImageUrl || null,
@@ -2127,7 +2147,6 @@ async function handleFormSubmit(e) {
           id: recordId,
           program,
           particulars,
-          prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
           regional_date_received: regionalDateReceived,
           image_url: payload.imageUrl,
@@ -2148,7 +2167,6 @@ async function handleFormSubmit(e) {
           id: newId,
           program,
           particulars,
-          prepared_by: preparedBy,
           date_transmitted: dateTransmitted,
           regional_date_received: regionalDateReceived,
           image_url: payload.imageUrl,
@@ -2166,6 +2184,23 @@ async function handleFormSubmit(e) {
   saveToLocalStorage();
   closeRecordModal();
   renderApp();
+}
+
+/**
+ * Handles Program Select Dropdown Change (Shows/Hides Custom Text Input)
+ */
+function handleProgramSelectChange() {
+  const select = document.getElementById('transmittal-program-select');
+  const customInput = document.getElementById('transmittal-custom-program');
+  if (!select || !customInput) return;
+
+  if (select.value === 'CUSTOM') {
+    customInput.style.display = 'block';
+    customInput.focus();
+  } else {
+    customInput.style.display = 'none';
+    customInput.value = '';
+  }
 }
 
 /**

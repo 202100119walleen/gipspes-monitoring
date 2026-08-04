@@ -382,20 +382,17 @@
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 160px 1fr; gap: 12px;">
-              <div class="form-group">
-                <label for="transmittal-program-select">Program <span style="font-weight: 400; color: var(--text-muted); font-size: 0.75rem;">(Optional)</span></label>
-                <select id="transmittal-program-select" class="form-control">
-                  <option value="">-- None --</option>
+            <div class="form-group">
+              <label for="transmittal-program-select">Program / Category <span style="font-weight: 400; color: var(--text-muted); font-size: 0.75rem;">(Optional)</span></label>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <select id="transmittal-program-select" class="form-control" style="flex: 1; min-width: 140px;" onchange="handleProgramSelectChange()">
+                  <option value="">-- None (Optional) --</option>
                   <option value="GIP">GIP</option>
                   <option value="SPES">SPES</option>
                   <option value="TUPAD">TUPAD</option>
+                  <option value="CUSTOM">Custom / Add Text...</option>
                 </select>
-              </div>
-              <div class="form-group">
-                <label for="prepared-by-trn">Prepared By <span style="font-weight: 400; color: var(--text-muted); font-size: 0.75rem;">(Optional)</span></label>
-                <input type="text" id="prepared-by-trn" class="form-control"
-                  placeholder="e.g. Juan De La Cruz / Administrative Assistant">
+                <input type="text" id="transmittal-custom-program" class="form-control" placeholder="Type custom program/category text..." style="flex: 1.2; min-width: 180px; display: none;">
               </div>
             </div>
 
