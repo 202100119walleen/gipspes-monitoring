@@ -3056,8 +3056,18 @@ function parseTransmittalOcrText(rawText) {
     }
   });
 
+  // Strict Line Deduplication Filter (prevents doubled/duplicated lines from OCR)
+  let uniqueLines = [];
+  finalLines.forEach(line => {
+    const normalized = line.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const isDuplicate = uniqueLines.some(u => u.toLowerCase().replace(/[^a-z0-9]/g, '') === normalized);
+    if (!isDuplicate && normalized.length > 0) {
+      uniqueLines.push(line);
+    }
+  });
+
   // Format list items with clean bullets
-  let formattedLines = finalLines.map(line => {
+  let formattedLines = uniqueLines.map(line => {
     const isHeaderLine = line.endsWith(':') ||
       /^TO\s+PAYMENT/i.test(line) ||
       /^WITH\s+ATTACHMENTS/i.test(line) ||
@@ -3160,11 +3170,15 @@ function initDragAndDropHandler() {
   });
 }
 
+let isOcrScanningActive = false;
+
 function processTransmittalImageFile(file) {
   if (!file || !file.type.startsWith('image/')) {
     showToast('PLEASE UPLOAD A VALID IMAGE FILE (PNG, JPG, WEBP)', 'warning');
     return;
   }
+
+  if (isOcrScanningActive) return;
 
   const reader = new FileReader();
   reader.onload = async (e) => {
@@ -3329,6 +3343,9 @@ function preprocessImageForOCR(file) {
  * Executes Tesseract.js OCR scan on provided image file using high-contrast preprocessed canvas
  */
 async function scanTransmittalImageOCR(file) {
+  if (isOcrScanningActive) return;
+  isOcrScanningActive = true;
+
   const statusBox = document.getElementById('ocr-status-box');
   const statusText = document.getElementById('ocr-status-text');
 
@@ -3380,12 +3397,9 @@ async function scanTransmittalImageOCR(file) {
     const prepInput = document.getElementById('prepared-by-trn');
     const dateInput = document.getElementById('date-transmitted');
 
+    // Set fresh particulars text without concatenating duplicates
     if (parsed.particulars) {
-      if (textarea.value.trim()) {
-        textarea.value = textarea.value.trim() + '\n\n' + parsed.particulars;
-      } else {
-        textarea.value = parsed.particulars;
-      }
+      textarea.value = parsed.particulars;
     }
 
     if (parsed.preparedBy && prepInput && !prepInput.value) {
@@ -3404,6 +3418,8 @@ async function scanTransmittalImageOCR(file) {
     console.error('OCR Precision Error:', err);
     statusBox.style.display = 'none';
     showToast('IMAGE ATTACHED SUCCESSFULLY!', 'success');
+  } finally {
+    isOcrScanningActive = false;
   }
 }
 
