@@ -106,6 +106,7 @@ ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recycled_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_salary_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gip_compiled_documents ENABLE ROW LEVEL SECURITY;
 
 -- 8. Enable Public Read & Write Access Policies
 DROP POLICY IF EXISTS "Public full access on gip_dtr_ar_records" ON gip_dtr_ar_records;
@@ -133,8 +134,13 @@ CREATE POLICY "Public full access on gip_salary_records"
   ON gip_salary_records FOR ALL 
   USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Public full access on gip_compiled_documents" ON gip_compiled_documents;
+CREATE POLICY "Public full access on gip_compiled_documents" 
+  ON gip_compiled_documents FOR ALL 
+  USING (true) WITH CHECK (true);
+
 -- 9. Enable Realtime Publications for Realtime Multi-device Sync
 BEGIN;
   DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts, gip_salary_records;
+  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts, gip_salary_records, gip_compiled_documents;
 COMMIT;
