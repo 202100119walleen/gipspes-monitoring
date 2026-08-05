@@ -1703,7 +1703,9 @@ body.dark-mode mark.search-highlight, body.dark-mode .search-highlight {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: var(--bg-page);
+  background: rgba(248, 250, 252, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 99999;
   display: flex;
   align-items: center;
