@@ -2147,7 +2147,7 @@ function openRecordModal(id = null) {
     if (isDtr) modalTitle.textContent = 'EDIT GIP DTR & AR RECORD';
     else if (isContacts) modalTitle.textContent = 'EDIT GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'EDIT GIP SALARY RECORD';
-    else if (isCompiled) modalTitle.textContent = 'EDIT COMPILED DOCUMENT RECORD';
+    else if (isCompiled) modalTitle.textContent = 'EDIT DOCUMENT RECORD';
     else modalTitle.textContent = 'EDIT TRANSMITTAL RECORD';
 
     let dataset;
@@ -2226,7 +2226,7 @@ function openRecordModal(id = null) {
     if (isDtr) modalTitle.textContent = 'ADD NEW GIP DTR & AR RECORD';
     else if (isContacts) modalTitle.textContent = 'ADD NEW GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'ADD NEW GIP SALARY RECORD';
-    else if (isCompiled) modalTitle.textContent = 'ADD NEW COMPILED DOCUMENT RECORD';
+    else if (isCompiled) modalTitle.textContent = 'ADD NEW DOCUMENT RECORD';
     else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
 
     document.getElementById('form-record-id').value = '';
@@ -2268,7 +2268,7 @@ async function handleFormSubmit(e) {
     const dateReceived = document.getElementById('compiled-date-received').value;
 
     if (!documentTitle || !receivedFrom || !dateReceived) {
-      showToast('ALL REQUIRED FIELDS FOR COMPILED DOCUMENTS MUST BE FILLED', 'danger');
+      showToast('ALL REQUIRED FIELDS FOR DOCUMENT RECORD MUST BE FILLED', 'danger');
       return;
     }
 
@@ -2308,7 +2308,7 @@ async function handleFormSubmit(e) {
         if (sbErr) console.warn('Supabase update note:', sbErr.message);
       }
 
-      showToast('COMPILED DOCUMENT RECORD UPDATED SUCCESSFULLY!', 'success');
+      showToast('DOCUMENT RECORD UPDATED SUCCESSFULLY!', 'success');
     } else {
       const newId = 'doc-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
@@ -2330,7 +2330,7 @@ async function handleFormSubmit(e) {
         if (sbErr) console.warn('Supabase insert note:', sbErr.message);
       }
 
-      showToast('NEW COMPILED DOCUMENT RECORD ADDED SUCCESSFULLY!', 'success');
+      showToast('NEW DOCUMENT RECORD ADDED SUCCESSFULLY!', 'success');
     }
 
     closeRecordModal();
