@@ -2107,8 +2107,8 @@ function renderSalaryModalInputs(record = null) {
           ${escapeHtml(periodKey)} Amount (₱)
         </label>
         <div style="display: flex; gap: 6px; align-items: center;">
-          <input type="number" step="0.01" id="${fieldIdAmt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-amt" placeholder="0.00" value="${amtVal}" style="font-size: 0.825rem; flex: 1; min-width: 0;">
-          <select id="${fieldIdSt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-st" style="font-size: 0.8rem; width: 105px; min-width: 105px;">
+          <input type="number" step="0.01" id="${fieldIdAmt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-amt" placeholder="0.00" value="${amtVal}" style="font-size: 0.825rem; flex: 1; min-width: 0;" oninput="handleLiveSalaryModalInputChange()">
+          <select id="${fieldIdSt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-st" style="font-size: 0.8rem; width: 105px; min-width: 105px;" onchange="handleLiveSalaryModalInputChange()">
             <option value="received" ${stVal === 'received' ? 'selected' : ''}>Received</option>
             <option value="pending" ${stVal === 'pending' ? 'selected' : ''}>Pending</option>
             <option value="na" ${stVal === 'na' ? 'selected' : ''}>N/A</option>
@@ -2117,6 +2117,60 @@ function renderSalaryModalInputs(record = null) {
       </div>
     `;
   }).join('');
+}
+
+/**
+ * Instant Real-time Calculation Handler when editing salary inputs in modal
+ */
+function handleLiveSalaryModalInputChange() {
+  let tempPaid = 0;
+  let tempPending = 0;
+
+  const editingId = appState.editingRecordId;
+  const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
+
+  (appState.data.salaryRecords || []).forEach(r => {
+    if (r.id === 'salary-budget-config') return;
+    if (r.id === editingId) return;
+
+    Object.values(r.periods || {}).forEach(item => {
+      if (item && item.amount) {
+        let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
+        if (!isNaN(numAmt) && numAmt > 0) {
+          if (item.status === 'received') tempPaid += numAmt;
+          else if (item.status === 'pending') tempPending += numAmt;
+        }
+      }
+    });
+  });
+
+  periodsList.forEach((_, idx) => {
+    const amtEl = document.getElementById(`sal-amt-${idx}`);
+    const stEl = document.getElementById(`sal-st-${idx}`);
+    if (amtEl && stEl) {
+      const amtVal = parseFloat(amtEl.value) || 0;
+      const stVal = stEl.value;
+      if (amtVal > 0) {
+        if (stVal === 'received') tempPaid += amtVal;
+        else if (stVal === 'pending') tempPending += amtVal;
+      }
+    }
+  });
+
+  const totalBudget = parseFloat(appState.data.totalBudget) || 0;
+  const remainingBalance = totalBudget - tempPaid - tempPending;
+
+  const grandTotalValElem = document.getElementById('salary-grand-total-val');
+  if (grandTotalValElem) grandTotalValElem.textContent = `₱${tempPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const pendingValElem = document.getElementById('salary-total-pending-val');
+  if (pendingValElem) pendingValElem.textContent = `₱${tempPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const remainingValElem = document.getElementById('salary-remaining-balance-val');
+  if (remainingValElem) {
+    remainingValElem.textContent = `${remainingBalance < 0 ? '-' : ''}₱${Math.abs(remainingBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    remainingValElem.style.color = remainingBalance < 0 ? '#dc2626' : '#059669';
+  }
 }
 
 /**
