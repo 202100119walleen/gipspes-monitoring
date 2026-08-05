@@ -221,11 +221,37 @@ let appState = {
 
 // DOM Elements Initialization
 document.addEventListener('DOMContentLoaded', async () => {
+  showPageLoading('Syncing live database & initializing workspace...');
   bindEvents();
   loadLocalStorageData();
   await initSupabaseClient();
   renderApp();
+  hidePageLoading(500);
 });
+
+/**
+ * Show Modern Page Loading Overlay Indicator
+ */
+function showPageLoading(subtext = 'Loading workspace & syncing live records...') {
+  const overlay = document.getElementById('page-loading-overlay');
+  const textElem = document.getElementById('page-loading-subtext');
+  if (textElem) textElem.textContent = subtext;
+  if (overlay) {
+    overlay.classList.remove('fade-out');
+  }
+}
+
+/**
+ * Hide Modern Page Loading Overlay Indicator
+ */
+function hidePageLoading(delayMs = 350) {
+  setTimeout(() => {
+    const overlay = document.getElementById('page-loading-overlay');
+    if (overlay) {
+      overlay.classList.add('fade-out');
+    }
+  }, delayMs);
+}
 
 /**
  * Initialize Supabase SDK Client with pre-configured URL & Key
@@ -741,6 +767,7 @@ function bindEvents() {
     if (sQuin) sQuin.value = 'ALL';
 
     // Re-fetch fresh data from Supabase / LocalStorage to update data live
+    showPageLoading('Refreshing workspace & updating live cloud records...');
     if (isSupabaseConnected && supabaseClient) {
       await fetchRecordsFromSupabase();
     } else {
@@ -748,6 +775,7 @@ function bindEvents() {
     }
 
     renderApp();
+    hidePageLoading(450);
     showToast('ALL FILTERS RESET & DATA UPDATED LIVE!', 'success');
   });
 
