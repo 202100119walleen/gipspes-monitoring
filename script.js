@@ -243,9 +243,11 @@ async function initSupabaseClient() {
 
     supabaseClient = window.supabase.createClient(url, key);
 
-    const { error } = await supabaseClient.from('gip_dtr_ar_records').select('id').limit(1);
-    if (error && error.code !== 'PGRST116') {
-      console.warn('Supabase connection test note:', error ? error.message : 'OK');
+    const { data: testData, error: testErr } = await supabaseClient.from('gip_dtr_ar_records').select('id').limit(1);
+    if (testErr) {
+      console.warn('Supabase connection test failed:', testErr.message);
+      setLocalMode('INVALID API KEY / CONNECTION ERROR');
+      return;
     }
 
     isSupabaseConnected = true;
@@ -260,10 +262,10 @@ async function initSupabaseClient() {
   }
 }
 
-function setLocalMode() {
+function setLocalMode(customText = 'LOCAL STORAGE MODE') {
   isSupabaseConnected = false;
   supabaseClient = null;
-  updateConnectionBadge('offline', 'LOCAL STORAGE MODE');
+  updateConnectionBadge('offline', customText);
 }
 
 function updateConnectionBadge(status, text) {
