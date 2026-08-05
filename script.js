@@ -1354,6 +1354,9 @@ function renderTable() {
       } else if (type === 'salary') {
         typeBadge = `<span class="quincena-pill quincena-q1" style="background: #e0f2fe; color: #0369a1; border-color: #7dd3fc;"><i data-lucide="wallet" style="width: 12px; height: 12px;"></i> SALARY RECORD</span>`;
         titleText = `SALARY: ${escapeHtml(formatEtAl(orig.gipName || ''))}`;
+      } else if (type === 'compiled') {
+        typeBadge = `<span class="quincena-pill quincena-q1" style="background: #f0fdf4; color: #15803d; border-color: #bbf7d0;"><i data-lucide="folder-check" style="width: 12px; height: 12px;"></i> DOCUMENTS RECEIVED</span>`;
+        titleText = `DOCUMENT: ${escapeHtml(formatEtAl((orig.documentTitle || orig.particulars || '').substring(0, 65)))}...`;
       } else {
         typeBadge = `<span class="quincena-pill quincena-q2"><i data-lucide="send" style="width: 12px; height: 12px;"></i> TRANSMITTAL</span>`;
         titleText = `PARTICULARS: ${escapeHtml(formatEtAl((orig.particulars || '').substring(0, 65)))}...`;
@@ -2825,6 +2828,8 @@ async function restoreRecord(trashId) {
         received_from: orig.receivedFrom,
         date_received: orig.dateReceived,
         remarks: orig.remarks,
+        attachments: orig.attachments || [],
+        image_url: orig.imageUrl || null,
         created_at: orig.createdAt || new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
