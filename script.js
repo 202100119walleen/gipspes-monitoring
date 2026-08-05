@@ -672,6 +672,13 @@ function bindEvents() {
     });
   }
 
+  const budgetModal = document.getElementById('edit-total-budget-modal');
+  if (budgetModal) {
+    budgetModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget || e.target.id === 'budget-modal-close') closeTotalBudgetModal();
+    });
+  }
+
   // Dashboard Stat Cards Quick Jump
   const statCardDtr = document.querySelector('#stat-dtr-count')?.closest('.stat-card');
   const statCardTrn = document.querySelector('#stat-trn-count')?.closest('.stat-card');
@@ -3149,13 +3156,30 @@ function openTotalBudgetModal() {
 
   updateBudgetModalPreview();
 
-  if (modal) modal.style.display = 'flex';
-  if (input) setTimeout(() => input.focus(), 100);
+  if (modal) {
+    modal.classList.add('active');
+  }
+  if (input) setTimeout(() => input.focus(), 150);
 }
 
 function closeTotalBudgetModal() {
   const modal = document.getElementById('edit-total-budget-modal');
-  if (modal) modal.style.display = 'none';
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+async function quickPromptEditBudget() {
+  const current = parseFloat(appState.data.totalBudget) || 0;
+  const res = prompt('Enter new Total Salary Budget Amount (₱):', current > 0 ? current : '1500000.00');
+  if (res === null) return;
+  const val = parseFloat(res.replace(/[^0-9.]/g, ''));
+  if (isNaN(val) || val < 0) {
+    showToast('INVALID BUDGET AMOUNT ENTERED!', 'danger');
+    return;
+  }
+  await saveTotalBudget(val);
+  showToast(`TOTAL SALARY BUDGET UPDATED TO ₱${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}!`, 'success');
 }
 
 function setBudgetPreset(amount) {
