@@ -1081,37 +1081,38 @@ function updateCountsAndStats() {
   if (statCompCount) statCompCount.textContent = compiledCount;
   document.getElementById('stat-active-count').textContent = currentDatasetLength;
 
-  // Calculate Grand Total Paid Disbursed across all GIP Salary Records cleanly
+  // Calculate Grand Total Paid & Grand Total Pending Disbursed across all GIP Salary Records
   let grandTotalPaid = 0;
+  let grandTotalPending = 0;
   (appState.data.salaryRecords || []).forEach(record => {
     if (record.id === 'salary-budget-config') return;
     const p = record.periods || {};
     Object.values(p).forEach(item => {
-      if (item && item.status === 'received' && item.amount) {
-        let numAmt = 0;
-        if (typeof item.amount === 'number') {
-          numAmt = item.amount;
-        } else {
-          numAmt = parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0;
-        }
+      if (item && item.amount) {
+        let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
         if (!isNaN(numAmt) && numAmt > 0) {
-          grandTotalPaid += numAmt;
+          if (item.status === 'received') {
+            grandTotalPaid += numAmt;
+          } else if (item.status === 'pending') {
+            grandTotalPending += numAmt;
+          }
         }
       }
     });
   });
 
   const totalBudget = parseFloat(appState.data.totalBudget) || 0;
-  const remainingBudget = totalBudget - grandTotalPaid;
+  const remainingBalance = totalBudget - grandTotalPaid - grandTotalPending;
 
   const formattedTotalPaid = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formattedTotalPending = `₱${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const formattedTotalBudget = `₱${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   let formattedRemaining = '';
-  if (remainingBudget >= 0) {
-    formattedRemaining = `₱${remainingBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (remainingBalance >= 0) {
+    formattedRemaining = `₱${remainingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   } else {
-    const absRemaining = Math.abs(remainingBudget);
+    const absRemaining = Math.abs(remainingBalance);
     formattedRemaining = `-₱${absRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
@@ -1119,22 +1120,25 @@ function updateCountsAndStats() {
   const grandTotalValElem = document.getElementById('salary-grand-total-val');
   if (grandTotalValElem) grandTotalValElem.textContent = formattedTotalPaid;
 
+  const pendingValElem = document.getElementById('salary-total-pending-val');
+  if (pendingValElem) pendingValElem.textContent = formattedTotalPending;
+
   const budgetValElem = document.getElementById('salary-total-budget-val');
   if (budgetValElem) budgetValElem.textContent = formattedTotalBudget;
 
-  const remainingValElem = document.getElementById('salary-remaining-budget-val');
-  const remainingBadgeElem = document.getElementById('salary-remaining-budget-badge');
-  const remainingIconBoxElem = document.getElementById('remaining-budget-icon-box');
-  const remainingIconElem = document.getElementById('remaining-budget-icon');
+  const remainingValElem = document.getElementById('salary-remaining-balance-val');
+  const remainingBadgeElem = document.getElementById('salary-remaining-balance-badge');
+  const remainingIconBoxElem = document.getElementById('remaining-balance-icon-box');
+  const remainingIconElem = document.getElementById('remaining-balance-icon');
 
   if (remainingValElem) {
     remainingValElem.textContent = formattedRemaining;
-    if (remainingBudget < 0) {
+    if (remainingBalance < 0) {
       remainingValElem.style.color = '#dc2626';
       if (remainingBadgeElem) {
         remainingBadgeElem.style.background = 'rgba(239, 68, 68, 0.1)';
         remainingBadgeElem.style.borderColor = 'rgba(239, 68, 68, 0.35)';
-        remainingBadgeElem.title = `OVER BUDGET / DEFICIT! Exceeded by ₱${Math.abs(remainingBudget).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        remainingBadgeElem.title = `OVER BUDGET / DEFICIT! Exceeded by ₱${Math.abs(remainingBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       }
       if (remainingIconBoxElem) {
         remainingIconBoxElem.style.background = 'rgba(239, 68, 68, 0.2)';
@@ -1146,7 +1150,7 @@ function updateCountsAndStats() {
       if (remainingBadgeElem) {
         remainingBadgeElem.style.background = 'rgba(16, 185, 129, 0.08)';
         remainingBadgeElem.style.borderColor = 'rgba(16, 185, 129, 0.25)';
-        remainingBadgeElem.title = 'Remaining Budget = Total Budget minus Total Paid';
+        remainingBadgeElem.title = 'Remaining Balance = Total Budget minus Total Paid minus Total Pending';
       }
       if (remainingIconBoxElem) {
         remainingIconBoxElem.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -3132,25 +3136,34 @@ function openTotalBudgetModal() {
   const modal = document.getElementById('edit-total-budget-modal');
   const input = document.getElementById('input-total-budget');
   const modalPaid = document.getElementById('modal-current-paid-val');
+  const modalPending = document.getElementById('modal-current-pending-val');
   const modalRem = document.getElementById('modal-current-remaining-val');
 
-  // Calculate current total paid
+  // Calculate current total paid & pending
   let grandTotalPaid = 0;
+  let grandTotalPending = 0;
   (appState.data.salaryRecords || []).forEach(record => {
     if (record.id === 'salary-budget-config') return;
     const p = record.periods || {};
     Object.values(p).forEach(item => {
-      if (item && item.status === 'received' && item.amount) {
+      if (item && item.amount) {
         let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
-        if (!isNaN(numAmt) && numAmt > 0) grandTotalPaid += numAmt;
+        if (!isNaN(numAmt) && numAmt > 0) {
+          if (item.status === 'received') {
+            grandTotalPaid += numAmt;
+          } else if (item.status === 'pending') {
+            grandTotalPending += numAmt;
+          }
+        }
       }
     });
   });
 
   const currBudget = parseFloat(appState.data.totalBudget) || 0;
-  const currRem = currBudget - grandTotalPaid;
+  const currRem = currBudget - grandTotalPaid - grandTotalPending;
 
   if (modalPaid) modalPaid.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (modalPending) modalPending.textContent = `₱${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (modalRem) modalRem.textContent = `${currRem < 0 ? '-' : ''}₱${Math.abs(currRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (input) input.value = currBudget > 0 ? currBudget : '';
 
@@ -3195,19 +3208,26 @@ function updateBudgetModalPreview() {
   const preview = document.getElementById('modal-preview-remaining-val');
 
   let grandTotalPaid = 0;
+  let grandTotalPending = 0;
   (appState.data.salaryRecords || []).forEach(record => {
     if (record.id === 'salary-budget-config') return;
     const p = record.periods || {};
     Object.values(p).forEach(item => {
-      if (item && item.status === 'received' && item.amount) {
+      if (item && item.amount) {
         let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
-        if (!isNaN(numAmt) && numAmt > 0) grandTotalPaid += numAmt;
+        if (!isNaN(numAmt) && numAmt > 0) {
+          if (item.status === 'received') {
+            grandTotalPaid += numAmt;
+          } else if (item.status === 'pending') {
+            grandTotalPending += numAmt;
+          }
+        }
       }
     });
   });
 
   const newBudget = parseFloat(input?.value) || 0;
-  const newRem = newBudget - grandTotalPaid;
+  const newRem = newBudget - grandTotalPaid - grandTotalPending;
 
   if (preview) {
     preview.textContent = `${newRem < 0 ? '-' : ''}₱${Math.abs(newRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

@@ -254,7 +254,7 @@
             </div>
 
             <!-- Total Paid Card (Auto-Calculated / Read-Only) -->
-            <div class="salary-budget-badge budget-paid" id="salary-total-paid-badge" title="Automatically calculated from all paid salary records (Read-Only)">
+            <div class="salary-budget-badge budget-paid" id="salary-total-paid-badge" title="Automatically calculated total paid disbursed stipends (Read-Only)">
               <div class="badge-icon-box" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
                 <i data-lucide="wallet" style="width: 15px; height: 15px;"></i>
               </div>
@@ -265,14 +265,26 @@
               <span class="badge-lock-tag" title="Auto-calculated from records"><i data-lucide="lock" style="width: 10px; height: 10px;"></i> Auto</span>
             </div>
 
-            <!-- Remaining Budget Card (Calculated: Total Budget minus Total Paid) -->
-            <div class="salary-budget-badge budget-remaining" id="salary-remaining-budget-badge" title="Remaining Budget = Total Budget minus Total Paid">
-              <div class="badge-icon-box" id="remaining-budget-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-                <i data-lucide="pie-chart" id="remaining-budget-icon" style="width: 15px; height: 15px;"></i>
+            <!-- Total Pending Card (Auto-Calculated / Read-Only) -->
+            <div class="salary-budget-badge budget-pending" id="salary-total-pending-badge" title="Automatically calculated total pending unpaid stipends (Read-Only)">
+              <div class="badge-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #d97706;">
+                <i data-lucide="clock" style="width: 15px; height: 15px;"></i>
               </div>
               <div class="badge-content">
-                <span class="badge-label">REMAINING BUDGET:</span>
-                <strong id="salary-remaining-budget-val" class="badge-value" style="color: #059669;">₱0.00</strong>
+                <span class="badge-label">TOTAL PENDING:</span>
+                <strong id="salary-total-pending-val" class="badge-value" style="color: #d97706;">₱0.00</strong>
+              </div>
+              <span class="badge-lock-tag" style="color: #d97706; background: rgba(245, 158, 11, 0.12);" title="Auto-calculated from records"><i data-lucide="lock" style="width: 10px; height: 10px;"></i> Auto</span>
+            </div>
+
+            <!-- Remaining Balance Card (Calculated: Total Budget minus Total Paid minus Total Pending) -->
+            <div class="salary-budget-badge budget-remaining" id="salary-remaining-balance-badge" title="Remaining Balance = Total Budget minus Total Paid minus Total Pending">
+              <div class="badge-icon-box" id="remaining-balance-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                <i data-lucide="pie-chart" id="remaining-balance-icon" style="width: 15px; height: 15px;"></i>
+              </div>
+              <div class="badge-content">
+                <span class="badge-label">REMAINING BALANCE:</span>
+                <strong id="salary-remaining-balance-val" class="badge-value" style="color: #059669;">₱0.00</strong>
               </div>
             </div>
           </div>
@@ -930,18 +942,22 @@
       <form id="edit-total-budget-form" onsubmit="handleTotalBudgetSubmit(event)">
         <div class="modal-body">
           <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 14px;">
-            Specify the Total Salary Budget allocated for GIPs. The <strong>Remaining Budget</strong> will automatically be calculated as <strong>Total Budget minus Total Paid</strong>.
+            Specify the Total Salary Budget allocated for GIPs. The <strong>Remaining Balance</strong> will automatically be calculated as <strong>Total Budget minus Total Paid minus Total Pending</strong>.
           </p>
 
           <!-- Current Financial Overview Box -->
-          <div style="background: var(--bg-page); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="background: var(--bg-page); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
             <div>
-              <div style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Current Total Paid</div>
-              <div id="modal-current-paid-val" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #0284c7; margin-top: 2px;">₱0.00</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Paid</div>
+              <div id="modal-current-paid-val" style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #0284c7; margin-top: 2px;">₱0.00</div>
             </div>
             <div>
-              <div style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Current Remaining</div>
-              <div id="modal-current-remaining-val" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #059669; margin-top: 2px;">₱0.00</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Pending</div>
+              <div id="modal-current-pending-val" style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #d97706; margin-top: 2px;">₱0.00</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Remaining</div>
+              <div id="modal-current-remaining-val" style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #059669; margin-top: 2px;">₱0.00</div>
             </div>
           </div>
 
@@ -962,10 +978,10 @@
             </small>
           </div>
 
-          <!-- Live Preview of New Remaining Budget -->
+          <!-- Live Preview of New Remaining Balance -->
           <div id="budget-modal-preview-box" style="background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 0.825rem;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-weight: 600; color: var(--primary-navy);">Projected Remaining Budget:</span>
+              <span style="font-weight: 600; color: var(--primary-navy);">Projected Remaining Balance:</span>
               <strong id="modal-preview-remaining-val" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #059669;">₱0.00</strong>
             </div>
           </div>
