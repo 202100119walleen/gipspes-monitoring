@@ -770,9 +770,6 @@ function bindEvents() {
     });
   });
 
-  // Transmittal Drag & Drop Upload & OCR Scanner Handler
-  initDragAndDropHandler();
-
   // Header Action Buttons
   document.getElementById('btn-add-record').addEventListener('click', () => openRecordModal());
 
@@ -3648,10 +3645,15 @@ function parseOcrDateToYYYYMMDD(dateStr) {
  */
 let currentCompiledImageUrl = null;
 
+let isDragAndDropInitialized = false;
+
 /**
  * Initialize Drag & Drop and File/Camera Handlers for Transmittals & Documents Received Image Upload
  */
 function initDragAndDropHandler() {
+  if (isDragAndDropInitialized) return;
+  isDragAndDropInitialized = true;
+
   const transmittalDropzone = document.getElementById('ocr-scan-zone');
   const transmittalFile = document.getElementById('transmittal-ocr-file');
   const transmittalCamera = document.getElementById('transmittal-camera-file');
@@ -3696,6 +3698,7 @@ function initDragAndDropHandler() {
         if (isMulti) processFn(files);
         else processFn(files[0]);
       }
+      input.value = '';
     });
   };
 
