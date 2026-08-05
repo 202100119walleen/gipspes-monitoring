@@ -150,6 +150,8 @@ let appState = {
   sortDirection: 'desc',
   editingRecordId: null,
   deletingRecordId: null,
+  isLoading: false,
+  loadingSubtext: 'Loading live database records...',
   quincenaPeriods: [...DEFAULT_QUINCENA_PERIODS],
   salarySortOption: 'name-asc',
   salaryStatusFilter: 'ALL',
@@ -159,7 +161,8 @@ let appState = {
     transmittalRecords: [],
     recycledRecords: [],
     contactsRecords: [],
-    salaryRecords: []
+    salaryRecords: [],
+    totalBudget: 1500000
   }
 };
 
@@ -170,30 +173,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadLocalStorageData();
   await initSupabaseClient();
   renderApp();
-  hidePageLoading(500);
+  hidePageLoading(400);
 });
 
 /**
- * Show Modern Page Loading Overlay Indicator
+ * Show Inline System Data Loading Indicator (Bouncing Dots)
  */
-function showPageLoading(subtext = 'Loading workspace & syncing live records...') {
-  const overlay = document.getElementById('page-loading-overlay');
-  const textElem = document.getElementById('page-loading-subtext');
-  if (textElem) textElem.textContent = subtext;
-  if (overlay) {
-    overlay.classList.remove('fade-out');
-  }
+function showPageLoading(subtext = 'Loading live database records...') {
+  appState.isLoading = true;
+  appState.loadingSubtext = subtext;
+  renderApp();
 }
 
 /**
- * Hide Modern Page Loading Overlay Indicator
+ * Hide Inline System Data Loading Indicator
  */
-function hidePageLoading(delayMs = 350) {
+function hidePageLoading(delayMs = 300) {
   setTimeout(() => {
-    const overlay = document.getElementById('page-loading-overlay');
-    if (overlay) {
-      overlay.classList.add('fade-out');
-    }
+    appState.isLoading = false;
+    renderApp();
   }, delayMs);
 }
 
@@ -331,6 +329,11 @@ function loadLocalStorageData() {
       }
       if (!parsed.salaryRecords || parsed.salaryRecords.length === 0) {
         parsed.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
+      }
+      if (parsed.totalBudget !== undefined && !isNaN(parseFloat(parsed.totalBudget))) {
+        parsed.totalBudget = parseFloat(parsed.totalBudget);
+      } else {
+        parsed.totalBudget = 1500000;
       }
       if (parsed.compiledRecords) {
         parsed.compiledRecords = parsed.compiledRecords.filter(r => r.id !== 'doc-101');
@@ -487,7 +490,12 @@ async function fetchRecordsFromSupabase() {
 
     // 5. Process Salary Records
     if (salData) {
-      const formattedCloudSal = salData.map(r => ({
+      const configRow = salData.find(r => r.id === 'salary-budget-config');
+      if (configRow && configRow.periods && configRow.periods.totalBudget !== undefined) {
+        appState.data.totalBudget = parseFloat(configRow.periods.totalBudget) || 0;
+      }
+      const actualSalData = salData.filter(r => r.id !== 'salary-budget-config');
+      const formattedCloudSal = actualSalData.map(r => ({
         id: r.id,
         gipName: formatEtAl(r.gip_name),
         periods: r.periods || {},
@@ -495,6 +503,7 @@ async function fetchRecordsFromSupabase() {
         updatedAt: r.updated_at
       }));
       appState.data.salaryRecords = mergeData(formattedCloudSal, appState.data.salaryRecords);
+      appState.data.salaryRecords = appState.data.salaryRecords.filter(r => r.id !== 'salary-budget-config');
     }
 
     // Delete sample seed record doc-101 if it exists in Supabase
@@ -969,7 +978,10 @@ function switchTab(tabName) {
   if (btnAddQuincena) {
     btnAddQuincena.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
-  if (totalBadge) {
+  const indicatorsPanel = document.getElementById('salary-financial-indicators');
+  if (indicatorsPanel) {
+    indicatorsPanel.style.display = (tabName === 'salary') ? 'flex' : 'none';
+  } else if (totalBadge) {
     totalBadge.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
   if (salControls) {
@@ -1065,6 +1077,7 @@ function updateCountsAndStats() {
   // Calculate Grand Total Paid Disbursed across all GIP Salary Records cleanly
   let grandTotalPaid = 0;
   (appState.data.salaryRecords || []).forEach(record => {
+    if (record.id === 'salary-budget-config') return;
     const p = record.periods || {};
     Object.values(p).forEach(item => {
       if (item && item.status === 'received' && item.amount) {
@@ -1081,11 +1094,59 @@ function updateCountsAndStats() {
     });
   });
 
-  const formattedTotal = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const totalBudget = parseFloat(appState.data.totalBudget) || 0;
+  const remainingBudget = totalBudget - grandTotalPaid;
 
+  const formattedTotalPaid = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formattedTotalBudget = `₱${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  let formattedRemaining = '';
+  if (remainingBudget >= 0) {
+    formattedRemaining = `₱${remainingBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  } else {
+    const absRemaining = Math.abs(remainingBudget);
+    formattedRemaining = `-₱${absRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  // Update DOM Elements
   const grandTotalValElem = document.getElementById('salary-grand-total-val');
-  if (grandTotalValElem) {
-    grandTotalValElem.textContent = formattedTotal;
+  if (grandTotalValElem) grandTotalValElem.textContent = formattedTotalPaid;
+
+  const budgetValElem = document.getElementById('salary-total-budget-val');
+  if (budgetValElem) budgetValElem.textContent = formattedTotalBudget;
+
+  const remainingValElem = document.getElementById('salary-remaining-budget-val');
+  const remainingBadgeElem = document.getElementById('salary-remaining-budget-badge');
+  const remainingIconBoxElem = document.getElementById('remaining-budget-icon-box');
+  const remainingIconElem = document.getElementById('remaining-budget-icon');
+
+  if (remainingValElem) {
+    remainingValElem.textContent = formattedRemaining;
+    if (remainingBudget < 0) {
+      remainingValElem.style.color = '#dc2626';
+      if (remainingBadgeElem) {
+        remainingBadgeElem.style.background = 'rgba(239, 68, 68, 0.1)';
+        remainingBadgeElem.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+        remainingBadgeElem.title = `OVER BUDGET / DEFICIT! Exceeded by ₱${Math.abs(remainingBudget).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+      if (remainingIconBoxElem) {
+        remainingIconBoxElem.style.background = 'rgba(239, 68, 68, 0.2)';
+        remainingIconBoxElem.style.color = '#dc2626';
+      }
+      if (remainingIconElem) remainingIconElem.setAttribute('data-lucide', 'alert-triangle');
+    } else {
+      remainingValElem.style.color = '#059669';
+      if (remainingBadgeElem) {
+        remainingBadgeElem.style.background = 'rgba(16, 185, 129, 0.08)';
+        remainingBadgeElem.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+        remainingBadgeElem.title = 'Remaining Budget = Total Budget minus Total Paid';
+      }
+      if (remainingIconBoxElem) {
+        remainingIconBoxElem.style.background = 'rgba(16, 185, 129, 0.15)';
+        remainingIconBoxElem.style.color = '#10b981';
+      }
+      if (remainingIconElem) remainingIconElem.setAttribute('data-lucide', 'pie-chart');
+    }
   }
 }
 
@@ -1167,7 +1228,7 @@ function getFilteredAndSortedRecords() {
   }
 
   if (appState.activeTab === 'salary') {
-    let records = appState.data.salaryRecords ? [...appState.data.salaryRecords] : [];
+    let records = appState.data.salaryRecords ? appState.data.salaryRecords.filter(r => r.id !== 'salary-budget-config') : [];
 
     if (appState.searchQuery) {
       const q = appState.searchQuery;
@@ -1283,6 +1344,49 @@ function renderTable() {
   const emptyMsg = document.getElementById('empty-state-msg');
   const tableWrapper = document.getElementById('table-responsive-wrapper');
   const salaryCardsGrid = document.getElementById('salary-cards-grid');
+
+  if (appState.isLoading) {
+    emptyState.style.display = 'none';
+    const subtext = appState.loadingSubtext || 'Loading live database records...';
+    if (appState.activeTab === 'salary') {
+      if (tableWrapper) tableWrapper.style.display = 'none';
+      if (salaryCardsGrid) {
+        salaryCardsGrid.style.display = 'grid';
+        salaryCardsGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 50px 20px;">
+            <div class="table-loading-container">
+              <div class="bouncing-dots">
+                <span class="dot dot-1"></span>
+                <span class="dot dot-2"></span>
+                <span class="dot dot-3"></span>
+              </div>
+              <div class="table-loading-text">${escapeHtml(subtext)}</div>
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      if (tableWrapper) tableWrapper.style.display = 'block';
+      if (salaryCardsGrid) salaryCardsGrid.style.display = 'none';
+      if (tableBody) {
+        tableBody.innerHTML = `
+          <tr class="table-loading-row">
+            <td colspan="10" style="text-align: center; padding: 50px 20px;">
+              <div class="table-loading-container">
+                <div class="bouncing-dots">
+                  <span class="dot dot-1"></span>
+                  <span class="dot dot-2"></span>
+                  <span class="dot dot-3"></span>
+                </div>
+                <div class="table-loading-text">${escapeHtml(subtext)}</div>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+    return;
+  }
 
   if (appState.activeTab === 'trash') {
     if (tableWrapper) tableWrapper.style.display = 'block';
@@ -2950,6 +3054,180 @@ async function handleEmptyTrash() {
 
 
 /**
+ * Real-time Payment Status Toggle (Pending/NA <-> Received/Paid)
+ * Automatically recalculates Total Paid and Remaining Budget in real-time when paid option is selected.
+ */
+async function toggleSalaryStatus(recordId, periodKey) {
+  if (!recordId || !periodKey) return;
+  const records = appState.data.salaryRecords || [];
+  const record = records.find(r => r.id === recordId);
+  if (!record) return;
+
+  if (!record.periods) record.periods = {};
+  const currentItem = record.periods[periodKey] || { amount: 0, status: 'pending' };
+
+  let nextStatus = 'received';
+  if (currentItem.status === 'received') {
+    nextStatus = 'pending';
+  } else {
+    nextStatus = 'received';
+  }
+
+  let currentAmt = 0;
+  if (typeof currentItem.amount === 'number') {
+    currentAmt = currentItem.amount;
+  } else if (currentItem.amount) {
+    currentAmt = parseFloat(String(currentItem.amount).replace(/[^0-9.]/g, '')) || 0;
+  }
+
+  if (nextStatus === 'received' && currentAmt <= 0) {
+    const inputAmt = prompt(`Enter stipend amount for ${record.gipName} (${periodKey}):`, '5020.00');
+    if (inputAmt === null) return;
+    const parsedAmt = parseFloat(inputAmt.replace(/[^0-9.]/g, ''));
+    currentAmt = !isNaN(parsedAmt) && parsedAmt > 0 ? parsedAmt : 5020.00;
+  }
+
+  record.periods[periodKey] = {
+    amount: currentAmt,
+    status: nextStatus
+  };
+  record.updatedAt = new Date().toISOString();
+
+  saveToLocalStorage();
+
+  if (isSupabaseConnected && supabaseClient) {
+    try {
+      await supabaseClient.from('gip_salary_records').upsert({
+        id: record.id,
+        gip_name: record.gipName,
+        periods: record.periods,
+        updated_at: record.updatedAt
+      });
+    } catch (err) {
+      console.warn('Real-time status toggle sync note:', err.message);
+    }
+  }
+
+  renderApp();
+
+  const formattedAmt = `₱${currentAmt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (nextStatus === 'received') {
+    showToast(`PAID OPTION SELECTED: ${record.gipName} (${periodKey}) - ${formattedAmt}. Remaining budget updated live!`, 'success');
+  } else {
+    showToast(`MARKED AS PENDING: ${record.gipName} (${periodKey})`, 'info');
+  }
+}
+
+/**
+ * Total Salary Budget Modal & Management Handlers
+ */
+function openTotalBudgetModal() {
+  const modal = document.getElementById('edit-total-budget-modal');
+  const input = document.getElementById('input-total-budget');
+  const modalPaid = document.getElementById('modal-current-paid-val');
+  const modalRem = document.getElementById('modal-current-remaining-val');
+
+  // Calculate current total paid
+  let grandTotalPaid = 0;
+  (appState.data.salaryRecords || []).forEach(record => {
+    if (record.id === 'salary-budget-config') return;
+    const p = record.periods || {};
+    Object.values(p).forEach(item => {
+      if (item && item.status === 'received' && item.amount) {
+        let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
+        if (!isNaN(numAmt) && numAmt > 0) grandTotalPaid += numAmt;
+      }
+    });
+  });
+
+  const currBudget = parseFloat(appState.data.totalBudget) || 0;
+  const currRem = currBudget - grandTotalPaid;
+
+  if (modalPaid) modalPaid.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (modalRem) modalRem.textContent = `${currRem < 0 ? '-' : ''}₱${Math.abs(currRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (input) input.value = currBudget > 0 ? currBudget : '';
+
+  updateBudgetModalPreview();
+
+  if (modal) modal.style.display = 'flex';
+  if (input) setTimeout(() => input.focus(), 100);
+}
+
+function closeTotalBudgetModal() {
+  const modal = document.getElementById('edit-total-budget-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function setBudgetPreset(amount) {
+  const input = document.getElementById('input-total-budget');
+  if (input) {
+    input.value = amount;
+    updateBudgetModalPreview();
+  }
+}
+
+function updateBudgetModalPreview() {
+  const input = document.getElementById('input-total-budget');
+  const preview = document.getElementById('modal-preview-remaining-val');
+
+  let grandTotalPaid = 0;
+  (appState.data.salaryRecords || []).forEach(record => {
+    if (record.id === 'salary-budget-config') return;
+    const p = record.periods || {};
+    Object.values(p).forEach(item => {
+      if (item && item.status === 'received' && item.amount) {
+        let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
+        if (!isNaN(numAmt) && numAmt > 0) grandTotalPaid += numAmt;
+      }
+    });
+  });
+
+  const newBudget = parseFloat(input?.value) || 0;
+  const newRem = newBudget - grandTotalPaid;
+
+  if (preview) {
+    preview.textContent = `${newRem < 0 ? '-' : ''}₱${Math.abs(newRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    preview.style.color = newRem < 0 ? '#dc2626' : '#059669';
+  }
+}
+
+async function handleTotalBudgetSubmit(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById('input-total-budget');
+  const val = parseFloat(input?.value) || 0;
+
+  if (val < 0) {
+    showToast('BUDGET AMOUNT CANNOT BE NEGATIVE!', 'danger');
+    return;
+  }
+
+  await saveTotalBudget(val);
+  closeTotalBudgetModal();
+  showToast(`TOTAL SALARY BUDGET UPDATED TO ₱${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}!`, 'success');
+}
+
+async function saveTotalBudget(newBudget) {
+  appState.data.totalBudget = newBudget;
+  saveToLocalStorage();
+
+  if (isSupabaseConnected && supabaseClient) {
+    try {
+      await supabaseClient.from('gip_salary_records').upsert({
+        id: 'salary-budget-config',
+        gip_name: '__TOTAL_BUDGET_CONFIG__',
+        periods: { totalBudget: newBudget },
+        updated_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn('Failed to sync total budget to Supabase:', err);
+    }
+  }
+
+  updateCountsAndStats();
+  renderTable();
+}
+
+/**
  * Excel Export Selection Modal & Handlers
  */
 function renderSalaryFilterOptions() {
@@ -3158,6 +3436,22 @@ function handleExcelExportFormSubmit(e) {
         summaryRow['TOTAL PENDING AMOUNT'] = `\u20b1${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         summaryRow['REMARKS'] = `TOTAL DISBURSED - ${label}`;
         rows.push(summaryRow);
+
+        const totalBudgetVal = parseFloat(appState.data.totalBudget) || 0;
+        const remVal = totalBudgetVal - grandTotalDisbursed;
+        const budgetRow = { 'NO.': '', 'GIP NAME / BENEFICIARY GROUP': '=== TOTAL ALLOCATED BUDGET ===' };
+        periodsList.forEach(pKey => { budgetRow[pKey] = ''; });
+        budgetRow['TOTAL PAID AMOUNT'] = `\u20b1${totalBudgetVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        budgetRow['TOTAL PENDING AMOUNT'] = '';
+        budgetRow['REMARKS'] = 'MANUALLY SET TOTAL BUDGET';
+        rows.push(budgetRow);
+
+        const remainingRow = { 'NO.': '', 'GIP NAME / BENEFICIARY GROUP': '=== REMAINING BUDGET ===' };
+        periodsList.forEach(pKey => { remainingRow[pKey] = ''; });
+        remainingRow['TOTAL PAID AMOUNT'] = `${remVal < 0 ? '-' : ''}\u20b1${Math.abs(remVal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        remainingRow['TOTAL PENDING AMOUNT'] = '';
+        remainingRow['REMARKS'] = remVal < 0 ? 'OVER BUDGET / DEFICIT' : 'TOTAL BUDGET MINUS TOTAL PAID';
+        rows.push(remainingRow);
         return rows;
       };
 
