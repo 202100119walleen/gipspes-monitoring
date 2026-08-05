@@ -77,17 +77,7 @@ const DEFAULT_SEED_DATA = {
       createdAt: '2026-07-25T15:20:00.000Z'
     }
   ],
-  compiledRecords: [
-    {
-      id: 'doc-101',
-      documentTitle: 'COMPLIED GIP DTRs & ARs FOR THE MONTH OF MAY 2026',
-      receivedFrom: 'DOLE REGIONAL OFFICE X',
-      dateReceived: '2026-05-25',
-      remarks: 'OFFICIALLY RECEIVED AND STAMPED',
-      createdAt: '2026-05-25T08:30:00.000Z',
-      updatedAt: '2026-05-25T08:30:00.000Z'
-    }
-  ]
+  compiledRecords: []
 };
 // Initial GIP Contacts Directory Seed Data from CSV
 const DEFAULT_CONTACTS_SEED = [
@@ -361,8 +351,10 @@ function loadLocalStorageData() {
       if (!parsed.salaryRecords || parsed.salaryRecords.length === 0) {
         parsed.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
       }
-      if (!parsed.compiledRecords || parsed.compiledRecords.length === 0) {
-        parsed.compiledRecords = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA.compiledRecords || []));
+      if (parsed.compiledRecords) {
+        parsed.compiledRecords = parsed.compiledRecords.filter(r => r.id !== 'doc-101');
+      } else {
+        parsed.compiledRecords = [];
       }
       if (parsed.quincenaPeriods && Array.isArray(parsed.quincenaPeriods)) {
         appState.quincenaPeriods = parsed.quincenaPeriods;
@@ -377,7 +369,7 @@ function loadLocalStorageData() {
       appState.data.recycledRecords = [];
       appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
       appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
-      appState.data.compiledRecords = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA.compiledRecords || []));
+      appState.data.compiledRecords = [];
       saveToLocalStorage();
     }
   } catch (err) {
@@ -524,9 +516,15 @@ async function fetchRecordsFromSupabase() {
       appState.data.salaryRecords = mergeData(formattedCloudSal, appState.data.salaryRecords);
     }
 
+    // Delete sample seed record doc-101 if it exists in Supabase
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_compiled_documents').delete().eq('id', 'doc-101');
+    }
+
     // 6. Process Compiled Documents Records
     if (docData) {
-      const formattedCloudDoc = docData.map(r => ({
+      const filteredDocData = docData.filter(r => r.id !== 'doc-101');
+      const formattedCloudDoc = filteredDocData.map(r => ({
         id: r.id,
         documentTitle: formatEtAl(r.document_title),
         receivedFrom: formatEtAl(r.received_from),
@@ -538,6 +536,7 @@ async function fetchRecordsFromSupabase() {
         updatedAt: r.updated_at
       }));
       appState.data.compiledRecords = mergeData(formattedCloudDoc, appState.data.compiledRecords || []);
+      appState.data.compiledRecords = appState.data.compiledRecords.filter(r => r.id !== 'doc-101');
     }
 
     purgeExpiredRecycledRecords();
