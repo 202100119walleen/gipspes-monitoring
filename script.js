@@ -17,66 +17,10 @@ let supabaseClient = null;
 let isSupabaseConnected = false;
 let realtimeSubscription = null;
 
-// Initial Sample Seed Data (All Uppercase)
+// Initial Sample Seed Data (Empty for Live Realtime Production Mode)
 const DEFAULT_SEED_DATA = {
-  dtrRecords: [
-    {
-      id: 'dtr-101',
-      gipName: 'MARIA SANTOS',
-      month: '2026-07',
-      quincena: '1ST QUINCENA (1-15)',
-      dtrArDateReceived: '2026-07-05',
-      remarks: 'COMPLETE DTR & AR ATTACHED AND VERIFIED.',
-      createdAt: '2026-07-05T08:00:00.000Z'
-    },
-    {
-      id: 'dtr-102',
-      gipName: 'JUAN DELA CRUZ',
-      month: '2026-07',
-      quincena: '1ST QUINCENA (1-15)',
-      dtrArDateReceived: '2026-07-15',
-      remarks: 'DTR & AR RECEIVED AT LDNPFO. PENDING TRANSMITTAL TO RO.',
-      createdAt: '2026-07-15T09:30:00.000Z'
-    },
-    {
-      id: 'dtr-103',
-      gipName: 'ANGELA REYES',
-      month: '2026-07',
-      quincena: '2ND QUINCENA (16-31)',
-      dtrArDateReceived: '',
-      remarks: 'AWAITING SUBMISSION OF DTR & ACCOMPLISHMENT REPORT.',
-      createdAt: '2026-07-28T14:15:00.000Z'
-    },
-    {
-      id: 'dtr-104',
-      gipName: 'CHRISTIAN GONZALES',
-      month: '2026-06',
-      quincena: '2ND QUINCENA (16-31)',
-      dtrArDateReceived: '2026-06-30',
-      remarks: 'PROCESSED AND SUBMITTED FOR PAYROLL CLEARING.',
-      createdAt: '2026-06-30T11:00:00.000Z'
-    }
-  ],
-  transmittalRecords: [
-    {
-      id: 'trn-201',
-      particulars: 'TRANSMITTAL LETTER #2026-07-042:\nTRANSMITTAL OF 15 SETS DTR & AR FOR JULY 1ST QUINCENA, INCLUDING SUMMARY OF HOURS WORKED & ACCOMPLISHMENTS, APPROVED WORK PROGRAMS, AND DEPLOYMENT LOGS.',
-      preparedBy: 'MARIA SANTOS / ADMINISTRATIVE ASSISTANT',
-      dateTransmitted: '2026-07-14',
-      regionalDateReceived: '2026-07-16',
-      remarks: 'TRANSMITTAL LETTER ACKNOWLEDGED AND SIGNED BY REGIONAL OFFICE.',
-      createdAt: '2026-07-14T10:00:00.000Z'
-    },
-    {
-      id: 'trn-202',
-      particulars: 'TRANSMITTAL LETTER #2026-07-088:\n10 SETS DTR & AR FOR JULY 2ND QUINCENA, INTERNSHIP ATTENDANCE LOGS, PERFORMANCE RATING REPORTS',
-      preparedBy: 'JUAN DELA CRUZ / GIP COORDINATOR',
-      dateTransmitted: '2026-07-25',
-      regionalDateReceived: '',
-      remarks: 'DISPATCHED VIA COURIER SERVICES. TRACKING #PH982341.',
-      createdAt: '2026-07-25T15:20:00.000Z'
-    }
-  ],
+  dtrRecords: [],
+  transmittalRecords: [],
   compiledRecords: []
 };
 // Initial GIP Contacts Directory Seed Data from CSV
@@ -355,20 +299,29 @@ function loadLocalStorageData() {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
+      const sampleSeedIds = ['dtr-101', 'dtr-102', 'dtr-103', 'dtr-104', 'trn-201', 'trn-202', 'doc-101'];
       if (parsed.dtrRecords) {
-        parsed.dtrRecords = parsed.dtrRecords.map(r => ({
-          ...r,
-          gipName: formatEtAl(r.gipName),
-          remarks: formatEtAl(r.remarks)
-        }));
+        parsed.dtrRecords = parsed.dtrRecords
+          .filter(r => !sampleSeedIds.includes(r.id))
+          .map(r => ({
+            ...r,
+            gipName: formatEtAl(r.gipName),
+            remarks: formatEtAl(r.remarks)
+          }));
+      } else {
+        parsed.dtrRecords = [];
       }
       if (parsed.transmittalRecords) {
-        parsed.transmittalRecords = parsed.transmittalRecords.map(r => ({
-          ...r,
-          particulars: formatEtAl(r.particulars),
-          preparedBy: formatEtAl(r.preparedBy),
-          remarks: formatEtAl(r.remarks)
-        }));
+        parsed.transmittalRecords = parsed.transmittalRecords
+          .filter(r => !sampleSeedIds.includes(r.id))
+          .map(r => ({
+            ...r,
+            particulars: formatEtAl(r.particulars),
+            preparedBy: formatEtAl(r.preparedBy),
+            remarks: formatEtAl(r.remarks)
+          }));
+      } else {
+        parsed.transmittalRecords = [];
       }
       if (!parsed.recycledRecords) {
         parsed.recycledRecords = [];
@@ -1760,7 +1713,8 @@ function renderTable() {
 
       const gipNameFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.gipName)), searchQuery);
       const periodLabelFormatted = highlightTextInHtml(escapeHtml(`${monthFormatted} - ${quincenaLabel}`), searchQuery);
-      const dateRecFormatted = highlightTextInHtml(escapeHtml(formatDate(record.dtrArDateReceived)), searchQuery);
+      const rawDateRec = formatDate(record.dtrArDateReceived);
+      const dateRecFormatted = rawDateRec === '-' ? '<span style="color: var(--text-light);">-</span>' : highlightTextInHtml(escapeHtml(rawDateRec), searchQuery);
       const remarksFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.remarks || '-')), searchQuery);
 
       return `
@@ -1807,8 +1761,8 @@ function renderTable() {
       const dateRegStr = formatDate(record.regionalDateReceived);
       const remarksStr = escapeHtml(formatEtAl(record.remarks || '-'));
 
-      const highlightedDateTrn = highlightTextInHtml(dateTrnStr, searchQuery);
-      const highlightedDateReg = highlightTextInHtml(dateRegStr, searchQuery);
+      const highlightedDateTrn = dateTrnStr === '-' ? '<span style="color: var(--text-light);">-</span>' : highlightTextInHtml(escapeHtml(dateTrnStr), searchQuery);
+      const highlightedDateReg = dateRegStr === '-' ? '<span style="color: var(--text-light);">-</span>' : highlightTextInHtml(escapeHtml(dateRegStr), searchQuery);
       const highlightedRemarks = highlightTextInHtml(remarksStr, searchQuery);
 
       return `
@@ -3367,7 +3321,7 @@ function showToast(message, type = 'info') {
  * Formatting Utility Helpers
  */
 function formatDate(dateStr) {
-  if (!dateStr) return '<span style="color: var(--text-light);">-</span>';
+  if (!dateStr) return '-';
   try {
     const cleanStr = String(dateStr).split('T')[0];
     const parts = cleanStr.split('-');
@@ -3384,9 +3338,9 @@ function formatDate(dateStr) {
     if (!isNaN(parsedDate.getTime())) {
       return parsedDate.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase();
     }
-    return dateStr;
+    return String(dateStr).toUpperCase();
   } catch (e) {
-    return dateStr;
+    return String(dateStr || '-').toUpperCase();
   }
 }
 
