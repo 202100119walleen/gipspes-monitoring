@@ -532,6 +532,7 @@ async function fetchRecordsFromSupabase() {
         receivedFrom: formatEtAl(r.received_from),
         dateReceived: r.date_received,
         remarks: formatEtAl(r.remarks),
+        imageUrl: r.image_url || r.imageUrl || null,
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
@@ -604,6 +605,7 @@ async function pushLocalDataToSupabase() {
         received_from: r.receivedFrom || '',
         date_received: r.dateReceived || '',
         remarks: r.remarks || '',
+        image_url: r.imageUrl || null,
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
@@ -808,12 +810,18 @@ function bindEvents() {
     });
   }
 
-  // Transmittal Image Attachment & Lightbox Listeners
+  // Transmittal & Compiled Image Attachment & Lightbox Listeners
   const btnRemoveImg = document.getElementById('btn-remove-modal-image');
   if (btnRemoveImg) btnRemoveImg.addEventListener('click', removeTransmittalModalImage);
 
   const btnViewImg = document.getElementById('btn-view-modal-image');
   if (btnViewImg) btnViewImg.addEventListener('click', viewTransmittalModalImage);
+
+  const btnRemoveCompiledImg = document.getElementById('btn-remove-compiled-image');
+  if (btnRemoveCompiledImg) btnRemoveCompiledImg.addEventListener('click', removeCompiledModalImage);
+
+  const btnViewCompiledImg = document.getElementById('btn-view-compiled-image');
+  if (btnViewCompiledImg) btnViewCompiledImg.addEventListener('click', viewCompiledModalImage);
 
   const lightboxCloseBtn = document.getElementById('lightbox-modal-close');
   if (lightboxCloseBtn) lightboxCloseBtn.addEventListener('click', closeImageLightbox);
@@ -1107,10 +1115,10 @@ function getFilteredAndSortedRecords() {
     let records = appState.data.contactsRecords ? [...appState.data.contactsRecords] : [];
     if (appState.searchQuery) {
       const q = appState.searchQuery;
-      records = records.filter(r => 
-        (r.gipName || '').toLowerCase().includes(q) || 
-        (r.assignment || '').toLowerCase().includes(q) || 
-        (r.contactNumber || '').includes(q) || 
+      records = records.filter(r =>
+        (r.gipName || '').toLowerCase().includes(q) ||
+        (r.assignment || '').toLowerCase().includes(q) ||
+        (r.contactNumber || '').includes(q) ||
         (r.remarks || '').toLowerCase().includes(q)
       );
     }
@@ -1528,6 +1536,93 @@ function renderTable() {
   } else {
     if (tableWrapper) tableWrapper.style.display = 'block';
     if (salaryCardsGrid) salaryCardsGrid.style.display = 'none';
+  }
+
+  if (appState.activeTab === 'compiled') {
+    if (tableWrapper) tableWrapper.style.display = 'block';
+    if (salaryCardsGrid) salaryCardsGrid.style.display = 'none';
+
+    tableHead.innerHTML = `
+      <tr>
+        <th onclick="handleSort('documentTitle')">
+          <div class="th-content">COMPILED DOCUMENTS / TITLE ${getSortIcon('documentTitle')}</div>
+        </th>
+        <th onclick="handleSort('receivedFrom')">
+          <div class="th-content">RECEIVED FROM / SENDER ${getSortIcon('receivedFrom')}</div>
+        </th>
+        <th onclick="handleSort('dateReceived')">
+          <div class="th-content">DATE RECEIVED ${getSortIcon('dateReceived')}</div>
+        </th>
+        <th>
+          <div class="th-content">REMARKS</div>
+        </th>
+        <th style="text-align: right;">ACTIONS</th>
+      </tr>
+    `;
+
+    const records = getFilteredAndSortedRecords();
+
+    if (records.length === 0) {
+      tableBody.innerHTML = '';
+      emptyState.style.display = 'block';
+      if (emptyMsg) emptyMsg.textContent = 'No compiled documents received found. Click "+ Add New Record" to create one.';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tableBody.innerHTML = records.map(record => {
+      const searchQuery = appState.searchQuery ? appState.searchQuery.trim() : '';
+      const titleText = escapeHtml(formatEtAl(record.documentTitle || record.particulars || ''));
+      const highlightedTitle = highlightTextInHtml(titleText, searchQuery);
+
+      let imageBtnHtml = '';
+      if (record.imageUrl) {
+        imageBtnHtml = `
+          <button type="button" class="btn-show-attached-img" onclick="openImageLightbox('${escapeHtml(record.imageUrl)}', 'COMPILED DOCUMENT PHOTO')" title="Click to view attached document photo" style="margin-left: 8px;">
+            <i data-lucide="image" style="width: 13px; height: 13px;"></i> Photo
+          </button>
+        `;
+      }
+
+      const titleCellHtml = `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <span style="font-weight: 600; font-size: 0.925rem; color: var(--primary-navy);">${highlightedTitle}</span>
+          ${imageBtnHtml}
+        </div>
+      `;
+
+      const senderFormatted = highlightTextInHtml(escapeHtml(record.receivedFrom || '-'), searchQuery);
+      const dateRecFormatted = highlightTextInHtml(escapeHtml(formatDate(record.dateReceived)), searchQuery);
+      const remarksFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.remarks || '-')), searchQuery);
+
+      return `
+        <tr>
+          <td>${titleCellHtml}</td>
+          <td>
+            <span class="quincena-pill quincena-q1">
+              <i data-lucide="building" style="width: 12px; height: 12px;"></i>
+              ${senderFormatted}
+            </span>
+          </td>
+          <td>${dateRecFormatted}</td>
+          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${remarksFormatted}</td>
+          <td style="text-align: right;">
+            <div class="action-buttons" style="justify-content: flex-end;">
+              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Document Record">
+                <i data-lucide="edit-3"></i>
+              </button>
+              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Document Record">
+                <i data-lucide="trash-2"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+    return;
   }
 
   const isDtr = appState.activeTab === 'dtr';
@@ -2030,7 +2125,7 @@ function openRecordModal(id = null) {
         const qSelect = document.getElementById('record-quincena');
         const recQuincena = (record.quincena || '').trim();
         if (qSelect) {
-          const matchedOpt = Array.from(qSelect.options).find(opt => 
+          const matchedOpt = Array.from(qSelect.options).find(opt =>
             opt.value.trim().toUpperCase() === recQuincena.toUpperCase()
           );
           if (matchedOpt) {
@@ -2051,6 +2146,8 @@ function openRecordModal(id = null) {
         document.getElementById('compiled-title').value = (record.documentTitle || '').toUpperCase();
         document.getElementById('compiled-received-from').value = (record.receivedFrom || '').toUpperCase();
         document.getElementById('compiled-date-received').value = record.dateReceived || '';
+        currentCompiledImageUrl = record.imageUrl || null;
+        updateCompiledModalImagePreview();
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         const recProg = (record.program || '').toUpperCase();
@@ -2093,6 +2190,8 @@ function openRecordModal(id = null) {
     }
     currentTransmittalImageUrl = null;
     updateTransmittalModalImagePreview();
+    currentCompiledImageUrl = null;
+    updateCompiledModalImagePreview();
   }
 
   document.getElementById('record-modal').classList.add('active');
@@ -2129,6 +2228,7 @@ async function handleFormSubmit(e) {
       receivedFrom,
       dateReceived,
       remarks,
+      imageUrl: currentCompiledImageUrl || null,
       updatedAt: nowISO
     };
 
@@ -2148,6 +2248,7 @@ async function handleFormSubmit(e) {
           received_from: receivedFrom,
           date_received: dateReceived,
           remarks,
+          image_url: currentCompiledImageUrl || null,
           updated_at: nowISO
         });
         if (sbErr) console.warn('Supabase update note:', sbErr.message);
@@ -2167,6 +2268,7 @@ async function handleFormSubmit(e) {
           received_from: receivedFrom,
           date_received: dateReceived,
           remarks,
+          image_url: currentCompiledImageUrl || null,
           created_at: nowISO,
           updated_at: nowISO
         });
@@ -2491,7 +2593,7 @@ function openDeleteModal(id) {
   else summary = `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
 
   document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
-  
+
   const pwdInput = document.getElementById('delete-password-input');
   if (pwdInput) {
     pwdInput.value = '';
@@ -3487,63 +3589,82 @@ function parseOcrDateToYYYYMMDD(dateStr) {
 /**
  * Initialize Transmittal OCR Image Reader using Tesseract.js
  */
+let currentCompiledImageUrl = null;
+
 /**
- * Initialize Drag & Drop and File Selection Handlers for Transmittal Image Upload
+ * Initialize Drag & Drop and File/Camera Handlers for Transmittals & Documents Received Image Upload
  */
 function initDragAndDropHandler() {
-  const dropzone = document.getElementById('ocr-scan-zone');
-  const fileInput = document.getElementById('transmittal-ocr-file');
+  const transmittalDropzone = document.getElementById('ocr-scan-zone');
+  const transmittalFile = document.getElementById('transmittal-ocr-file');
+  const transmittalCamera = document.getElementById('transmittal-camera-file');
 
-  if (dropzone) {
+  const compiledDropzone = document.getElementById('compiled-ocr-zone');
+  const compiledFile = document.getElementById('compiled-image-file');
+  const compiledCamera = document.getElementById('compiled-camera-file');
+
+  const setupDropzone = (zone, processFn) => {
+    if (!zone) return;
     ['dragenter', 'dragover'].forEach(eventName => {
-      dropzone.addEventListener(eventName, (e) => {
+      zone.addEventListener(eventName, (e) => {
         e.preventDefault();
         e.stopPropagation();
-        dropzone.classList.add('drag-over');
+        zone.classList.add('drag-over');
       }, false);
     });
 
     ['dragleave', 'drop'].forEach(eventName => {
-      dropzone.addEventListener(eventName, (e) => {
+      zone.addEventListener(eventName, (e) => {
         e.preventDefault();
         e.stopPropagation();
-        dropzone.classList.remove('drag-over');
+        zone.classList.remove('drag-over');
       }, false);
     });
 
-    dropzone.addEventListener('drop', (e) => {
+    zone.addEventListener('drop', (e) => {
       const dt = e.dataTransfer;
       const files = dt.files;
       if (files && files.length > 0) {
-        processTransmittalImageFile(files[0]);
+        processFn(files[0]);
       }
     });
-  }
+  };
 
-  if (fileInput) {
-    fileInput.addEventListener('change', (e) => {
+  const setupFileInput = (input, processFn) => {
+    if (!input) return;
+    input.addEventListener('change', (e) => {
       const files = e.target.files;
       if (files && files.length > 0) {
-        processTransmittalImageFile(files[0]);
+        processFn(files[0]);
       }
     });
-  }
+  };
 
-  // Global window drop listener for Transmittal tab
+  setupDropzone(transmittalDropzone, processTransmittalImageFile);
+  setupFileInput(transmittalFile, processTransmittalImageFile);
+  setupFileInput(transmittalCamera, processTransmittalImageFile);
+
+  setupDropzone(compiledDropzone, processCompiledImageFile);
+  setupFileInput(compiledFile, processCompiledImageFile);
+  setupFileInput(compiledCamera, processCompiledImageFile);
+
+  // Global window drop listener
   window.addEventListener('dragover', (e) => e.preventDefault());
   window.addEventListener('drop', (e) => {
-    if (appState.activeTab === 'transmittal') {
-      const files = e.dataTransfer.files;
-      if (files && files.length > 0 && files[0].type.startsWith('image/')) {
-        e.preventDefault();
-        const recordModal = document.getElementById('record-modal');
-        if (!recordModal.classList.contains('active')) {
-          openRecordModal();
-        }
-        setTimeout(() => {
-          processTransmittalImageFile(files[0]);
-        }, 150);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0 && files[0].type.startsWith('image/')) {
+      e.preventDefault();
+      const recordModal = document.getElementById('record-modal');
+      if (!recordModal.classList.contains('active')) {
+        openRecordModal();
       }
+      setTimeout(() => {
+        if (appState.activeTab === 'compiled') {
+          processCompiledImageFile(files[0]);
+        } else {
+          processTransmittalImageFile(files[0]);
+        }
+      }, 150);
     }
   });
 
@@ -3588,7 +3709,7 @@ function initPasteSanitizer() {
     const newCursorPos = start + sanitized.length;
     try {
       target.selectionStart = target.selectionEnd = newCursorPos;
-    } catch (err) {}
+    } catch (err) { }
 
     if (target.id === 'particulars') {
       handleParticularsLivePreview();
@@ -3609,7 +3730,7 @@ function processTransmittalImageFile(file) {
   const reader = new FileReader();
   reader.onload = async (e) => {
     const rawDataUrl = e.target.result;
-    
+
     // Scale and compress image preserving exact format and aspect ratio
     const optimizedDataUrl = await compressImagePreservingFormat(rawDataUrl, 1600, 0.88);
     currentTransmittalImageUrl = optimizedDataUrl;
@@ -3676,6 +3797,53 @@ function removeTransmittalModalImage() {
 function viewTransmittalModalImage() {
   if (currentTransmittalImageUrl) {
     openImageLightbox(currentTransmittalImageUrl, 'TRANSMITTAL DOCUMENT ATTACHMENT');
+  }
+}
+
+function processCompiledImageFile(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    showToast('PLEASE UPLOAD A VALID IMAGE FILE (PNG, JPG, WEBP)', 'warning');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const rawDataUrl = e.target.result;
+    const optimizedDataUrl = await compressImagePreservingFormat(rawDataUrl, 1600, 0.88);
+    currentCompiledImageUrl = optimizedDataUrl;
+    updateCompiledModalImagePreview();
+    showToast('DOCUMENT PHOTO ATTACHED SUCCESSFULLY', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateCompiledModalImagePreview() {
+  const container = document.getElementById('compiled-image-preview-container');
+  const img = document.getElementById('compiled-modal-img-preview');
+  if (!container || !img) return;
+
+  if (currentCompiledImageUrl) {
+    img.src = currentCompiledImageUrl;
+    container.style.display = 'block';
+  } else {
+    img.src = '';
+    container.style.display = 'none';
+  }
+}
+
+function removeCompiledModalImage() {
+  currentCompiledImageUrl = null;
+  updateCompiledModalImagePreview();
+  const fileInput = document.getElementById('compiled-image-file');
+  if (fileInput) fileInput.value = '';
+  const camInput = document.getElementById('compiled-camera-file');
+  if (camInput) camInput.value = '';
+  showToast('DOCUMENT PHOTO ATTACHMENT REMOVED', 'info');
+}
+
+function viewCompiledModalImage() {
+  if (currentCompiledImageUrl) {
+    openImageLightbox(currentCompiledImageUrl, 'COMPILED DOCUMENT PHOTO');
   }
 }
 

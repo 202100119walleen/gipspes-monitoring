@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS gip_compiled_documents (
   received_from TEXT,
   date_received TEXT,
   remarks TEXT,
+  image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -77,6 +78,12 @@ ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS regional_date_received 
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS remarks TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS program TEXT DEFAULT 'GIP';
+
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS document_title TEXT;
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS received_from TEXT;
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS date_received TEXT;
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS remarks TEXT;
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS image_url TEXT;
 
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS month TEXT;

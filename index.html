@@ -471,6 +471,55 @@
 
           <!-- Fields for Documents Received Module -->
           <div id="fields-compiled" class="module-fields" style="display: none;">
+            <!-- Drag & Drop Photo Upload & Camera Capture Zone -->
+            <div class="ocr-scan-card compiled-dropzone" id="compiled-ocr-zone">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand-accent); flex-shrink: 0;">
+                    <i data-lucide="image" style="width: 22px; height: 22px;"></i>
+                  </div>
+                  <div>
+                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Document Photo / Camera Capture</span>
+                    <p style="font-size: 0.775rem; color: var(--text-muted); margin-top: 2px;">
+                      Attach document photo from local device gallery or snap a photo directly using phone camera.
+                    </p>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <label for="compiled-image-file" class="btn btn-secondary btn-icon"
+                    style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: var(--brand-accent); color: var(--brand-accent);">
+                    <i data-lucide="image-plus"></i> Select File
+                  </label>
+                  <input type="file" id="compiled-image-file" accept="image/*" style="display: none;">
+                  <label for="compiled-camera-file" class="btn btn-secondary btn-icon"
+                    style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: #10b981; color: #10b981;">
+                    <i data-lucide="camera"></i> Take Photo
+                  </label>
+                  <input type="file" id="compiled-camera-file" accept="image/*" capture="environment" style="display: none;">
+                </div>
+              </div>
+
+              <!-- Uploaded Attachment Preview Box -->
+              <div id="compiled-image-preview-container" style="display: none; margin-top: 14px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-medium); border-radius: 8px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                  <span style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> DOCUMENT PHOTO ATTACHED
+                  </span>
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" id="btn-view-compiled-image" style="padding: 4px 10px; font-size: 0.75rem;">
+                      <i data-lucide="maximize-2" style="width: 12px; height: 12px;"></i> Full Screen
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btn-remove-compiled-image" style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
+                      <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Remove
+                    </button>
+                  </div>
+                </div>
+                <div style="text-align: center; background: #0f172a; border-radius: 6px; padding: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; max-height: 240px;">
+                  <img id="compiled-modal-img-preview" src="" alt="Document Photo Preview" style="max-height: 220px; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">
+                </div>
+              </div>
+            </div>
+
             <div class="form-group">
               <label for="compiled-title">Compiled Documents / Title <span class="required">*</span></label>
               <textarea id="compiled-title" class="form-control" rows="3" placeholder="e.g. COMPLIED GIP DTRs & ARs, ACKNOWLEDGEMENT RECEIPTS, ETC."></textarea>
