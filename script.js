@@ -1102,7 +1102,7 @@ function updateCountsAndStats() {
   });
 
   const totalBudget = parseFloat(appState.data.totalBudget) || 0;
-  const remainingBalance = totalBudget - grandTotalPaid - grandTotalPending;
+  const remainingBalance = totalBudget - grandTotalPaid;
 
   const formattedTotalPaid = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const formattedTotalPending = `₱${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -1150,7 +1150,7 @@ function updateCountsAndStats() {
       if (remainingBadgeElem) {
         remainingBadgeElem.style.background = 'rgba(16, 185, 129, 0.08)';
         remainingBadgeElem.style.borderColor = 'rgba(16, 185, 129, 0.25)';
-        remainingBadgeElem.title = 'Remaining Balance = Total Budget minus Total Paid minus Total Pending';
+        remainingBadgeElem.title = 'Remaining Balance = Total Budget minus Total Paid';
       }
       if (remainingIconBoxElem) {
         remainingIconBoxElem.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -2158,7 +2158,7 @@ function handleLiveSalaryModalInputChange() {
   });
 
   const totalBudget = parseFloat(appState.data.totalBudget) || 0;
-  const remainingBalance = totalBudget - tempPaid - tempPending;
+  const remainingBalance = totalBudget - tempPaid;
 
   const grandTotalValElem = document.getElementById('salary-grand-total-val');
   if (grandTotalValElem) grandTotalValElem.textContent = `₱${tempPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -3214,7 +3214,7 @@ function openTotalBudgetModal() {
   });
 
   const currBudget = parseFloat(appState.data.totalBudget) || 0;
-  const currRem = currBudget - grandTotalPaid - grandTotalPending;
+  const currRem = currBudget - grandTotalPaid;
 
   if (modalPaid) modalPaid.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (modalPending) modalPending.textContent = `₱${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -3281,7 +3281,7 @@ function updateBudgetModalPreview() {
   });
 
   const newBudget = parseFloat(input?.value) || 0;
-  const newRem = newBudget - grandTotalPaid - grandTotalPending;
+  const newRem = newBudget - grandTotalPaid;
 
   if (preview) {
     preview.textContent = `${newRem < 0 ? '-' : ''}₱${Math.abs(newRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
