@@ -532,6 +532,7 @@ async function fetchRecordsFromSupabase() {
         receivedFrom: formatEtAl(r.received_from),
         dateReceived: r.date_received,
         remarks: formatEtAl(r.remarks),
+        attachments: r.attachments || (r.image_url ? [{ id: 'att-cloud', name: 'Document_Photo.jpg', type: 'image', url: r.image_url }] : []),
         imageUrl: r.image_url || r.imageUrl || null,
         createdAt: r.created_at,
         updatedAt: r.updated_at
@@ -561,8 +562,8 @@ async function pushLocalDataToSupabase() {
         gip_name: r.gipName,
         month: r.month,
         quincena: r.quincena,
-        dtr_ar_date_received: r.dtrArDateReceived,
-        remarks: r.remarks,
+        dtr_ar_date_received: r.dtrArDateReceived || '',
+        remarks: r.remarks || '',
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
@@ -572,13 +573,13 @@ async function pushLocalDataToSupabase() {
     if (appState.data.transmittalRecords && appState.data.transmittalRecords.length > 0) {
       const trnPayload = appState.data.transmittalRecords.map(r => ({
         id: r.id,
-        program: r.program || '',
         particulars: r.particulars,
         prepared_by: r.preparedBy || '',
         date_transmitted: r.dateTransmitted || '',
         regional_date_received: r.regionalDateReceived || '',
-        image_url: r.imageUrl || null,
         remarks: r.remarks || '',
+        image_url: r.imageUrl || null,
+        program: r.program || 'GIP',
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
@@ -589,13 +590,25 @@ async function pushLocalDataToSupabase() {
       const cntPayload = appState.data.contactsRecords.map(r => ({
         id: r.id,
         gip_name: r.gipName,
-        assignment: r.assignment,
-        contact_number: r.contactNumber,
-        remarks: r.remarks,
+        assignment: r.assignment || 'LDNPFO',
+        contact_number: r.contactNumber || '',
+        remarks: r.remarks || '',
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
       await supabaseClient.from('gip_contacts').upsert(cntPayload);
+    }
+
+    if (appState.data.salaryRecords && appState.data.salaryRecords.length > 0) {
+      const salPayload = appState.data.salaryRecords.map(r => ({
+        id: r.id,
+        gip_name: r.gipName,
+        periods: r.periods || {},
+        remarks: r.remarks || '',
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_salary_records').upsert(salPayload);
     }
 
     if (appState.data.compiledRecords && appState.data.compiledRecords.length > 0) {
@@ -605,7 +618,8 @@ async function pushLocalDataToSupabase() {
         received_from: r.receivedFrom || '',
         date_received: r.dateReceived || '',
         remarks: r.remarks || '',
-        image_url: r.imageUrl || null,
+        attachments: r.attachments || [],
+        image_url: r.imageUrl || (r.attachments && r.attachments.length > 0 ? r.attachments[0].url : null),
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
@@ -833,6 +847,20 @@ function bindEvents() {
   if (lightboxModal) {
     lightboxModal.addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeImageLightbox();
+    });
+  }
+
+  // PDF Viewer Modal Listeners
+  const pdfCloseBtn = document.getElementById('pdf-modal-close');
+  if (pdfCloseBtn) pdfCloseBtn.addEventListener('click', closePdfViewerModal);
+
+  const pdfCloseBtn2 = document.getElementById('pdf-modal-close-btn');
+  if (pdfCloseBtn2) pdfCloseBtn2.addEventListener('click', closePdfViewerModal);
+
+  const pdfModal = document.getElementById('pdf-viewer-modal');
+  if (pdfModal) {
+    pdfModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closePdfViewerModal();
     });
   }
 
@@ -1576,19 +1604,33 @@ function renderTable() {
       const titleText = escapeHtml(formatEtAl(record.documentTitle || record.particulars || ''));
       const highlightedTitle = highlightTextInHtml(titleText, searchQuery);
 
-      let imageBtnHtml = '';
-      if (record.imageUrl) {
-        imageBtnHtml = `
-          <button type="button" class="btn-show-attached-img" onclick="openImageLightbox('${escapeHtml(record.imageUrl)}', 'COMPILED DOCUMENT PHOTO')" title="Click to view attached document photo" style="margin-left: 8px;">
-            <i data-lucide="image" style="width: 13px; height: 13px;"></i> Photo
-          </button>
-        `;
+      const attachments = record.attachments && Array.isArray(record.attachments) && record.attachments.length > 0 
+        ? record.attachments 
+        : (record.imageUrl ? [{ id: 'att-legacy', name: 'Document_Photo.jpg', type: 'image', url: record.imageUrl }] : []);
+
+      let attachmentBtnsHtml = '';
+      if (attachments.length > 0) {
+        attachmentBtnsHtml = `<div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">` + attachments.map((att, idx) => {
+          if (att.type === 'pdf') {
+            return `
+              <button type="button" class="btn-show-attached-pdf" onclick="openPdfViewerModal('${escapeHtml(att.url)}', '${escapeHtml(att.name)}')" title="Click to view attached PDF: ${escapeHtml(att.name)}" style="background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.725rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                <i data-lucide="file-text" style="width: 12px; height: 12px; color: #ef4444;"></i> PDF ${attachments.length > 1 ? (idx + 1) : ''}
+              </button>
+            `;
+          } else {
+            return `
+              <button type="button" class="btn-show-attached-img" onclick="openImageLightbox('${escapeHtml(att.url)}', 'COMPILED DOCUMENT PHOTO (${idx + 1}/${attachments.length})')" title="Click to view attached photo: ${escapeHtml(att.name)}" style="margin-left: 0;">
+                <i data-lucide="image" style="width: 12px; height: 12px;"></i> Photo ${attachments.length > 1 ? (idx + 1) : ''}
+              </button>
+            `;
+          }
+        }).join('') + `</div>`;
       }
 
       const titleCellHtml = `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
           <span style="font-weight: 600; font-size: 0.925rem; color: var(--primary-navy);">${highlightedTitle}</span>
-          ${imageBtnHtml}
+          ${attachmentBtnsHtml}
         </div>
       `;
 
@@ -2146,7 +2188,12 @@ function openRecordModal(id = null) {
         document.getElementById('compiled-title').value = (record.documentTitle || '').toUpperCase();
         document.getElementById('compiled-received-from').value = (record.receivedFrom || '').toUpperCase();
         document.getElementById('compiled-date-received').value = record.dateReceived || '';
-        currentCompiledImageUrl = record.imageUrl || null;
+        currentCompiledAttachments = [];
+        if (record.attachments && Array.isArray(record.attachments)) {
+          currentCompiledAttachments = [...record.attachments];
+        } else if (record.imageUrl) {
+          currentCompiledAttachments = [{ id: 'att-legacy', name: 'Document_Photo.jpg', type: 'image', url: record.imageUrl, size: 0 }];
+        }
         updateCompiledModalImagePreview();
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
@@ -2190,7 +2237,7 @@ function openRecordModal(id = null) {
     }
     currentTransmittalImageUrl = null;
     updateTransmittalModalImagePreview();
-    currentCompiledImageUrl = null;
+    currentCompiledAttachments = [];
     updateCompiledModalImagePreview();
   }
 
@@ -2223,12 +2270,16 @@ async function handleFormSubmit(e) {
       return;
     }
 
+    const firstImg = currentCompiledAttachments.find(a => a.type === 'image');
+    const primaryImgUrl = firstImg ? firstImg.url : (currentCompiledAttachments.length > 0 ? currentCompiledAttachments[0].url : null);
+
     const payload = {
       documentTitle,
       receivedFrom,
       dateReceived,
       remarks,
-      imageUrl: currentCompiledImageUrl || null,
+      attachments: currentCompiledAttachments,
+      imageUrl: primaryImgUrl,
       updatedAt: nowISO
     };
 
@@ -2248,7 +2299,8 @@ async function handleFormSubmit(e) {
           received_from: receivedFrom,
           date_received: dateReceived,
           remarks,
-          image_url: currentCompiledImageUrl || null,
+          attachments: currentCompiledAttachments,
+          image_url: primaryImgUrl,
           updated_at: nowISO
         });
         if (sbErr) console.warn('Supabase update note:', sbErr.message);
@@ -2268,7 +2320,8 @@ async function handleFormSubmit(e) {
           received_from: receivedFrom,
           date_received: dateReceived,
           remarks,
-          image_url: currentCompiledImageUrl || null,
+          attachments: currentCompiledAttachments,
+          image_url: primaryImgUrl,
           created_at: nowISO,
           updated_at: nowISO
         });
@@ -3603,7 +3656,7 @@ function initDragAndDropHandler() {
   const compiledFile = document.getElementById('compiled-image-file');
   const compiledCamera = document.getElementById('compiled-camera-file');
 
-  const setupDropzone = (zone, processFn) => {
+  const setupDropzone = (zone, processFn, isMulti = false) => {
     if (!zone) return;
     ['dragenter', 'dragover'].forEach(eventName => {
       zone.addEventListener(eventName, (e) => {
@@ -3625,46 +3678,51 @@ function initDragAndDropHandler() {
       const dt = e.dataTransfer;
       const files = dt.files;
       if (files && files.length > 0) {
-        processFn(files[0]);
+        if (isMulti) processFn(files);
+        else processFn(files[0]);
       }
     });
   };
 
-  const setupFileInput = (input, processFn) => {
+  const setupFileInput = (input, processFn, isMulti = false) => {
     if (!input) return;
     input.addEventListener('change', (e) => {
       const files = e.target.files;
       if (files && files.length > 0) {
-        processFn(files[0]);
+        if (isMulti) processFn(files);
+        else processFn(files[0]);
       }
     });
   };
 
-  setupDropzone(transmittalDropzone, processTransmittalImageFile);
-  setupFileInput(transmittalFile, processTransmittalImageFile);
-  setupFileInput(transmittalCamera, processTransmittalImageFile);
+  setupDropzone(transmittalDropzone, processTransmittalImageFile, false);
+  setupFileInput(transmittalFile, processTransmittalImageFile, false);
+  setupFileInput(transmittalCamera, processTransmittalImageFile, false);
 
-  setupDropzone(compiledDropzone, processCompiledImageFile);
-  setupFileInput(compiledFile, processCompiledImageFile);
-  setupFileInput(compiledCamera, processCompiledImageFile);
+  setupDropzone(compiledDropzone, processCompiledFiles, true);
+  setupFileInput(compiledFile, processCompiledFiles, true);
+  setupFileInput(compiledCamera, processCompiledFiles, true);
 
   // Global window drop listener
   window.addEventListener('dragover', (e) => e.preventDefault());
   window.addEventListener('drop', (e) => {
     const files = e.dataTransfer.files;
-    if (files && files.length > 0 && files[0].type.startsWith('image/')) {
-      e.preventDefault();
-      const recordModal = document.getElementById('record-modal');
-      if (!recordModal.classList.contains('active')) {
-        openRecordModal();
-      }
-      setTimeout(() => {
-        if (appState.activeTab === 'compiled') {
-          processCompiledImageFile(files[0]);
-        } else {
-          processTransmittalImageFile(files[0]);
+    if (files && files.length > 0) {
+      const hasImageOrPdf = Array.from(files).some(f => f.type.startsWith('image/') || f.type === 'application/pdf' || f.name.endsWith('.pdf'));
+      if (hasImageOrPdf) {
+        e.preventDefault();
+        const recordModal = document.getElementById('record-modal');
+        if (!recordModal.classList.contains('active')) {
+          openRecordModal();
         }
-      }, 150);
+        setTimeout(() => {
+          if (appState.activeTab === 'compiled') {
+            processCompiledFiles(files);
+          } else {
+            processTransmittalImageFile(files[0]);
+          }
+        }, 150);
+      }
     }
   });
 
@@ -3800,51 +3858,181 @@ function viewTransmittalModalImage() {
   }
 }
 
-function processCompiledImageFile(file) {
-  if (!file || !file.type.startsWith('image/')) {
-    showToast('PLEASE UPLOAD A VALID IMAGE FILE (PNG, JPG, WEBP)', 'warning');
-    return;
+let currentCompiledAttachments = [];
+
+async function processCompiledFiles(fileList) {
+  if (!fileList || fileList.length === 0) return;
+  const files = Array.from(fileList);
+
+  for (const file of files) {
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    if (!isImage && !isPdf) {
+      showToast(`SKIPPED "${file.name}": UNSUPPORTED FORMAT (ONLY PDF & IMAGES ALLOWED)`, 'warning');
+      continue;
+    }
+
+    if (isImage) {
+      const dataUrl = await readFileAsDataURL(file);
+      const optimizedUrl = await compressImagePreservingFormat(dataUrl, 1600, 0.88);
+      currentCompiledAttachments.push({
+        id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+        name: file.name || 'Photo.jpg',
+        type: 'image',
+        url: optimizedUrl,
+        size: file.size || 0
+      });
+    } else if (isPdf) {
+      const pdfDataUrl = await readFileAsDataURL(file);
+      currentCompiledAttachments.push({
+        id: 'att-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+        name: file.name || 'Document.pdf',
+        type: 'pdf',
+        url: pdfDataUrl,
+        size: file.size || 0
+      });
+    }
   }
 
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const rawDataUrl = e.target.result;
-    const optimizedDataUrl = await compressImagePreservingFormat(rawDataUrl, 1600, 0.88);
-    currentCompiledImageUrl = optimizedDataUrl;
-    updateCompiledModalImagePreview();
-    showToast('DOCUMENT PHOTO ATTACHED SUCCESSFULLY', 'success');
-  };
-  reader.readAsDataURL(file);
+  updateCompiledModalImagePreview();
+  showToast(`${files.length} ATTACHMENT(S) PROCESSED`, 'success');
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
 }
 
 function updateCompiledModalImagePreview() {
   const container = document.getElementById('compiled-image-preview-container');
-  const img = document.getElementById('compiled-modal-img-preview');
-  if (!container || !img) return;
+  const countBadge = document.getElementById('compiled-attachments-count-badge');
+  const listContainer = document.getElementById('compiled-attachments-list');
 
-  if (currentCompiledImageUrl) {
-    img.src = currentCompiledImageUrl;
-    container.style.display = 'block';
-  } else {
-    img.src = '';
+  if (!container || !listContainer) return;
+
+  if (!currentCompiledAttachments || currentCompiledAttachments.length === 0) {
     container.style.display = 'none';
+    listContainer.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'block';
+  const imgCount = currentCompiledAttachments.filter(a => a.type === 'image').length;
+  const pdfCount = currentCompiledAttachments.filter(a => a.type === 'pdf').length;
+
+  if (countBadge) {
+    countBadge.innerHTML = `<i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> ATTACHED DOCUMENTS (${currentCompiledAttachments.length}) &bull; ${imgCount} IMAGES, ${pdfCount} PDFS`;
+  }
+
+  listContainer.innerHTML = currentCompiledAttachments.map((att, idx) => {
+    if (att.type === 'image') {
+      return `
+        <div style="background: #0f172a; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 8px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+          <div style="width: 100%; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px; background: #000; margin-bottom: 6px;">
+            <img src="${escapeHtml(att.url)}" alt="${escapeHtml(att.name)}" style="max-height: 100px; width: auto; max-width: 100%; object-fit: contain;">
+          </div>
+          <div style="width: 100%; font-size: 0.725rem; color: #cbd5e1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px;" title="${escapeHtml(att.name)}">
+            📷 ${escapeHtml(att.name)}
+          </div>
+          <div style="display: flex; gap: 4px; width: 100%;">
+            <button type="button" class="btn btn-secondary" onclick="viewCompiledAttachmentAtIndex(${idx})" style="flex: 1; padding: 3px 6px; font-size: 0.7rem; justify-content: center;">
+              <i data-lucide="maximize-2" style="width: 10px; height: 10px;"></i> View
+            </button>
+            <button type="button" class="btn btn-danger" onclick="removeCompiledAttachmentAtIndex(${idx})" style="padding: 3px 6px; font-size: 0.7rem; background: #ef4444; border-color: #dc2626;">
+              <i data-lucide="x" style="width: 10px; height: 10px;"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    } else {
+      return `
+        <div style="background: #1e293b; border: 1px solid rgba(239,68,68,0.3); border-radius: 6px; padding: 10px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+          <div style="width: 100%; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 4px; background: rgba(239,68,68,0.1); margin-bottom: 6px; color: #ef4444;">
+            <i data-lucide="file-text" style="width: 32px; height: 32px; margin-bottom: 4px;"></i>
+            <span style="font-size: 0.65rem; font-weight: 700; color: #f8fafc;">PDF DOCUMENT</span>
+          </div>
+          <div style="width: 100%; font-size: 0.725rem; color: #f8fafc; font-weight: 600; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px;" title="${escapeHtml(att.name)}">
+            📄 ${escapeHtml(att.name)}
+          </div>
+          <div style="display: flex; gap: 4px; width: 100%;">
+            <button type="button" class="btn btn-secondary" onclick="viewCompiledAttachmentAtIndex(${idx})" style="flex: 1; padding: 3px 6px; font-size: 0.7rem; justify-content: center; border-color: #ef4444; color: #ef4444;">
+              <i data-lucide="eye" style="width: 10px; height: 10px;"></i> Read PDF
+            </button>
+            <button type="button" class="btn btn-danger" onclick="removeCompiledAttachmentAtIndex(${idx})" style="padding: 3px 6px; font-size: 0.7rem; background: #ef4444; border-color: #dc2626;">
+              <i data-lucide="x" style="width: 10px; height: 10px;"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function removeCompiledAttachmentAtIndex(index) {
+  if (index >= 0 && index < currentCompiledAttachments.length) {
+    currentCompiledAttachments.splice(index, 1);
+    updateCompiledModalImagePreview();
   }
 }
 
 function removeCompiledModalImage() {
-  currentCompiledImageUrl = null;
+  currentCompiledAttachments = [];
   updateCompiledModalImagePreview();
   const fileInput = document.getElementById('compiled-image-file');
   if (fileInput) fileInput.value = '';
   const camInput = document.getElementById('compiled-camera-file');
   if (camInput) camInput.value = '';
-  showToast('DOCUMENT PHOTO ATTACHMENT REMOVED', 'info');
+  showToast('ALL ATTACHMENTS REMOVED', 'info');
 }
 
-function viewCompiledModalImage() {
-  if (currentCompiledImageUrl) {
-    openImageLightbox(currentCompiledImageUrl, 'COMPILED DOCUMENT PHOTO');
+function viewCompiledAttachmentAtIndex(index) {
+  const att = currentCompiledAttachments[index];
+  if (!att) return;
+  if (att.type === 'pdf') {
+    openPdfViewerModal(att.url, att.name);
+  } else {
+    openImageLightbox(att.url, `ATTACHMENT (${index + 1}/${currentCompiledAttachments.length}) - ${att.name}`);
   }
+}
+
+function openPdfViewerModal(pdfUrl, titleText = 'PDF DOCUMENT') {
+  if (!pdfUrl) return;
+  const modal = document.getElementById('pdf-viewer-modal');
+  const iframe = document.getElementById('pdf-modal-iframe');
+  const title = document.getElementById('pdf-modal-title');
+  const downloadBtn = document.getElementById('pdf-modal-download-btn');
+  const openNewBtn = document.getElementById('pdf-modal-open-new-btn');
+
+  if (!modal || !iframe) return;
+
+  iframe.src = pdfUrl;
+  if (title) {
+    title.innerHTML = `<i data-lucide="file-text" style="width: 20px; height: 20px; color: #ef4444;"></i> ${escapeHtml(titleText).toUpperCase()}`;
+  }
+  if (downloadBtn) {
+    downloadBtn.href = pdfUrl;
+    downloadBtn.download = titleText.endsWith('.pdf') ? titleText : `${titleText}.pdf`;
+  }
+  if (openNewBtn) {
+    openNewBtn.href = pdfUrl;
+  }
+
+  modal.classList.add('active');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closePdfViewerModal() {
+  const modal = document.getElementById('pdf-viewer-modal');
+  const iframe = document.getElementById('pdf-modal-iframe');
+  if (modal) modal.classList.remove('active');
+  if (iframe) iframe.src = '';
 }
 
 function openImageLightbox(imageUrl, titleText = 'TRANSMITTAL DOCUMENT ATTACHMENT') {

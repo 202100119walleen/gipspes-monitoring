@@ -471,51 +471,46 @@
 
           <!-- Fields for Documents Received Module -->
           <div id="fields-compiled" class="module-fields" style="display: none;">
-            <!-- Drag & Drop Photo Upload & Camera Capture Zone -->
+            <!-- Drag & Drop PDF & Photo Upload Zone -->
             <div class="ocr-scan-card compiled-dropzone" id="compiled-ocr-zone">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                   <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand-accent); flex-shrink: 0;">
-                    <i data-lucide="image" style="width: 22px; height: 22px;"></i>
+                    <i data-lucide="paperclip" style="width: 22px; height: 22px;"></i>
                   </div>
                   <div>
-                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Document Photo / Camera Capture</span>
+                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Document Files &amp; Camera Capture (PDF &amp; Images)</span>
                     <p style="font-size: 0.775rem; color: var(--text-muted); margin-top: 2px;">
-                      Attach document photo from local device gallery or snap a photo directly using phone camera.
+                      Attach multiple photos or PDF documents from your device gallery/files or capture direct camera photos.
                     </p>
                   </div>
                 </div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                   <label for="compiled-image-file" class="btn btn-secondary btn-icon"
                     style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: var(--brand-accent); color: var(--brand-accent);">
-                    <i data-lucide="image-plus"></i> Select File
+                    <i data-lucide="folder-plus"></i> Select File(s) / PDF
                   </label>
-                  <input type="file" id="compiled-image-file" accept="image/*" style="display: none;">
+                  <input type="file" id="compiled-image-file" accept="image/*,application/pdf" multiple style="display: none;">
                   <label for="compiled-camera-file" class="btn btn-secondary btn-icon"
                     style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: #10b981; color: #10b981;">
                     <i data-lucide="camera"></i> Take Photo
                   </label>
-                  <input type="file" id="compiled-camera-file" accept="image/*" capture="environment" style="display: none;">
+                  <input type="file" id="compiled-camera-file" accept="image/*" capture="environment" multiple style="display: none;">
                 </div>
               </div>
 
-              <!-- Uploaded Attachment Preview Box -->
+              <!-- Uploaded Attachments Multi-Item Container -->
               <div id="compiled-image-preview-container" style="display: none; margin-top: 14px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-medium); border-radius: 8px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> DOCUMENT PHOTO ATTACHED
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px dashed var(--border-medium);">
+                  <span id="compiled-attachments-count-badge" style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> ATTACHED DOCUMENTS (0)
                   </span>
-                  <div style="display: flex; gap: 8px;">
-                    <button type="button" class="btn btn-secondary" id="btn-view-compiled-image" style="padding: 4px 10px; font-size: 0.75rem;">
-                      <i data-lucide="maximize-2" style="width: 12px; height: 12px;"></i> Full Screen
-                    </button>
-                    <button type="button" class="btn btn-danger" id="btn-remove-compiled-image" style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
-                      <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Remove
-                    </button>
-                  </div>
+                  <button type="button" class="btn btn-danger" id="btn-remove-compiled-image" style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
+                    <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Clear All
+                  </button>
                 </div>
-                <div style="text-align: center; background: #0f172a; border-radius: 6px; padding: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; max-height: 240px;">
-                  <img id="compiled-modal-img-preview" src="" alt="Document Photo Preview" style="max-height: 220px; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">
+                <div id="compiled-attachments-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 260px; overflow-y: auto;">
+                  <!-- Dynamically populated attachment cards -->
                 </div>
               </div>
             </div>
@@ -854,6 +849,35 @@
             <i data-lucide="download"></i> Download Image
           </a>
           <button type="button" class="btn btn-secondary" id="lightbox-modal-close-btn" style="font-size: 0.85rem;">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- High-Resolution PDF Document Viewer Modal -->
+  <div class="modal-backdrop" id="pdf-viewer-modal" style="z-index: 1210; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px);">
+    <div class="modal-container" style="max-width: 92vw; width: 950px; height: 88vh; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
+      <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 14px 20px;">
+        <h2 style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 1rem;" id="pdf-modal-title">
+          <i data-lucide="file-text" style="width: 20px; height: 20px; color: #ef4444;"></i> Attached PDF Document
+        </h2>
+        <button class="modal-close" id="pdf-modal-close" style="color: #94a3b8;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 0; flex: 1; background: #090d16; overflow: hidden; position: relative;">
+        <iframe id="pdf-modal-iframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+      </div>
+      <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; justify-content: space-between;">
+        <span style="font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
+          <i data-lucide="info" style="width: 14px; height: 14px;"></i> Interactive PDF Document Viewer
+        </span>
+        <div style="display: flex; gap: 10px;">
+          <a id="pdf-modal-open-new-btn" href="#" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem; text-decoration: none;">
+            <i data-lucide="external-link"></i> Open in New Tab
+          </a>
+          <a id="pdf-modal-download-btn" href="#" download="Document.pdf" class="btn btn-primary" style="font-size: 0.85rem; text-decoration: none;">
+            <i data-lucide="download"></i> Download PDF
+          </a>
+          <button type="button" class="btn btn-secondary" id="pdf-modal-close-btn" style="font-size: 0.85rem;">Close</button>
         </div>
       </div>
     </div>
