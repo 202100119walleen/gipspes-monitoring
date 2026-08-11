@@ -2300,6 +2300,79 @@ function toggleParticularsMemoCard(cardId, totalLines) {
 }
 
 /**
+ * Automatically Calculate Age from Date of Birth String
+ */
+function calculateAgeFromDob(dobStr) {
+  if (!dobStr || typeof dobStr !== 'string') return '';
+  const cleanStr = dobStr.trim();
+  if (!cleanStr) return '';
+
+  let birthDate = null;
+
+  const parsed = new Date(cleanStr);
+  if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 1900 && parsed.getFullYear() <= new Date().getFullYear()) {
+    birthDate = parsed;
+  } else {
+    const parts = cleanStr.split(/[\/\-\.]/).map(p => p.trim());
+    if (parts.length === 3) {
+      let num1 = parseInt(parts[0], 10);
+      let num2 = parseInt(parts[1], 10);
+      let num3 = parseInt(parts[2], 10);
+
+      if (!isNaN(num1) && !isNaN(num2) && !isNaN(num3)) {
+        let year, month, day;
+        if (num1 > 1000) {
+          year = num1; month = num2; day = num3;
+        } else if (num3 > 1000) {
+          year = num3;
+          if (num1 > 12) {
+            day = num1; month = num2;
+          } else {
+            month = num1; day = num2;
+          }
+        } else if (num3 < 100) {
+          year = num3 > 30 ? 1900 + num3 : 2000 + num3;
+          if (num1 > 12) {
+            day = num1; month = num2;
+          } else {
+            month = num1; day = num2;
+          }
+        }
+
+        if (year && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          birthDate = new Date(year, month - 1, day);
+        }
+      }
+    }
+  }
+
+  if (!birthDate || isNaN(birthDate.getTime())) return '';
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  return (age >= 0 && age < 120) ? String(age) : '';
+}
+
+/**
+ * Real-time DOB input handler to auto-populate Age field
+ */
+function handleGsisDobInput() {
+  const dobInput = document.getElementById('gsis-dob');
+  const ageInput = document.getElementById('gsis-age');
+  if (!dobInput || !ageInput) return;
+
+  const calculatedAge = calculateAgeFromDob(dobInput.value);
+  if (calculatedAge) {
+    ageInput.value = calculatedAge;
+  }
+}
+
+/**
  * Live Form Preview Handler for Particulars Textarea
  */
 function handleParticularsLivePreview() {
@@ -2637,7 +2710,8 @@ function openRecordModal(id = null) {
       } else if (isGsis) {
         document.getElementById('gsis-name').value = (record.name || '').toUpperCase();
         document.getElementById('gsis-dob').value = record.dob || '';
-        document.getElementById('gsis-age').value = record.age || '';
+        const calcAge = calculateAgeFromDob(record.dob || '');
+        document.getElementById('gsis-age').value = calcAge || record.age || '';
         document.getElementById('gsis-address').value = (record.address || '').toUpperCase();
         document.getElementById('gsis-beneficiary').value = (record.beneficiary || '').toUpperCase();
         document.getElementById('gsis-relationship').value = (record.relationship || '').toUpperCase();
@@ -2712,7 +2786,10 @@ async function handleFormSubmit(e) {
   if (isGsis) {
     const name = formatEtAl(document.getElementById('gsis-name').value.trim().toUpperCase());
     const dob = document.getElementById('gsis-dob').value.trim();
-    const age = document.getElementById('gsis-age').value.trim();
+    let age = document.getElementById('gsis-age').value.trim();
+    if (!age && dob) {
+      age = calculateAgeFromDob(dob);
+    }
     const address = document.getElementById('gsis-address').value.trim().toUpperCase();
     const beneficiary = formatEtAl(document.getElementById('gsis-beneficiary').value.trim().toUpperCase());
     const relationship = document.getElementById('gsis-relationship').value.trim().toUpperCase();

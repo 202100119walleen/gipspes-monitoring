@@ -612,11 +612,11 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label for="gsis-dob">Date of Birth</label>
-                <input type="text" id="gsis-dob" class="form-control" placeholder="e.g. 8/29/2002">
+                <input type="text" id="gsis-dob" class="form-control" placeholder="e.g. 8/29/2002" oninput="handleGsisDobInput()" onchange="handleGsisDobInput()">
               </div>
               <div class="form-group">
-                <label for="gsis-age">Age</label>
-                <input type="text" id="gsis-age" class="form-control" placeholder="e.g. 23">
+                <label for="gsis-age">Age <span style="font-size: 0.725rem; color: #10b981; font-weight: 600;">(Auto-Calculated)</span></label>
+                <input type="text" id="gsis-age" class="form-control" placeholder="Auto-calculated from DOB">
               </div>
             </div>
             <div class="form-group">
