@@ -1134,7 +1134,7 @@ function switchTab(tabName) {
   else if (tabName === 'transmittal') downloadLabel = 'Transmittals';
   else if (tabName === 'contacts') downloadLabel = 'Contacts';
   else if (tabName === 'salary') downloadLabel = 'Salary Data';
-  else if (tabName === 'gsis') downloadLabel = 'GSIS Data';
+  else if (tabName === 'gsis') downloadLabel = 'GIP Information';
   else if (tabName === 'compiled') downloadLabel = 'Documents';
   else if (tabName === 'trash') downloadLabel = 'Recycle Bin';
 
@@ -1169,8 +1169,8 @@ function switchTab(tabName) {
     btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'gsis') {
-    viewTitle.textContent = 'GIP GSIS INSURANCE INFO DIRECTORY';
-    viewSubtitle.textContent = 'GSIS GROUP ACCIDENT INSURANCE COVERAGE & DESIGNATED BENEFICIARY RECORDS';
+    viewTitle.textContent = 'GIP INFORMATION DIRECTORY';
+    viewSubtitle.textContent = 'GIP PROFILES, GSIS GROUP ACCIDENT INSURANCE COVERAGE & DESIGNATED BENEFICIARIES';
     btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'trash') {
@@ -1780,7 +1780,7 @@ function renderTable() {
     if (records.length === 0) {
       tableBody.innerHTML = '';
       emptyState.style.display = 'block';
-      if (emptyMsg) emptyMsg.textContent = 'No GIP GSIS Insurance records found. Click "+ Add New Record" to create one.';
+      if (emptyMsg) emptyMsg.textContent = 'No GIP Information records found. Click "+ Add New Record" to create one.';
       return;
     }
 
@@ -2583,7 +2583,7 @@ function openRecordModal(id = null) {
     else if (isContacts) modalTitle.textContent = 'EDIT GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'EDIT GIP SALARY RECORD';
     else if (isCompiled) modalTitle.textContent = 'EDIT DOCUMENT RECORD';
-    else if (isGsis) modalTitle.textContent = 'EDIT GSIS INSURANCE RECORD';
+    else if (isGsis) modalTitle.textContent = 'EDIT GIP INFORMATION RECORD';
     else modalTitle.textContent = 'EDIT TRANSMITTAL RECORD';
 
     let dataset;
@@ -2672,7 +2672,7 @@ function openRecordModal(id = null) {
     else if (isContacts) modalTitle.textContent = 'ADD NEW GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'ADD NEW GIP SALARY RECORD';
     else if (isCompiled) modalTitle.textContent = 'ADD NEW DOCUMENT RECORD';
-    else if (isGsis) modalTitle.textContent = 'ADD NEW GSIS INSURANCE RECORD';
+    else if (isGsis) modalTitle.textContent = 'ADD NEW GIP INFORMATION RECORD';
     else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
 
     document.getElementById('form-record-id').value = '';
@@ -2753,12 +2753,10 @@ async function handleFormSubmit(e) {
           beneficiary,
           relationship,
           period,
-          amount,
-          source_file: sourceFile,
           updated_at: nowISO
         });
       }
-      showToast('GSIS RECORD UPDATED SUCCESSFULLY!', 'success');
+      showToast('GIP INFORMATION RECORD UPDATED SUCCESSFULLY!', 'success');
     } else {
       const newId = 'gip-gsis-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
@@ -2774,13 +2772,11 @@ async function handleFormSubmit(e) {
           beneficiary,
           relationship,
           period,
-          amount,
-          source_file: sourceFile,
           created_at: nowISO,
           updated_at: nowISO
         });
       }
-      showToast('NEW GSIS RECORD ADDED SUCCESSFULLY!', 'success');
+      showToast('NEW GIP INFORMATION RECORD ADDED SUCCESSFULLY!', 'success');
     }
 
     closeRecordModal();
@@ -3907,7 +3903,7 @@ function handleExcelExportFormSubmit(e) {
         'PERIOD OF EMPLOYMENT': (r.period || '').toUpperCase()
       }));
       const wsGsis = XLSX.utils.json_to_sheet(gsisDataFormatted);
-      XLSX.utils.book_append_sheet(wb, wsGsis, 'GIP GSIS INSURANCE');
+      XLSX.utils.book_append_sheet(wb, wsGsis, 'GIP INFORMATION');
     }
 
     const chkSalary = document.getElementById('export-chk-salary')?.checked;
@@ -4133,9 +4129,9 @@ function exportSingleModule(e, type) {
         'PERIOD OF EMPLOYMENT': (r.period || '').toUpperCase()
       }));
       const ws = XLSX.utils.json_to_sheet(dataFormatted);
-      XLSX.utils.book_append_sheet(wb, ws, 'GIP GSIS INSURANCE');
-      XLSX.writeFile(wb, `GIP_GSIS_Insurance_Info_${dateStr}.xlsx`);
-      showToast('GIP GSIS EXCEL DOWNLOADED!', 'success');
+      XLSX.utils.book_append_sheet(wb, ws, 'GIP INFORMATION');
+      XLSX.writeFile(wb, `GIP_Information_${dateStr}.xlsx`);
+      showToast('GIP INFORMATION EXCEL DOWNLOADED!', 'success');
     } else if (type === 'compiled') {
       const dataFormatted = (appState.data.compiledRecords || []).map((r, idx) => ({
         'NO.': idx + 1,
