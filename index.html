@@ -84,6 +84,14 @@
           <span class="sidebar-badge" id="side-count-salary">0</span>
         </button>
 
+        <button class="sidebar-item" id="side-nav-gsis" data-tab="gsis">
+          <div class="sidebar-item-content">
+            <i data-lucide="shield-check"></i>
+            <span>GIP GSIS Insurance Info</span>
+          </div>
+          <span class="sidebar-badge" id="side-count-gsis">0</span>
+        </button>
+
         <button class="sidebar-item" id="side-nav-compiled" data-tab="compiled">
           <div class="sidebar-item-content">
             <i data-lucide="folder-check"></i>
@@ -138,9 +146,14 @@
           </div>
         </div>
 
-        <button class="btn btn-primary" id="btn-add-record">
-          <i data-lucide="plus-circle"></i> Add New Record
-        </button>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <button class="btn" id="btn-download-active-data" onclick="exportActiveModuleData()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-color: #059669; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);" title="Download Active Dataset as Excel">
+            <i data-lucide="download"></i> Download Data
+          </button>
+          <button class="btn btn-primary" id="btn-add-record">
+            <i data-lucide="plus-circle"></i> Add New Record
+          </button>
+        </div>
       </div>
 
       <!-- Overview Stats Grid -->
@@ -188,6 +201,15 @@
           </div>
           <div class="stat-icon received">
             <i data-lucide="folder-check"></i>
+          </div>
+        </div>
+        <div class="stat-card" id="stat-card-gsis" style="cursor: pointer;">
+          <div class="stat-info">
+            <div class="stat-label">GSIS Coverage Info</div>
+            <div class="stat-value" id="stat-gsis-count">0</div>
+          </div>
+          <div class="stat-icon completed" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+            <i data-lucide="shield-check"></i>
           </div>
         </div>
         <div class="stat-card">
@@ -581,6 +603,42 @@
             </div>
           </div>
 
+          <!-- Fields for GSIS Insurance Info Module -->
+          <div id="fields-gsis" class="module-fields" style="display: none;">
+            <div class="form-group">
+              <label for="gsis-name">Name of Assured <span class="required">*</span></label>
+              <input type="text" id="gsis-name" class="form-control" placeholder="e.g. ALEGA, ANGELYN A.">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="gsis-dob">Date of Birth</label>
+                <input type="text" id="gsis-dob" class="form-control" placeholder="e.g. 8/29/2002">
+              </div>
+              <div class="form-group">
+                <label for="gsis-age">Age</label>
+                <input type="text" id="gsis-age" class="form-control" placeholder="e.g. 23">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="gsis-address">Address</label>
+              <input type="text" id="gsis-address" class="form-control" placeholder="e.g. POB. MATUNGAO, LANAO DEL NORTE">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="gsis-beneficiary">Designated Beneficiary</label>
+                <input type="text" id="gsis-beneficiary" class="form-control" placeholder="e.g. ALEGA, LEONISA A.">
+              </div>
+              <div class="form-group">
+                <label for="gsis-relationship">Relationship to Assured</label>
+                <input type="text" id="gsis-relationship" class="form-control" placeholder="e.g. MOTHER">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="gsis-period">Period of Employment</label>
+              <input type="text" id="gsis-period" class="form-control" placeholder="e.g. JUNE 16, 2026 - DECEMBER 15, 2026">
+            </div>
+          </div>
+
           <!-- End of module fields -->
 
           <div class="form-group">
@@ -777,6 +835,19 @@
                   <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">GIP Contacts Directory
                   </div>
                   <div style="font-size: 0.75rem; color: var(--text-muted);">Official Mobile Contacts Directory</div>
+                </div>
+              </div>
+              <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
+            </label>
+
+            <label
+              style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; background: var(--card-bg);">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" id="export-chk-gsis" checked
+                  style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">GIP GSIS Insurance Info</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">GSIS Group Accident Insurance & Beneficiary Directory</div>
                 </div>
               </div>
               <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>

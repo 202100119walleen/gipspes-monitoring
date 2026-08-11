@@ -138,14 +138,93 @@ const DEFAULT_SALARY_SEED = [
   { id: "sal-33", gipName: "SINGSON, CLYDENE FRANZ M.", periods: { "APR 16-30": { amount: 0, status: "na" }, "MAY 1-15": { amount: 0, status: "na" }, "MAY 16-31": { amount: 0, status: "na" }, "JUNE 1-15": { amount: 0, status: "na" }, "JUNE 16-30": { amount: 5020.00, status: "received" }, "JULY 1-15": { amount: 5520.00, status: "received" }, "JULY 16-31": { amount: 0, status: "na" } } }
 ];
 
+const DEFAULT_GSIS_SEED = [
+  { id: "gip-gsis-1", sourceFile: "UPDATED NEW GSIS for jordan - ALEGA ET.AL.csv", name: "ALEGA, ANGELYN A", dob: "8/29/2002", age: "23", address: "POB. MATUNGAO, LANAO DEL NORTE", beneficiary: "ALEGA, LEONISA A.", relationship: "MOTHER", period: "JUNE 16, 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-2", sourceFile: "UPDATED NEW GSIS for jordan - ALEGA ET.AL.csv", name: "AMEROL, SOHAIB M.", dob: "3/30/2001", age: "25", address: "BLOCK 19, LOT 8 SANTA ELENA, STEEL TOWN, ILIGAN CITY", beneficiary: "AMEROL, ABDULAZIZ I.", relationship: "FATHER", period: "JUNE 16, 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-3", sourceFile: "UPDATED NEW GSIS for jordan - BOT AND MAIGO.csv", name: "AGBALOG, JOAN T. (BOT)", dob: "2/14/2000", age: "26", address: "PUROK 6-A, SANTIAGO, ILIGAN CITY", beneficiary: "AGBALOG, GEMMA", relationship: "MOTHER", period: "MAY 16, 2026 - OCTOBER 31, 2026", amount: "50.00" },
+  { id: "gip-gsis-4", sourceFile: "UPDATED NEW GSIS for jordan - BOT AND MAIGO.csv", name: "LACABA, LEO JAY B. (PESO MAIGO)", dob: "9/17/2000", age: "25", address: "P-2 CMR, MAIGO, LANAO DEL NORTE", beneficiary: "LACABA, JUDITH B.", relationship: "MOTHER", period: "MAY 16, 2026 - OCTOBER 31, 2026", amount: "50.00" },
+  { id: "gip-gsis-5", sourceFile: "UPDATED NEW GSIS for jordan - BOT AND MAIGO.csv", name: "LUNA, ELLA VIA C. (BOT)", dob: "11/13/1998", age: "27", address: "DULCE MARIA ACMAC, ILIGAN CITY", beneficiary: "LUNA, ROGEL C.", relationship: "BROTHER", period: "MAY 16, 2026 - OCTOBER 31, 2026", amount: "50.00" },
+  { id: "gip-gsis-6", sourceFile: "UPDATED NEW GSIS for jordan - CABILANDO.csv", name: "CABILANDO, SUSAN R.", dob: "8/11/2000", age: "25", address: "PUROK 8-C BARANGAY SANTIAGO, ILIGAN CITY", beneficiary: "CABILANDO, LUTGARDA R.", relationship: "MOTHER", period: "AUGUST 03, 2026 - NOVEMBER 30, 2026", amount: "50.00" },
+  { id: "gip-gsis-7", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "AGBONA, FRELYN L. (PESO BAROY)", dob: "5/13/1997", age: "29", address: "P-1, BAROY DAKU, BAROY, LANAO DEL NORTE", beneficiary: "IMRAN, MOJAHED S.", relationship: "HUSBAND", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-8", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "ARNOCO, KAYLA JOY V. (PESO SND)", dob: "4/1/2003", age: "22", address: "PANDANAN, SULTAN NAGA DIMAPORO LANAO DEL NORTE", beneficiary: "ARNOCO, ROEL, M.", relationship: "FATHER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-9", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "BEDOL, ZAIRA MAE L. (PESO BALO-I", dob: "11/9/2002", age: "23", address: "PRK 5, MARIA CRISTINA, BALO-I, LANAO DEL NORTE", beneficiary: "BEDOL, ROCHELL L.", relationship: "MOTHER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-10", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "MAMANGCONI, NUR-HASNA M. (PESO MATUNGAO)", dob: "1/29/2005", age: "21", address: "PANGI, MATUNGAO, LANAO DEL NORTE", beneficiary: "MAMANGCONI,NORAIDA M.", relationship: "MOTHER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-11", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "PATAD, ANALYN M. (PESO NUNUNGAN)", dob: "2/14/2002", age: "24", address: "NOTONGAN, NUNUNGAN, LANAO DEL NORTE", beneficiary: "PATAD, ONILYN M.", relationship: "SISTER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-12", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "PINDOLONAN, SAMAILA D. (PESO NUNUNGAN)", dob: "11/23/2001", age: "24", address: "NOTONGAN, NUNUNGAN, LANAO DEL NORTE", beneficiary: "BUTIG, MARBIA D.", relationship: "SISTER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-13", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "RIVERA, JHOPAY JANE D. (PESO BACOLOD)", dob: "6/4/2007", age: "18", address: "BACOLOD, LANAO DEL NORTE", beneficiary: "RIVERA, JASMIN D.", relationship: "SISTER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-14", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "SEBIAL, MARY CRIS C. (PESO SND)", dob: "3/19/2001", age: "25", address: "MAMAGUM, SULTAN NAGA DIMAPORO, LANAO DEL NORTE", beneficiary: "SEBIAL, LOURDES C.", relationship: "MOTHER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-15", sourceFile: "UPDATED NEW GSIS for jordan - GSIS NUNUNGAN AND SND AND BACOLOD.csv", name: "TEMPLADO, KATHY M. (PESO BAROY)", dob: "11/5/2005", age: "20", address: "LIMWAG, BAROY, LANAO DEL NORTE", beneficiary: "TEMPLADO,REBECCA", relationship: "MOTHER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-16", sourceFile: "UPDATED NEW GSIS for jordan - LANAO APRIL TO DECEMBER ABBAS EXSAN ET.AL.csv", name: "ABBAS, EXSAN S.", dob: "9/2/2000", age: "25", address: "RIVERSIDE, ZONE 2, MAHAYAHAY, ILIGAN CITY", beneficiary: "ABBAS, HAYNAH S.", relationship: "SISTER", period: "APRIL 16 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-17", sourceFile: "UPDATED NEW GSIS for jordan - LANAO APRIL TO DECEMBER ABBAS EXSAN ET.AL.csv", name: "ABDUL, NURKEYMAR, C.", dob: "9/3/2002", age: "23", address: "PUROK 4, MARIA CRISTINA BALO-I LANAO DEL NORTE", beneficiary: "DIABO, CAREN C.", relationship: "MOTHER", period: "APRIL 16 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-18", sourceFile: "UPDATED NEW GSIS for jordan - LANAO APRIL TO DECEMBER ABBAS EXSAN ET.AL.csv", name: "ATES, WALLEEN V.", dob: "11/4/1999", age: "26", address: "PUROK 4, LUINAB ILIGAN CITY LANAO DEL NORTE", beneficiary: "ATES, WALTER A.", relationship: "FATHER", period: "APRIL 16 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-19", sourceFile: "UPDATED NEW GSIS for jordan - LANAO APRIL TO DECEMBER ABBAS EXSAN ET.AL.csv", name: "GELLICA, MARK LLOYD V.", dob: "3/6/2003", age: "23", address: "PUROK 2B, TAMBACAN, ILIGAN CITY", beneficiary: "GELLICA, ELIZABETH", relationship: "MOTHER", period: "APRIL 16 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-20", sourceFile: "UPDATED NEW GSIS for jordan - LANAO APRIL TO DECEMBER ABBAS EXSAN ET.AL.csv", name: "H. ABBAS, JUNAISAH H.", dob: "8/13/2001", age: "24", address: "MARAWI CITY LANAO DEL SUR", beneficiary: "SALIM, JAMALIAH H.", relationship: "MOTHER", period: "APRIL 16 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-21", sourceFile: "UPDATED NEW GSIS for jordan - LANAO APRIL TO DECEMBER ABBAS EXSAN ET.AL.csv", name: "JAICTEN, FRANZELLE VIE B.", dob: "5/11/2003", age: "22", address: "#1664, PUROK 5-A PAITAN, DALIPUGA, ILIGAN CITY", beneficiary: "JAICTEN, VIVIAN B.", relationship: "MOTHER", period: "APRIL 16 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-22", sourceFile: "UPDATED NEW GSIS for jordan - LANAO APRIL TO DECEMBER ABBAS EXSAN ET.AL.csv", name: "TANGHIYAN, ERNIE JEAN D.", dob: "9/19/2003", age: "22", address: "UBALDO LAYA, ILIGAN CITY", beneficiary: "TANGHIYAN, EMILY D.", relationship: "MOTHER", period: "APRIL 16 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-23", sourceFile: "UPDATED NEW GSIS for jordan - LANAO APRIL TO DECEMBER ABBAS EXSAN ET.AL.csv", name: "UNDA, PRINCESS JEHAN, P", dob: "3/12/1998", age: "28", address: "BARA-AS, ILIGAN CITY, LANAO DEL NORTE", beneficiary: "UNDA, ABDULGAFFAR", relationship: "FATHER", period: "APRIL 16 2026 - DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-24", sourceFile: "UPDATED NEW GSIS for jordan - LEBUMFACIL.csv", name: "LEBUMFACIL, JOMARIE B.", dob: "12/28/1996", age: "29", address: "PUROK 14, UPPER HINAPLANON, ILIGAN CITY", beneficiary: "LEBUMFACIL, MARIFE B.", relationship: "MOTHER", period: "July 2, 2026 - October 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-25", sourceFile: "UPDATED NEW GSIS for jordan - MAGSAYSAY.csv", name: "OMAR, ABDUL JAME A. (MAGSAYSAY)", dob: "8/20/2002", age: "23", address: "P-1 LAMIGADATO MAGSAYSAY, LANAO DEL NORTE", beneficiary: "OMAR, MAHID B.", relationship: "FATHER", period: "MAY 1, 2026 - OCTOBER 31, 2026", amount: "50.00" },
+  { id: "gip-gsis-26", sourceFile: "UPDATED NEW GSIS for jordan - MONSANTO, HIZEL ET.AL.csv", name: "MONSANTO, HIZEL G.", dob: "6/21/2004", age: "21", address: "ZONE 6, MALINDAWAG, ABUNO, ILIGAN CITY", beneficiary: "GOMEZ, MELISSA T.", relationship: "MOTHER", period: "JUNE 1, 2026 - NOVEMBER 30, 2026", amount: "50.00" },
+  { id: "gip-gsis-27", sourceFile: "UPDATED NEW GSIS for jordan - MONSANTO, HIZEL ET.AL.csv", name: "RATUNIL, DAVE EDWARD R.", dob: "1/26/2007", age: "19", address: "PUROK 1, POBLACION, MANTICAO, MISAMIS ORIENTAL", beneficiary: "RATUNIL, ZEBUL B.", relationship: "FATHER", period: "JUNE 1, 2026 - NOVEMBER 30, 2026", amount: "50.00" },
+  { id: "gip-gsis-28", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "ABUTON, DAVIE C. (NLRC)", dob: "12/12/2000", age: "25", address: "ZONE 1, PUROK MANGGA TUBOD ILIGAN CITY", beneficiary: "ABUTON, CAROL C.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-29", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "ALI, NOR-AIN D. (PESO TAGOLOAN)", dob: "7/2/2000", age: "25", address: "DIMAYON, TAGOLOAN, LANAO DEL NORTE", beneficiary: "ALI, NORSIDA D.", relationship: "SISTER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-30", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "ALIP, ALYANAH A. (PESO BALO-I)", dob: "7/9/2004", age: "21", address: "BATOLACONGAN, BALO - I, LANAO DEL NORTE", beneficiary: "ALIP, ASLIA A.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-31", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "AMER, RAINISA C. (PESO POONA PIAGAPO)", dob: "8/25/2000", age: "25", address: "LININDINGAN, POONA-PIAGAPO LANAO DEL NORTE", beneficiary: "CALIMBABA, SAMIA M.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-32", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "BALANG, RACMA B. (PESO SAPAD)", dob: "4/26/2002", age: "23", address: "PUROK 2, CENTRO PANOLOON SAPAD, LANAO DEL NORTE", beneficiary: "BALANG, MARIAM B.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-33", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "BALANGHIG, SHENDY LIANE T. (PESO SAPAD)", dob: "8/23/2023", age: "22", address: "GAMAL, SAPAD, LANAO DEL NORTE", beneficiary: "BALANGHIG, LILIAN", relationship: "AUNT", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-34", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "BANGUIS, JERLYN C. (PESO BALO-I)", dob: "11/11/1999", age: "26", address: "PUROK 4, NANGKA, BALO-I, LANAO DEL NORTE", beneficiary: "BANGUIS, TERESITA C.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-35", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "COLALO, JAMAIDA P. (PESO SALVADOR)", dob: "12/3/1999", age: "27", address: "PRK. 4, BRGY. POBLACION, SALVADOR, LANAO DEL NORTE", beneficiary: "COLALO, DAYAMALA M.", relationship: "GRANDMOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-36", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "CONCILIADO, CONSTANTINO LUIS C. (PRC)", dob: "5/20/1996", age: "29", address: "3-15, CORPUS CHRISTI VILLAGE, TUBOD, ILIGAN CITY", beneficiary: "BUCKLEY, PETER", relationship: "STEP-FATHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-37", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "CORDERO, MAYA NIÑA D. (PESO KAUSWAGAN)", dob: "5/9/2000", age: "25", address: "PUROK 6, POBLACION, KAUSWAGAN LANAO DEL NORTE", beneficiary: "CORDERO, GINA D.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-38", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "DATU, JOHANIE H. SERAD (PESO PANTAR)", dob: "10/23/1998", age: "27", address: "PANTAO RANAO, PANTAR, LANAO DEL NORTE", beneficiary: "DATU, NORMINA H.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-39", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "DATU, RAIHANIE H. SERAD (PESO PANTAR)", dob: "9/28/2003", age: "22", address: "PANTAO RANAO, PANTAR, LANAO DEL NORTE", beneficiary: "DATU, NORMINA H.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-40", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "DAYGAM, JOHN ALJHON C. (PGLDN)", dob: "8/19/2000", age: "25", address: "PUROK MAGSAYSAY, POBLACION, MAGSAYSAY, LANAO DEL NORTE", beneficiary: "DAYGAM, ALMA C.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-41", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "DIMAPORO, NORLIN B. (PESO TANGCAL)", dob: "6/9/2004", age: "22", address: "PUNOD TANGCAL, LANAO DEL NORTE", beneficiary: "BAGOLONG, MAULIDA M.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-42", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "DOMAGAY, ABDUL HASSAN B. (PESO TANGCAL)", dob: "3/27/2000", age: "26", address: "POBLACION, TANGCAL, LANAO DEL NORTE", beneficiary: "DOMAGAY, ROHAIDAH A.", relationship: "WIFE", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-43", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "DUMAPIAS, JOVELLE A. (PRC)", dob: "4/7/2002", age: "24", address: "PUROK 9 ADELFA LAMBAGUHON, SAN ROQUE", beneficiary: "DUMAPIAS, MELINDA A.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-44", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "FALCESO, DAVE B. (NLRC)", dob: "9/11/2001", age: "24", address: "ZONE 1, PUROK MANGGA TUBOD ILIGAN CITY", beneficiary: "FALCESO, GENALIN B.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-45", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "GENON, RHEA THERESS A. (PESO LINAMON)", dob: "4/20/2003", age: "22", address: "BOSQUE, LINAMON LANAO DEL NORTE", beneficiary: "GENON, TERESITA A.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-46", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "GUMAMA, ADEL YASSIN G. (LDNPFO)", dob: "8/20/2001", age: "24", address: "PUROK LERIO II, MAHAYAHAY, ILIGAN CITY", beneficiary: "GUMAMA, ANSARI C.", relationship: "FATHER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-47", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "HERMOSO, MYCEL JOY J. (PGLDN)", dob: "8/30/2003", age: "22", address: "PUROK 4, BUALAN, TUBOD, LANAO DEL NORTE", beneficiary: "HERMOSO, CRISPIVIC J.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-48", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "HERNANDEZ, FRANCIS CLARK C. (NLRC)", dob: "12/11/2001", age: "24", address: "ISABEL VILLAGE PALA-O ILIGAN CITY", beneficiary: "HERNANDEZ, GERARDO S.", relationship: "FATHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-49", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "IBRAHIM, PRINCESS JIHAN SHAIRA M.  (NLRC)", dob: "7/31/1999", age: "26", address: "BASCARA APT., MAHAYAHAY, ILIGAN CITY", beneficiary: "IBRAHIM, QUEENEE MOSERA M.", relationship: "SISTER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-50", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "JACINTO, LAICAH O. (NLRC)", dob: "9/12/1996", age: "29", address: "DONA MARIA SUBD. ILIGAN CITY", beneficiary: "JACINTO, CARL JOHN R.", relationship: "HUSBAND", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-51", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "JUMALON, JEVI R. (PESO ILIGAN)", dob: "10/8/2005", age: "20", address: "PUROK 31 ZONE 13, MARIA CRISTINA, ILIGAN CITY", beneficiary: "JUMALON, VILMA R.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-52", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "LAGRECA, NAOMIE B. (PESO KOLAMBUGAN)", dob: "7/8/1996", age: "29", address: "PUROK -4, LIBERTAD, KOLAMBUGAN, LANAO DEL NORTE", beneficiary: "LAGRECA, MARCITA B.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-53", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "LAPECIROS, JELORD A. (PRC)", dob: "7/12/1999", age: "26", address: "1ST EAST ROSARIO HEIGHTS, TUBOD, ILIGAN CITY", beneficiary: "LAPECIROS, ANN A.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-54", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "LEONG, CHLEO DENISE C.  (PESO LINAMON)", dob: "7/17/1997", age: "28", address: "RIGODON COMPOUND VILLA VERDE, ILIGAN CITY", beneficiary: "LEONG, MARIA CHONA C.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-55", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "LIPANTAS, AISAH O. (PESO MAGSAYSAY)", dob: "9/13/2000", age: "25", address: "POBLACION SARIPAADIL, MAGSAYSAY, LANAO DEL NORTE", beneficiary: "LIPANTAS, LIMBA O.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-56", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "MABANING, JOHANNA, P. (PESO PANTAO RAGAT)", dob: "5/31/2003", age: "22", address: "EAST POBLACION, PANTAO-RAGAT, LANAO DEL NORTE", beneficiary: "MABANING, NASROLLAH P.", relationship: "FATHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-57", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "MACACUNA, FARHAN B. (PESO PANTAO RAGAT)", dob: "10/28/2004", age: "21", address: "CABASAGAN, PANTAO-RAGAT, LANAO DEL NORTE", beneficiary: "MACACUNA, SOLAIMAN R.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-58", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "MAMANGCONI, ALYANA-HAMRA M. (PESO MATUNGAO)", dob: "7/30/2003", age: "22", address: "PANGI, MATUNGAO, LANAO DEL NORTE", beneficiary: "MASINGER, GAWIYA L.", relationship: "FATHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-59", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "MANOS, ESTHOR EMMANUEL A. (PESO TUBOD)", dob: "3/27/2000", age: "25", address: "CABASAGAN, PANTAO-RAGAT, LANAO DEL NORTE", beneficiary: "MANOS, EMMELYN A.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-60", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "MEJORADA, ELIZABETH M. (PGLDN)", dob: "8/24/1999", age: "26", address: "PUROK 2, GUMAMOT, LALA, LANAO DEL NORTE", beneficiary: "MEJORADA, CERILA M.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-61", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "NATIVIDAD, JUDIEL C. (PESO KAUSWAGAN)", dob: "7/7/2002", age: "24", address: "KAUSAWAGAN, LANAO DEL NORTE", beneficiary: "NATIVIDAD, JOCELYN C.", relationship: "MOTHER", period: "APRIL 16, 2026 - OCTOBER 15, 2029", amount: "50.00" },
+  { id: "gip-gsis-62", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "OMAR, JALILAH O. (PESO MAGSAYSAY)", dob: "4/25/1994", age: "31", address: "PUROK 9, RCIS POBLACION, TUBOD, LANAO DEL NORTE", beneficiary: "RASUL, JABBER", relationship: "HUSBAND", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-63", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "OYOG, LOVELY GRACE L. (PGLDN)", dob: "3/27/1999", age: "27", address: "PUROK 4, TABIGUE, KOLAMBUGAN, LANAO DEL NORTE", beneficiary: "OYOG, MARINEL L.", relationship: "SISTER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-64", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "PADILLA, THERESE MAE C. (PCUP)", dob: "10/1/1996", age: "29", address: "PUROK 5, TIBANGA, ILIGAN CITY", beneficiary: "AMOYAN, SOPHIA MAY P.", relationship: "DAUGHTER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-65", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "PENDANG, JOHN LLOYD D. (PESO ILIGAN)", dob: "3/6/2003", age: "23", address: "VISTA VILLAGE PAITAN, DALIPUGA ILIGAN CITY", beneficiary: "PENDANG, GRACE D.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-66", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "PETILUNA, QUEENIE LYN E. (PESO TUBOD)", dob: "8/1/2003", age: "22", address: "PUROK 5, TUBURAN, TUBOD, LANAO DEL NORTE", beneficiary: "PETILUNA, ESTERLITA E.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-67", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "POLOYAPOY, JUNDY MAE R. (PESO KOLAMBUGAN)", dob: "6/15/1998", age: "27", address: "PUROK 1, STO. NIÑO KOLAMBUGAN, LANAO DEL NORTE", beneficiary: "POLOYAPOY, IMELDA A.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-68", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "RABANES, NELSON A. JR. (NLRC)", dob: "6/12/2003", age: "22", address: "PRK. GUMAMELA 1, MAHAYAHAY, ILIGAN CITY", beneficiary: "RABANES, AMY A.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-69", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "RETES, DAISY LOU J. (PESO SALVADOR)", dob: "12/13/1997", age: "28", address: "PUROK 6, INASAGAN SALVADOR LANAO DEL NORTE", beneficiary: "RETES, ALIRAN C.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-70", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "SARIP, NORJANAH M. (PESO TAGOLOAN)", dob: "9/14/2000", age: "25", address: "KIAZAR, TAGOLOAN, LANAO DEL NORTE", beneficiary: "SARIP, NOR-AIN M.", relationship: "MOTHER", period: "APRIL 16 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-71", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "TABAO, JOHANISA D. (LDNPFO)", dob: "4/30/2002", age: "23", address: "BAHAYAN, LUINAB, ILIGAN CITY", beneficiary: "DALOMANGCOB, MAIMONA S.", relationship: "MOTHER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-72", sourceFile: "UPDATED NEW GSIS for jordan - PESO LANAO APRIL TO OCTOBER.csv", name: "UGTONG, MARK JORDAN, C. (LDNPFO)", dob: "6/8/2004", age: "21", address: "ZONE, NONUCAN OVERTON BRIDGE, MARIA CRISTINA, ILIGAN CITY, LANAO DEL NORTE", beneficiary: "UGTONG, ELENA, C", relationship: "MOTHER", period: "APRIL 16, 2026 - OCTOBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-73", sourceFile: "UPDATED NEW GSIS for jordan - SSS.csv", name: "ALFORQUE, JULIANA B.", dob: "6/21/2003", age: "23", address: "47B, JASMIN ST. DITUCALAN, ILIGAN CITY", beneficiary: "ALFORQUE, JUVY JULIET B.", relationship: "MOTHER", period: "JULY 01, 2026-DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-74", sourceFile: "UPDATED NEW GSIS for jordan - SSS.csv", name: "BALUYOS, DIANNE LANE B.", dob: "12/29/2000", age: "25", address: "PUROK 6A, SANTIAGO, ILIGAN CITY", beneficiary: "BALUYOS, MARITES B.", relationship: "MOTHER", period: "JULY 01, 2026-DECEMBER 15, 2026", amount: "50.00" },
+  { id: "gip-gsis-75", sourceFile: "UPDATED NEW GSIS for jordan - SUPAT.csv", name: "SUPAT, WILMARIE JANE I.", dob: "9/26/1999", age: "26", address: "PUROK 14-A DOÑA JUANA SUBD. PALAO ILIGAN CITY", beneficiary: "SUPAT, ARIANE JANE I.", relationship: "SISTER", period: "July 1, 2026 - December 15, 2026", amount: "50.00" }
+];
+
 const DEFAULT_QUINCENA_PERIODS = [
   "APR 16-30", "MAY 1-15", "MAY 16-31", "JUNE 1-15", "JUNE 16-30", "JULY 1-15", "JULY 16-31"
 ];
 
 // Application State Object
 let appState = {
-  activeTab: 'dtr', // 'dtr' | 'transmittal' | 'trash' | 'contacts' | 'salary'
+  activeTab: 'dtr', // 'dtr' | 'transmittal' | 'trash' | 'contacts' | 'salary' | 'compiled' | 'gsis'
   searchQuery: '',
+  gsisSourceFilter: 'ALL',
   sortColumn: 'createdAt',
   sortDirection: 'desc',
   editingRecordId: null,
@@ -162,6 +241,8 @@ let appState = {
     recycledRecords: [],
     contactsRecords: [],
     salaryRecords: [],
+    compiledRecords: [],
+    gsisRecords: [],
     totalBudget: 1500000
   }
 };
@@ -330,6 +411,9 @@ function loadLocalStorageData() {
       if (!parsed.salaryRecords || parsed.salaryRecords.length === 0) {
         parsed.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
       }
+      if (!parsed.gsisRecords || parsed.gsisRecords.length === 0) {
+        parsed.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED));
+      }
       if (parsed.totalBudget !== undefined && !isNaN(parseFloat(parsed.totalBudget))) {
         parsed.totalBudget = parseFloat(parsed.totalBudget);
       } else {
@@ -353,6 +437,7 @@ function loadLocalStorageData() {
       appState.data.recycledRecords = [];
       appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
       appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
+      appState.data.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED));
       appState.data.compiledRecords = [];
       saveToLocalStorage();
     }
@@ -362,6 +447,7 @@ function loadLocalStorageData() {
     appState.data.recycledRecords = [];
     appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
     appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
+    appState.data.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED));
   }
 }
 
@@ -409,6 +495,11 @@ async function fetchRecordsFromSupabase() {
       .from('gip_compiled_documents')
       .select('*')
       .order('created_at', { ascending: false });
+
+    const { data: gsisData } = await supabaseClient
+      .from('gip_gsis_records')
+      .select('*')
+      .order('gip_name', { ascending: true });
 
     // Smart Merge Helper: Preserves local records if not yet in Supabase or if updated locally
     const mergeData = (cloudList, localList) => {
@@ -529,6 +620,25 @@ async function fetchRecordsFromSupabase() {
       appState.data.compiledRecords = appState.data.compiledRecords.filter(r => r.id !== 'doc-101');
     }
 
+    // 7. Process GSIS Insurance Records
+    if (gsisData) {
+      const formattedCloudGsis = gsisData.map(r => ({
+        id: r.id,
+        sourceFile: r.source_file,
+        name: formatEtAl(r.gip_name),
+        dob: r.dob,
+        age: r.age,
+        address: r.address,
+        beneficiary: r.beneficiary,
+        relationship: r.relationship,
+        period: r.period,
+        amount: r.amount || '50.00',
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
+      appState.data.gsisRecords = mergeData(formattedCloudGsis, appState.data.gsisRecords || []);
+    }
+
     purgeExpiredRecycledRecords();
     saveToLocalStorage();
     renderApp();
@@ -614,6 +724,24 @@ async function pushLocalDataToSupabase() {
       }));
       await supabaseClient.from('gip_compiled_documents').upsert(docPayload);
     }
+
+    if (appState.data.gsisRecords && appState.data.gsisRecords.length > 0) {
+      const gsisPayload = appState.data.gsisRecords.map(r => ({
+        id: r.id,
+        source_file: r.sourceFile || '',
+        gip_name: r.name || '',
+        dob: r.dob || '',
+        age: r.age || '',
+        address: r.address || '',
+        beneficiary: r.beneficiary || '',
+        relationship: r.relationship || '',
+        period: r.period || '',
+        amount: r.amount || '50.00',
+        created_at: r.createdAt || new Date().toISOString(),
+        updated_at: r.updatedAt || new Date().toISOString()
+      }));
+      await supabaseClient.from('gip_gsis_records').upsert(gsisPayload);
+    }
   } catch (err) {
     console.warn('Auto-push local data note:', err.message);
   }
@@ -647,6 +775,8 @@ function bindEvents() {
   document.getElementById('side-nav-contacts').addEventListener('click', () => switchTab('contacts'));
   const sideSalary = document.getElementById('side-nav-salary');
   if (sideSalary) sideSalary.addEventListener('click', () => switchTab('salary'));
+  const sideGsis = document.getElementById('side-nav-gsis');
+  if (sideGsis) sideGsis.addEventListener('click', () => switchTab('gsis'));
   const sideCompiled = document.getElementById('side-nav-compiled');
   if (sideCompiled) sideCompiled.addEventListener('click', () => switchTab('compiled'));
   document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
@@ -691,6 +821,8 @@ function bindEvents() {
   if (statCardCnt) { statCardCnt.style.cursor = 'pointer'; statCardCnt.addEventListener('click', () => switchTab('contacts')); }
   if (statCardTrash) { statCardTrash.style.cursor = 'pointer'; statCardTrash.addEventListener('click', () => switchTab('trash')); }
   if (statCardCompiled) { statCardCompiled.style.cursor = 'pointer'; statCardCompiled.addEventListener('click', () => switchTab('compiled')); }
+  const statCardGsis = document.getElementById('stat-card-gsis');
+  if (statCardGsis) { statCardGsis.style.cursor = 'pointer'; statCardGsis.addEventListener('click', () => switchTab('gsis')); }
 
   // Mobile Menu Toggle
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -996,6 +1128,21 @@ function switchTab(tabName) {
     if (tabName === 'salary') renderSalaryFilterOptions();
   }
 
+  const btnDownloadActive = document.getElementById('btn-download-active-data');
+  let downloadLabel = 'Data';
+  if (tabName === 'dtr') downloadLabel = 'DTR & AR Data';
+  else if (tabName === 'transmittal') downloadLabel = 'Transmittals';
+  else if (tabName === 'contacts') downloadLabel = 'Contacts';
+  else if (tabName === 'salary') downloadLabel = 'Salary Data';
+  else if (tabName === 'gsis') downloadLabel = 'GSIS Data';
+  else if (tabName === 'compiled') downloadLabel = 'Documents';
+  else if (tabName === 'trash') downloadLabel = 'Recycle Bin';
+
+  if (btnDownloadActive) {
+    btnDownloadActive.innerHTML = `<i data-lucide="download"></i> Download ${downloadLabel}`;
+    btnDownloadActive.title = `Download ${downloadLabel} as Excel`;
+  }
+
   if (tabName === 'dtr') {
     viewTitle.textContent = 'GIP DTR & AR MONITORING';
     viewSubtitle.textContent = 'DAILY TIME RECORDS & ACCOMPLISHMENT REPORTS TRACKING';
@@ -1019,6 +1166,11 @@ function switchTab(tabName) {
   } else if (tabName === 'compiled') {
     viewTitle.textContent = 'DOCUMENTS RECEIVED MONITORING';
     viewSubtitle.textContent = 'TRACKING & MONITORING OF COMPLIED DOCUMENTS RECEIVED BY DOLE LDNPFO';
+    btnAdd.style.display = 'inline-flex';
+    btnEmptyTrash.style.display = 'none';
+  } else if (tabName === 'gsis') {
+    viewTitle.textContent = 'GIP GSIS INSURANCE INFO DIRECTORY';
+    viewSubtitle.textContent = 'GSIS GROUP ACCIDENT INSURANCE COVERAGE & DESIGNATED BENEFICIARY RECORDS';
     btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'trash') {
@@ -1055,6 +1207,7 @@ function updateCountsAndStats() {
   const contactsCount = (appState.data.contactsRecords || []).length;
   const salaryCount = (appState.data.salaryRecords || []).length;
   const compiledCount = (appState.data.compiledRecords || []).length;
+  const gsisCount = (appState.data.gsisRecords || []).length;
 
   document.getElementById('side-count-dtr').textContent = dtrCount;
   document.getElementById('side-count-transmittal').textContent = trnCount;
@@ -1064,6 +1217,8 @@ function updateCountsAndStats() {
   if (sideSalCount) sideSalCount.textContent = salaryCount;
   const sideCompCount = document.getElementById('side-count-compiled');
   if (sideCompCount) sideCompCount.textContent = compiledCount;
+  const sideGsisCount = document.getElementById('side-count-gsis');
+  if (sideGsisCount) sideGsisCount.textContent = gsisCount;
 
   let currentDatasetLength = 0;
   if (appState.activeTab === 'dtr') currentDatasetLength = dtrCount;
@@ -1071,6 +1226,7 @@ function updateCountsAndStats() {
   else if (appState.activeTab === 'contacts') currentDatasetLength = contactsCount;
   else if (appState.activeTab === 'salary') currentDatasetLength = salaryCount;
   else if (appState.activeTab === 'compiled') currentDatasetLength = compiledCount;
+  else if (appState.activeTab === 'gsis') currentDatasetLength = gsisCount;
   else if (appState.activeTab === 'trash') currentDatasetLength = trashCount;
 
   document.getElementById('stat-dtr-count').textContent = dtrCount;
@@ -1079,6 +1235,8 @@ function updateCountsAndStats() {
   document.getElementById('stat-contacts-count').textContent = contactsCount;
   const statCompCount = document.getElementById('stat-compiled-count');
   if (statCompCount) statCompCount.textContent = compiledCount;
+  const statGsisCount = document.getElementById('stat-gsis-count');
+  if (statGsisCount) statGsisCount.textContent = gsisCount;
   document.getElementById('stat-active-count').textContent = currentDatasetLength;
 
   // Calculate Grand Total Paid & Grand Total Pending Disbursed across all GIP Salary Records
@@ -1235,6 +1393,30 @@ function getFilteredAndSortedRecords() {
       return 0;
     });
 
+    return records;
+  }
+
+  if (appState.activeTab === 'gsis') {
+    let records = appState.data.gsisRecords ? [...appState.data.gsisRecords] : [];
+    if (appState.searchQuery) {
+      const q = appState.searchQuery.toLowerCase();
+      records = records.filter(r =>
+        (r.name || '').toLowerCase().includes(q) ||
+        (r.address || '').toLowerCase().includes(q) ||
+        (r.beneficiary || '').toLowerCase().includes(q) ||
+        (r.relationship || '').toLowerCase().includes(q) ||
+        (r.period || '').toLowerCase().includes(q) ||
+        (r.sourceFile || '').toLowerCase().includes(q)
+      );
+    }
+    records.sort((a, b) => {
+      let valA = a[appState.sortColumn] || a.name || '';
+      let valB = b[appState.sortColumn] || b.name || '';
+
+      if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
+      if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
     return records;
   }
 
@@ -1549,6 +1731,78 @@ function renderTable() {
                 <i data-lucide="edit-3"></i>
               </button>
               <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Contact">
+                <i data-lucide="trash-2"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  if (appState.activeTab === 'gsis') {
+    if (tableWrapper) tableWrapper.style.display = 'block';
+    if (salaryCardsGrid) salaryCardsGrid.style.display = 'none';
+
+    tableHead.innerHTML = `
+      <tr>
+        <th style="width: 40px;">#</th>
+        <th onclick="handleSort('name')">
+          <div class="th-content">NAME OF ASSURED ${getSortIcon('name')}</div>
+        </th>
+        <th onclick="handleSort('dob')">
+          <div class="th-content">DATE OF BIRTH ${getSortIcon('dob')}</div>
+        </th>
+        <th onclick="handleSort('age')">
+          <div class="th-content">AGE ${getSortIcon('age')}</div>
+        </th>
+        <th onclick="handleSort('address')">
+          <div class="th-content">ADDRESS ${getSortIcon('address')}</div>
+        </th>
+        <th onclick="handleSort('beneficiary')">
+          <div class="th-content">DESIGNATED BENEFICIARY ${getSortIcon('beneficiary')}</div>
+        </th>
+        <th onclick="handleSort('relationship')">
+          <div class="th-content">RELATIONSHIP ${getSortIcon('relationship')}</div>
+        </th>
+        <th onclick="handleSort('period')">
+          <div class="th-content">PERIOD OF EMPLOYMENT ${getSortIcon('period')}</div>
+        </th>
+        <th style="text-align: right;">ACTIONS</th>
+      </tr>
+    `;
+
+    const records = getFilteredAndSortedRecords();
+
+    if (records.length === 0) {
+      tableBody.innerHTML = '';
+      emptyState.style.display = 'block';
+      if (emptyMsg) emptyMsg.textContent = 'No GIP GSIS Insurance records found. Click "+ Add New Record" to create one.';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tableBody.innerHTML = records.map((record, idx) => {
+      return `
+        <tr>
+          <td style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem;">${idx + 1}</td>
+          <td style="font-weight: 600; font-size: 0.925rem; color: var(--primary-navy);">${escapeHtml(record.name)}</td>
+          <td style="white-space: nowrap;">${escapeHtml(record.dob || '-')}</td>
+          <td><span class="badge-tag">${escapeHtml(record.age || '-')}</span></td>
+          <td style="font-size: 0.85rem; max-width: 220px; color: var(--text-main);">${escapeHtml(record.address || '-')}</td>
+          <td style="font-weight: 600; font-size: 0.875rem; color: #0284c7;">${escapeHtml(record.beneficiary || '-')}</td>
+          <td><span class="quincena-pill quincena-q1" style="font-size: 0.75rem;">${escapeHtml(record.relationship || '-')}</span></td>
+          <td style="white-space: nowrap; font-size: 0.825rem; font-weight: 500;">${escapeHtml(record.period || '-')}</td>
+          <td style="text-align: right;">
+            <div class="action-buttons" style="justify-content: flex-end;">
+              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit GSIS Record">
+                <i data-lucide="edit-3"></i>
+              </button>
+              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete GSIS Record">
                 <i data-lucide="trash-2"></i>
               </button>
             </div>
@@ -2181,6 +2435,7 @@ function openRecordModal(id = null) {
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
   const isCompiled = appState.activeTab === 'compiled';
+  const isGsis = appState.activeTab === 'gsis';
   appState.editingRecordId = id;
 
   const modalTitle = document.getElementById('modal-title');
@@ -2189,6 +2444,7 @@ function openRecordModal(id = null) {
   const cntFields = document.getElementById('fields-contacts');
   const salFields = document.getElementById('fields-salary');
   const compiledFields = document.getElementById('fields-compiled');
+  const gsisFields = document.getElementById('fields-gsis');
   const form = document.getElementById('record-form');
 
   form.reset();
@@ -2211,6 +2467,7 @@ function openRecordModal(id = null) {
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'none';
+    if (gsisFields) gsisFields.style.display = 'none';
     setReq('gip-name', true);
     setReq('record-month', true);
     setReq('record-quincena', true);
@@ -2222,12 +2479,14 @@ function openRecordModal(id = null) {
     setReq('compiled-title', false);
     setReq('compiled-received-from', false);
     setReq('compiled-date-received', false);
+    setReq('gsis-name', false);
   } else if (isContacts) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
     cntFields.style.display = 'block';
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'none';
+    if (gsisFields) gsisFields.style.display = 'none';
     setReq('gip-name', false);
     setReq('record-month', false);
     setReq('record-quincena', false);
@@ -2239,12 +2498,14 @@ function openRecordModal(id = null) {
     setReq('compiled-title', false);
     setReq('compiled-received-from', false);
     setReq('compiled-date-received', false);
+    setReq('gsis-name', false);
   } else if (isSalary) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'block';
     if (compiledFields) compiledFields.style.display = 'none';
+    if (gsisFields) gsisFields.style.display = 'none';
     setReq('gip-name', false);
     setReq('record-month', false);
     setReq('record-quincena', false);
@@ -2256,6 +2517,7 @@ function openRecordModal(id = null) {
     setReq('compiled-title', false);
     setReq('compiled-received-from', false);
     setReq('compiled-date-received', false);
+    setReq('gsis-name', false);
     renderSalaryModalInputs(id ? appState.data.salaryRecords.find(r => r.id === id) : null);
   } else if (isCompiled) {
     dtrFields.style.display = 'none';
@@ -2263,6 +2525,7 @@ function openRecordModal(id = null) {
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'block';
+    if (gsisFields) gsisFields.style.display = 'none';
     setReq('gip-name', false);
     setReq('record-month', false);
     setReq('record-quincena', false);
@@ -2274,12 +2537,33 @@ function openRecordModal(id = null) {
     setReq('compiled-title', true);
     setReq('compiled-received-from', true);
     setReq('compiled-date-received', true);
+    setReq('gsis-name', false);
+  } else if (isGsis) {
+    dtrFields.style.display = 'none';
+    trnFields.style.display = 'none';
+    cntFields.style.display = 'none';
+    if (salFields) salFields.style.display = 'none';
+    if (compiledFields) compiledFields.style.display = 'none';
+    if (gsisFields) gsisFields.style.display = 'block';
+    setReq('gip-name', false);
+    setReq('record-month', false);
+    setReq('record-quincena', false);
+    setReq('particulars', false);
+    setReq('contact-gip-name', false);
+    setReq('contact-assignment', false);
+    setReq('contact-number', false);
+    setReq('salary-gip-name', false);
+    setReq('compiled-title', false);
+    setReq('compiled-received-from', false);
+    setReq('compiled-date-received', false);
+    setReq('gsis-name', true);
   } else {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'block';
     cntFields.style.display = 'none';
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'none';
+    if (gsisFields) gsisFields.style.display = 'none';
     setReq('gip-name', false);
     setReq('record-month', false);
     setReq('record-quincena', false);
@@ -2291,6 +2575,7 @@ function openRecordModal(id = null) {
     setReq('compiled-title', false);
     setReq('compiled-received-from', false);
     setReq('compiled-date-received', false);
+    setReq('gsis-name', false);
   }
 
   if (id) {
@@ -2298,6 +2583,7 @@ function openRecordModal(id = null) {
     else if (isContacts) modalTitle.textContent = 'EDIT GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'EDIT GIP SALARY RECORD';
     else if (isCompiled) modalTitle.textContent = 'EDIT DOCUMENT RECORD';
+    else if (isGsis) modalTitle.textContent = 'EDIT GSIS INSURANCE RECORD';
     else modalTitle.textContent = 'EDIT TRANSMITTAL RECORD';
 
     let dataset;
@@ -2305,6 +2591,7 @@ function openRecordModal(id = null) {
     else if (isContacts) dataset = appState.data.contactsRecords;
     else if (isSalary) dataset = appState.data.salaryRecords;
     else if (isCompiled) dataset = appState.data.compiledRecords;
+    else if (isGsis) dataset = appState.data.gsisRecords;
     else dataset = appState.data.transmittalRecords;
 
     const record = dataset.find(r => r.id === id);
@@ -2347,6 +2634,14 @@ function openRecordModal(id = null) {
           currentCompiledAttachments = [{ id: 'att-legacy', name: 'Document_Photo.jpg', type: 'image', url: record.imageUrl, size: 0 }];
         }
         updateCompiledModalImagePreview();
+      } else if (isGsis) {
+        document.getElementById('gsis-name').value = (record.name || '').toUpperCase();
+        document.getElementById('gsis-dob').value = record.dob || '';
+        document.getElementById('gsis-age').value = record.age || '';
+        document.getElementById('gsis-address').value = (record.address || '').toUpperCase();
+        document.getElementById('gsis-beneficiary').value = (record.beneficiary || '').toUpperCase();
+        document.getElementById('gsis-relationship').value = (record.relationship || '').toUpperCase();
+        document.getElementById('gsis-period').value = (record.period || '').toUpperCase();
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         const recProg = (record.program || '').toUpperCase();
@@ -2377,6 +2672,7 @@ function openRecordModal(id = null) {
     else if (isContacts) modalTitle.textContent = 'ADD NEW GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'ADD NEW GIP SALARY RECORD';
     else if (isCompiled) modalTitle.textContent = 'ADD NEW DOCUMENT RECORD';
+    else if (isGsis) modalTitle.textContent = 'ADD NEW GSIS INSURANCE RECORD';
     else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
 
     document.getElementById('form-record-id').value = '';
@@ -2407,10 +2703,91 @@ async function handleFormSubmit(e) {
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
   const isCompiled = appState.activeTab === 'compiled';
+  const isGsis = appState.activeTab === 'gsis';
   const recordId = document.getElementById('form-record-id').value;
   const remarks = formatEtAl(document.getElementById('record-remarks').value.trim().toUpperCase());
 
   const nowISO = new Date().toISOString();
+
+  if (isGsis) {
+    const name = formatEtAl(document.getElementById('gsis-name').value.trim().toUpperCase());
+    const dob = document.getElementById('gsis-dob').value.trim();
+    const age = document.getElementById('gsis-age').value.trim();
+    const address = document.getElementById('gsis-address').value.trim().toUpperCase();
+    const beneficiary = formatEtAl(document.getElementById('gsis-beneficiary').value.trim().toUpperCase());
+    const relationship = document.getElementById('gsis-relationship').value.trim().toUpperCase();
+    const period = document.getElementById('gsis-period').value.trim().toUpperCase();
+
+    if (!name) {
+      showToast('NAME OF ASSURED IS REQUIRED', 'danger');
+      return;
+    }
+
+    const payload = {
+      name,
+      dob,
+      age,
+      address,
+      beneficiary,
+      relationship,
+      period,
+      remarks,
+      updatedAt: nowISO
+    };
+
+    if (!appState.data.gsisRecords) appState.data.gsisRecords = [];
+
+    if (recordId) {
+      const index = appState.data.gsisRecords.findIndex(r => r.id === recordId);
+      if (index !== -1) {
+        appState.data.gsisRecords[index] = { ...appState.data.gsisRecords[index], ...payload };
+      }
+
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_gsis_records').upsert({
+          id: recordId,
+          gip_name: name,
+          dob,
+          age,
+          address,
+          beneficiary,
+          relationship,
+          period,
+          amount,
+          source_file: sourceFile,
+          updated_at: nowISO
+        });
+      }
+      showToast('GSIS RECORD UPDATED SUCCESSFULLY!', 'success');
+    } else {
+      const newId = 'gip-gsis-' + Date.now();
+      const newRecord = { id: newId, ...payload, createdAt: nowISO };
+      appState.data.gsisRecords.unshift(newRecord);
+
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_gsis_records').upsert({
+          id: newId,
+          gip_name: name,
+          dob,
+          age,
+          address,
+          beneficiary,
+          relationship,
+          period,
+          amount,
+          source_file: sourceFile,
+          created_at: nowISO,
+          updated_at: nowISO
+        });
+      }
+      showToast('NEW GSIS RECORD ADDED SUCCESSFULLY!', 'success');
+    }
+
+    closeRecordModal();
+    saveToLocalStorage();
+    renderApp();
+    return;
+  }
 
   if (isCompiled) {
     const documentTitle = formatEtAl(document.getElementById('compiled-title').value.trim().toUpperCase());
@@ -2777,6 +3154,7 @@ function openDeleteModal(id) {
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
   const isCompiled = appState.activeTab === 'compiled';
+  const isGsis = appState.activeTab === 'gsis';
   appState.deletingRecordId = id;
 
   let dataset;
@@ -2784,6 +3162,7 @@ function openDeleteModal(id) {
   else if (isContacts) dataset = appState.data.contactsRecords;
   else if (isSalary) dataset = appState.data.salaryRecords;
   else if (isCompiled) dataset = appState.data.compiledRecords;
+  else if (isGsis) dataset = appState.data.gsisRecords;
   else dataset = appState.data.transmittalRecords;
 
   const record = dataset.find(r => r.id === id);
@@ -2795,6 +3174,7 @@ function openDeleteModal(id) {
   else if (isContacts) summary = `GIP CONTACT: ${record.gipName} (${record.assignment})`;
   else if (isSalary) summary = `SALARY RECORD: ${record.gipName}`;
   else if (isCompiled) summary = `DOCUMENT: ${record.documentTitle.substring(0, 50)}...`;
+  else if (isGsis) summary = `GSIS ASSURED: ${record.name} (BENEFICIARY: ${record.beneficiary})`;
   else summary = `PARTICULARS: ${record.particulars.substring(0, 50)}...`;
 
   document.getElementById('delete-record-summary').textContent = summary.toUpperCase();
@@ -2845,12 +3225,14 @@ async function confirmDeleteRecord(e) {
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
   const isCompiled = appState.activeTab === 'compiled';
-  const type = isDtr ? 'dtr' : isContacts ? 'contacts' : isSalary ? 'salary' : isCompiled ? 'compiled' : 'transmittal';
+  const isGsis = appState.activeTab === 'gsis';
+  const type = isDtr ? 'dtr' : isContacts ? 'contacts' : isSalary ? 'salary' : isCompiled ? 'compiled' : isGsis ? 'gsis' : 'transmittal';
 
   let dataset = appState.data.dtrRecords;
   if (isContacts) dataset = appState.data.contactsRecords;
   else if (isSalary) dataset = appState.data.salaryRecords;
   else if (isCompiled) dataset = appState.data.compiledRecords;
+  else if (isGsis) dataset = appState.data.gsisRecords;
   else if (!isDtr) dataset = appState.data.transmittalRecords;
 
   const targetRecord = dataset.find(r => r.id === id);
@@ -2891,6 +3273,11 @@ async function confirmDeleteRecord(e) {
     appState.data.compiledRecords = appState.data.compiledRecords.filter(r => r.id !== id);
     if (isSupabaseConnected && supabaseClient) {
       await supabaseClient.from('gip_compiled_documents').delete().eq('id', id);
+    }
+  } else if (isGsis) {
+    appState.data.gsisRecords = appState.data.gsisRecords.filter(r => r.id !== id);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_gsis_records').delete().eq('id', id);
     }
   } else {
     appState.data.transmittalRecords = appState.data.transmittalRecords.filter(r => r.id !== id);
@@ -2979,6 +3366,25 @@ async function restoreRecord(trashId) {
         remarks: orig.remarks,
         attachments: orig.attachments || [],
         image_url: orig.imageUrl || null,
+        created_at: orig.createdAt || new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    }
+  } else if (type === 'gsis') {
+    if (!appState.data.gsisRecords) appState.data.gsisRecords = [];
+    appState.data.gsisRecords.unshift(orig);
+    if (isSupabaseConnected && supabaseClient) {
+      await supabaseClient.from('gip_gsis_records').upsert({
+        id: orig.id,
+        gip_name: orig.name,
+        dob: orig.dob,
+        age: orig.age,
+        address: orig.address,
+        beneficiary: orig.beneficiary,
+        relationship: orig.relationship,
+        period: orig.period,
+        amount: orig.amount || '50.00',
+        source_file: orig.sourceFile,
         created_at: orig.createdAt || new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
@@ -3488,6 +3894,22 @@ function handleExcelExportFormSubmit(e) {
       XLSX.utils.book_append_sheet(wb, wsCnt, 'GIP CONTACTS');
     }
 
+    const chkGsis = document.getElementById('export-chk-gsis')?.checked;
+    if (chkGsis) {
+      const gsisDataFormatted = (appState.data.gsisRecords || []).map((r, idx) => ({
+        'NO.': idx + 1,
+        'NAME OF ASSURED': (r.name || '').toUpperCase(),
+        'DATE OF BIRTH': r.dob || 'N/A',
+        'AGE': r.age || 'N/A',
+        'ADDRESS': (r.address || '').toUpperCase(),
+        'DESIGNATED BENEFICIARY': (r.beneficiary || '').toUpperCase(),
+        'RELATIONSHIP TO ASSURED': (r.relationship || '').toUpperCase(),
+        'PERIOD OF EMPLOYMENT': (r.period || '').toUpperCase()
+      }));
+      const wsGsis = XLSX.utils.json_to_sheet(gsisDataFormatted);
+      XLSX.utils.book_append_sheet(wb, wsGsis, 'GIP GSIS INSURANCE');
+    }
+
     const chkSalary = document.getElementById('export-chk-salary')?.checked;
     if (chkSalary) {
       const salStatusMode = (document.querySelector('input[name="export-salary-status"]:checked')?.value) || 'ALL';
@@ -3612,6 +4034,136 @@ function handleExcelExportFormSubmit(e) {
   } catch (err) {
     console.error('XLSX export error, falling back to CSV:', err);
     exportFallbackCSV();
+  }
+}
+
+/**
+ * Export Active Module Data from Header Toolbar
+ */
+function exportActiveModuleData() {
+  exportSingleModule(null, appState.activeTab);
+}
+
+/**
+ * Single Module Direct Download from Sidebar
+ */
+function exportSingleModule(e, type) {
+  if (e) {
+    e.stopPropagation();
+    e.preventDefault();
+  }
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  const wb = XLSX.utils.book_new();
+
+  try {
+    if (type === 'dtr') {
+      const dataFormatted = (appState.data.dtrRecords || []).map((r, idx) => ({
+        'NO.': idx + 1,
+        'GIP FULL NAME': (r.gipName || '').toUpperCase(),
+        'MONTH': formatMonth(r.month),
+        'QUINCENA': (r.quincena || '').toUpperCase(),
+        'DATE RECEIVED BY DOLE': r.dtrArDateReceived ? formatDate(r.dtrArDateReceived) : 'N/A',
+        'REMARKS': (r.remarks || '').toUpperCase()
+      }));
+      const ws = XLSX.utils.json_to_sheet(dataFormatted);
+      XLSX.utils.book_append_sheet(wb, ws, 'GIP DTR & AR');
+      XLSX.writeFile(wb, `GIP_DTR_AR_Records_${dateStr}.xlsx`);
+      showToast('GIP DTR & AR EXCEL DOWNLOADED!', 'success');
+    } else if (type === 'transmittal') {
+      const dataFormatted = (appState.data.transmittalRecords || []).map((r, idx) => ({
+        'NO.': idx + 1,
+        'PROGRAM': (r.program || 'GIP').toUpperCase(),
+        'PARTICULARS': (r.particulars || '').toUpperCase(),
+        'DATE TRANSMITTED': r.dateTransmitted ? formatDate(r.dateTransmitted) : 'N/A',
+        'REGIONAL DATE RECEIVED': r.regionalDateReceived ? formatDate(r.regionalDateReceived) : 'PENDING',
+        'REMARKS': (r.remarks || '').toUpperCase()
+      }));
+      const ws = XLSX.utils.json_to_sheet(dataFormatted);
+      XLSX.utils.book_append_sheet(wb, ws, 'TRANSMITTALS');
+      XLSX.writeFile(wb, `Transmittal_Records_${dateStr}.xlsx`);
+      showToast('TRANSMITTALS EXCEL DOWNLOADED!', 'success');
+    } else if (type === 'contacts') {
+      const dataFormatted = (appState.data.contactsRecords || []).map((r, idx) => ({
+        'NO.': idx + 1,
+        'GIP FULL NAME': (r.gipName || '').toUpperCase(),
+        'ASSIGNMENT / OFFICE': (r.assignment || 'LDNPFO').toUpperCase(),
+        'CONTACT NUMBER': r.contactNumber || 'N/A',
+        'REMARKS': (r.remarks || '').toUpperCase()
+      }));
+      const ws = XLSX.utils.json_to_sheet(dataFormatted);
+      XLSX.utils.book_append_sheet(wb, ws, 'GIP CONTACTS');
+      XLSX.writeFile(wb, `GIP_Contacts_Directory_${dateStr}.xlsx`);
+      showToast('GIP CONTACTS EXCEL DOWNLOADED!', 'success');
+    } else if (type === 'salary') {
+      const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
+      const dataFormatted = (appState.data.salaryRecords || []).map((r, idx) => {
+        let receivedSum = 0;
+        let pendingSum = 0;
+        const row = {
+          'NO.': idx + 1,
+          'GIP FULL NAME': (r.gipName || '').toUpperCase()
+        };
+        periodsList.forEach(p => {
+          const pData = (r.periods && r.periods[p]) ? r.periods[p] : { amount: 0, status: 'na' };
+          const amt = pData.amount || 0;
+          const st = (pData.status || 'na').toUpperCase();
+          row[p] = amt > 0 ? `₱${amt.toFixed(2)} (${st})` : 'N/A';
+          if (pData.status === 'received') receivedSum += amt;
+          else if (pData.status === 'pending') pendingSum += amt;
+        });
+        row['TOTAL RECEIVED'] = `₱${receivedSum.toFixed(2)}`;
+        row['TOTAL PENDING'] = `₱${pendingSum.toFixed(2)}`;
+        row['REMARKS'] = (r.remarks || '').toUpperCase();
+        return row;
+      });
+      const ws = XLSX.utils.json_to_sheet(dataFormatted);
+      XLSX.utils.book_append_sheet(wb, ws, 'GIP SALARY TRACKING');
+      XLSX.writeFile(wb, `GIP_Salary_Tracker_${dateStr}.xlsx`);
+      showToast('SALARY TRACKER EXCEL DOWNLOADED!', 'success');
+    } else if (type === 'gsis') {
+      const dataFormatted = (appState.data.gsisRecords || []).map((r, idx) => ({
+        'NO.': idx + 1,
+        'NAME OF ASSURED': (r.name || '').toUpperCase(),
+        'DATE OF BIRTH': r.dob || 'N/A',
+        'AGE': r.age || 'N/A',
+        'ADDRESS': (r.address || '').toUpperCase(),
+        'DESIGNATED BENEFICIARY': (r.beneficiary || '').toUpperCase(),
+        'RELATIONSHIP TO ASSURED': (r.relationship || '').toUpperCase(),
+        'PERIOD OF EMPLOYMENT': (r.period || '').toUpperCase()
+      }));
+      const ws = XLSX.utils.json_to_sheet(dataFormatted);
+      XLSX.utils.book_append_sheet(wb, ws, 'GIP GSIS INSURANCE');
+      XLSX.writeFile(wb, `GIP_GSIS_Insurance_Info_${dateStr}.xlsx`);
+      showToast('GIP GSIS EXCEL DOWNLOADED!', 'success');
+    } else if (type === 'compiled') {
+      const dataFormatted = (appState.data.compiledRecords || []).map((r, idx) => ({
+        'NO.': idx + 1,
+        'DOCUMENT TITLE': (r.documentTitle || '').toUpperCase(),
+        'RECEIVED FROM': (r.receivedFrom || '').toUpperCase(),
+        'DATE RECEIVED': r.dateReceived ? formatDate(r.dateReceived) : 'N/A',
+        'ATTACHMENTS COUNT': (r.attachments || []).length,
+        'REMARKS': (r.remarks || '').toUpperCase()
+      }));
+      const ws = XLSX.utils.json_to_sheet(dataFormatted);
+      XLSX.utils.book_append_sheet(wb, ws, 'DOCUMENTS RECEIVED');
+      XLSX.writeFile(wb, `GIP_Compiled_Documents_${dateStr}.xlsx`);
+      showToast('DOCUMENTS LIST EXCEL DOWNLOADED!', 'success');
+    } else if (type === 'trash') {
+      const dataFormatted = (appState.data.recycledRecords || []).map((r, idx) => ({
+        'NO.': idx + 1,
+        'TYPE': (r.type || '').toUpperCase(),
+        'ORIGINAL ID': r.originalId || '',
+        'DATE DELETED': r.deletedAt ? formatDate(r.deletedAt.substring(0, 10)) : 'N/A'
+      }));
+      const ws = XLSX.utils.json_to_sheet(dataFormatted);
+      XLSX.utils.book_append_sheet(wb, ws, 'RECYCLE BIN');
+      XLSX.writeFile(wb, `Recycle_Bin_Archive_${dateStr}.xlsx`);
+      showToast('RECYCLE BIN EXCEL DOWNLOADED!', 'success');
+    }
+  } catch (err) {
+    console.error('Error exporting single module:', err);
+    showToast('FAILED TO DOWNLOAD MODULE EXCEL', 'danger');
   }
 }
 

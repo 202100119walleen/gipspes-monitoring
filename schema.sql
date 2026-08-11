@@ -70,7 +70,23 @@ CREATE TABLE IF NOT EXISTS gip_compiled_documents (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Ensure all columns exist (Migration fix for existing tables)
+-- 7. Create GIP GSIS Insurance Records Table
+CREATE TABLE IF NOT EXISTS gip_gsis_records (
+  id TEXT PRIMARY KEY,
+  source_file TEXT,
+  gip_name TEXT NOT NULL,
+  dob TEXT,
+  age TEXT,
+  address TEXT,
+  beneficiary TEXT,
+  relationship TEXT,
+  period TEXT,
+  amount TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Ensure all columns exist
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS prepared_by TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS particulars TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS date_transmitted TEXT;
@@ -100,15 +116,26 @@ ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
 ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS periods JSONB;
 ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS remarks TEXT;
 
--- 7. Enable Row Level Security (RLS)
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS source_file TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS dob TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS age TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS beneficiary TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS relationship TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS period TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS amount TEXT;
+
+-- 8. Enable Row Level Security (RLS)
 ALTER TABLE gip_dtr_ar_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recycled_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_salary_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_compiled_documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gip_gsis_records ENABLE ROW LEVEL SECURITY;
 
--- 8. Enable Public Read & Write Access Policies
+-- 9. Enable Public Read & Write Access Policies
 DROP POLICY IF EXISTS "Public full access on gip_dtr_ar_records" ON gip_dtr_ar_records;
 CREATE POLICY "Public full access on gip_dtr_ar_records" 
   ON gip_dtr_ar_records FOR ALL 
@@ -139,8 +166,14 @@ CREATE POLICY "Public full access on gip_compiled_documents"
   ON gip_compiled_documents FOR ALL 
   USING (true) WITH CHECK (true);
 
--- 9. Enable Realtime Publications for Realtime Multi-device Sync
+DROP POLICY IF EXISTS "Public full access on gip_gsis_records" ON gip_gsis_records;
+CREATE POLICY "Public full access on gip_gsis_records" 
+  ON gip_gsis_records FOR ALL 
+  USING (true) WITH CHECK (true);
+
+-- 10. Enable Realtime Publications for Realtime Multi-device Sync
 BEGIN;
   DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts, gip_salary_records, gip_compiled_documents;
+  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts, gip_salary_records, gip_compiled_documents, gip_gsis_records;
 COMMIT;
+

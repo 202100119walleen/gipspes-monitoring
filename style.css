@@ -187,6 +187,12 @@ textarea {
   color: #38bdf8;
 }
 
+.sidebar-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .sidebar-badge {
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
@@ -199,6 +205,33 @@ textarea {
 .sidebar-item.active .sidebar-badge {
   background: rgba(56, 189, 248, 0.25);
   color: #38bdf8;
+}
+
+.sidebar-download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebar-download-btn:hover {
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+}
+
+.sidebar-download-btn i {
+  width: 13px !important;
+  height: 13px !important;
 }
 
 .sidebar-footer {
