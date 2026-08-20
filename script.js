@@ -784,7 +784,8 @@ function bindEvents() {
   const sideCalc = document.getElementById('side-nav-calc');
   if (sideCalc) sideCalc.addEventListener('click', openCalcModal);
   document.getElementById('side-nav-excel').addEventListener('click', openExcelExportModal);
-  document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
+  const sidePrint = document.getElementById('side-nav-print');
+  if (sidePrint) sidePrint.addEventListener('click', handlePrintReport);
   document.getElementById('btn-empty-trash').addEventListener('click', handleEmptyTrash);
 
   // Global Year Filter Select Listeners
