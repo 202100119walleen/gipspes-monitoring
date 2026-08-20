@@ -1936,3 +1936,56 @@ body.dark-mode mark.search-highlight, body.dark-mode .search-highlight {
   height: 11px !important;
   stroke-width: 2.2;
 }
+
+/* Calculate Hour & Payroll Modal Styles */
+.calc-nav-tab {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.calc-nav-tab:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-main);
+}
+
+.calc-nav-tab.active {
+  background: var(--card-bg, #ffffff) !important;
+  color: var(--brand-accent) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.calc-toggle-btn:hover {
+  background: #e2e8f0 !important;
+}
+
+.calc-toggle-btn.active {
+  background: var(--primary-navy, #0f172a) !important;
+  color: #ffffff !important;
+}
+
+.calc-toggle-btn.active i {
+  color: #38bdf8 !important;
+}
+
+.calc-advanced-section {
+  transition: all 0.3s ease;
+}
+
+.calc-advanced-section.hidden,
+.calc-result-row.hidden {
+  display: none !important;
+}
+
+.calc-app-view {
+  display: none;
+  animation: fadeInCalc 0.25s ease-in-out;
+}
+
+.calc-app-view.active {
+  display: block;
+}
+
+@keyframes fadeInCalc {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

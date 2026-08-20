@@ -780,9 +780,30 @@ function bindEvents() {
   const sideCompiled = document.getElementById('side-nav-compiled');
   if (sideCompiled) sideCompiled.addEventListener('click', () => switchTab('compiled'));
   document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
+  const sideCalc = document.getElementById('side-nav-calc');
+  if (sideCalc) sideCalc.addEventListener('click', openCalcModal);
   document.getElementById('side-nav-excel').addEventListener('click', openExcelExportModal);
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
   document.getElementById('btn-empty-trash').addEventListener('click', handleEmptyTrash);
+
+  // Calculate Hour Realtime Listeners
+  const calcInputs = document.querySelectorAll('#calc-view-calculator input');
+  calcInputs.forEach(input => {
+    input.addEventListener('input', calculatePayrollHours);
+  });
+
+  const calcToggleBtn = document.getElementById('calcToggleModeBtn');
+  if (calcToggleBtn) calcToggleBtn.addEventListener('click', toggleCalcAccountingMode);
+
+  const calcBatchInput = document.getElementById('calcBatchInput');
+  if (calcBatchInput) calcBatchInput.addEventListener('input', processCalcBatch);
+
+  const calcModal = document.getElementById('calc-modal');
+  if (calcModal) {
+    calcModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeCalcModal();
+    });
+  }
 
   const btnAddQuincena = document.getElementById('btn-add-quincena');
   if (btnAddQuincena) btnAddQuincena.addEventListener('click', openAddQuincenaModal);
@@ -5433,4 +5454,176 @@ async function handleAddQuincenaFormSubmit(e) {
 
   await pushLocalSalaryToSupabase();
   showToast(`NEW QUINCENA COLUMN "${newPeriod}" ADDED SUCCESSFULLY!`, 'success');
+}
+
+/**
+ * Calculate Hour & Payroll Modal Module
+ */
+let isCalcAdvanced = false;
+
+function openCalcModal() {
+  const modal = document.getElementById('calc-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  if (window.lucide) lucide.createIcons();
+  calculatePayrollHours();
+}
+
+function closeCalcModal() {
+  const modal = document.getElementById('calc-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function switchCalcView(targetViewId) {
+  document.querySelectorAll('.calc-app-view').forEach(view => view.classList.remove('active'));
+  document.querySelectorAll('.calc-nav-tab').forEach(btn => btn.classList.remove('active'));
+
+  if (targetViewId === 'view-calculator') {
+    document.getElementById('calc-view-calculator')?.classList.add('active');
+    document.getElementById('tab-btn-calc')?.classList.add('active');
+    const copyNetBtn = document.getElementById('btnCopyCalcNet');
+    if (copyNetBtn) copyNetBtn.style.display = 'inline-flex';
+  } else {
+    document.getElementById('calc-view-batch')?.classList.add('active');
+    document.getElementById('tab-btn-batch')?.classList.add('active');
+    const copyNetBtn = document.getElementById('btnCopyCalcNet');
+    if (copyNetBtn) copyNetBtn.style.display = 'none';
+  }
+}
+
+function toggleCalcAccountingMode() {
+  isCalcAdvanced = !isCalcAdvanced;
+  const toggleBtn = document.getElementById('calcToggleModeBtn');
+  const advancedFields = document.getElementById('calcAdvancedFields');
+  const rowOvertime = document.getElementById('calcRowOvertime');
+  const rowGross = document.getElementById('calcRowGross');
+  const rowGov = document.getElementById('calcRowGov');
+  const rowLoans = document.getElementById('calcRowLoans');
+  const iconSpan = document.getElementById('calcToggleIcon');
+
+  if (isCalcAdvanced) {
+    if (toggleBtn) toggleBtn.classList.add('active');
+    if (iconSpan) iconSpan.textContent = '▲';
+    if (advancedFields) advancedFields.classList.remove('hidden');
+    if (rowOvertime) rowOvertime.classList.remove('hidden');
+    if (rowGross) rowGross.classList.remove('hidden');
+    if (rowGov) rowGov.classList.remove('hidden');
+    if (rowLoans) rowLoans.classList.remove('hidden');
+  } else {
+    if (toggleBtn) toggleBtn.classList.remove('active');
+    if (iconSpan) iconSpan.textContent = '▼';
+    if (advancedFields) advancedFields.classList.add('hidden');
+    if (rowOvertime) rowOvertime.classList.add('hidden');
+    if (rowGross) rowGross.classList.add('hidden');
+    if (rowGov) rowGov.classList.add('hidden');
+    if (rowLoans) rowLoans.classList.add('hidden');
+  }
+  calculatePayrollHours();
+}
+
+function calculatePayrollHours() {
+  const rateInput = document.getElementById('calcRate');
+  const hoursInput = document.getElementById('calcHours');
+  const lateMinsInput = document.getElementById('calcLateMins');
+  const lateDedInput = document.getElementById('calcLateDed');
+  const allowanceInput = document.getElementById('calcAllowance');
+
+  if (!rateInput || !hoursInput) return;
+
+  const rate = parseFloat(rateInput.value) || 0;
+  const hours = parseFloat(hoursInput.value) || 0;
+  const lateMins = parseFloat(lateMinsInput?.value) || 0;
+  const lateDed = parseFloat(lateDedInput?.value) || 0;
+  const allowance = parseFloat(allowanceInput?.value) || 0;
+
+  const otHours = isCalcAdvanced ? (parseFloat(document.getElementById('calcOtHours')?.value) || 0) : 0;
+  const otMultiplier = isCalcAdvanced ? (parseFloat(document.getElementById('calcOtMultiplier')?.value) || 1.25) : 1.25;
+
+  const tax = isCalcAdvanced ? (parseFloat(document.getElementById('calcTax')?.value) || 0) : 0;
+  const govSss = isCalcAdvanced ? (parseFloat(document.getElementById('calcGovSss')?.value) || 0) : 0;
+  const govPhilhealth = isCalcAdvanced ? (parseFloat(document.getElementById('calcGovPhilhealth')?.value) || 0) : 0;
+  const govPagibig = isCalcAdvanced ? (parseFloat(document.getElementById('calcGovPagibig')?.value) || 0) : 0;
+  const loans = isCalcAdvanced ? (parseFloat(document.getElementById('calcLoans')?.value) || 0) : 0;
+
+  const hourlyRate = rate / 8;
+  const days = hours / 8;
+
+  const basicPay = days * rate;
+  const overtimePay = otHours * (hourlyRate * otMultiplier);
+  const grossPay = basicPay + allowance + overtimePay;
+
+  const totalLateDeduction = lateMins * lateDed;
+  const totalGovTaxes = tax + govSss + govPhilhealth + govPagibig;
+
+  const netPay = grossPay - totalLateDeduction - totalGovTaxes - loans;
+
+  const formatCalcCurrency = (num, prefix = "") => {
+    return prefix + "₱" + Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const daysLabel = document.getElementById('calcDaysLabel');
+  const outDays = document.getElementById('calcOutDays');
+  const outBasic = document.getElementById('calcOutBasic');
+  const outAllowance = document.getElementById('calcOutAllowance');
+  const outLate = document.getElementById('calcOutLate');
+  const outNet = document.getElementById('calcOutNet');
+  const outOvertime = document.getElementById('calcOutOvertime');
+  const outGross = document.getElementById('calcOutGross');
+  const outGov = document.getElementById('calcOutGov');
+  const outLoans = document.getElementById('calcOutLoans');
+
+  if (daysLabel) daysLabel.textContent = `Equivalent Days (${hours} ÷ 8)`;
+  if (outDays) outDays.textContent = days.toFixed(2);
+  if (outBasic) outBasic.textContent = formatCalcCurrency(basicPay);
+  if (outAllowance) outAllowance.textContent = formatCalcCurrency(allowance, "+ ");
+  if (outLate) outLate.textContent = formatCalcCurrency(totalLateDeduction, "- ");
+
+  if (outOvertime) outOvertime.textContent = formatCalcCurrency(overtimePay, "+ ");
+  if (outGross) outGross.textContent = formatCalcCurrency(grossPay);
+  if (outGov) outGov.textContent = formatCalcCurrency(totalGovTaxes, "- ");
+  if (outLoans) outLoans.textContent = formatCalcCurrency(loans, "- ");
+
+  if (outNet) outNet.textContent = formatCalcCurrency(Math.max(0, netPay));
+}
+
+function processCalcBatch() {
+  const batchInput = document.getElementById('calcBatchInput');
+  const batchOutput = document.getElementById('calcBatchOutput');
+  if (!batchInput || !batchOutput) return;
+
+  const text = batchInput.value;
+  const matches = text.match(/[0-9]+(?:,[0-9]{3})*(?:\.[0-9]+)?/g) || [];
+
+  const results = matches.map(numStr => {
+    const cleanNum = parseFloat(numStr.replace(/,/g, ''));
+    const deducted = cleanNum - 20;
+    return deducted.toFixed(2);
+  });
+
+  batchOutput.value = results.join('\n');
+}
+
+function copyCalcNetPay() {
+  const netText = document.getElementById('calcOutNet')?.textContent || '';
+  const empName = document.getElementById('calcEmpName')?.value.trim();
+  const textToCopy = empName ? `${empName}: ${netText}` : netText;
+
+  navigator.clipboard.writeText(textToCopy).then(() => {
+    showToast(`COPIED NET PAY: ${textToCopy}`, 'success');
+  }).catch(() => {
+    showToast('FAILED TO COPY TO CLIPBOARD', 'danger');
+  });
+}
+
+function copyBatchOutput() {
+  const batchOutput = document.getElementById('calcBatchOutput');
+  if (!batchOutput || !batchOutput.value) {
+    showToast('NO BATCH OUTPUT TO COPY', 'warning');
+    return;
+  }
+  navigator.clipboard.writeText(batchOutput.value).then(() => {
+    showToast('EXCEL-READY BATCH AMOUNTS COPIED!', 'success');
+  }).catch(() => {
+    showToast('FAILED TO COPY TO CLIPBOARD', 'danger');
+  });
 }

@@ -109,6 +109,12 @@
         </button>
 
         <div class="nav-section-title">System Tools</div>
+        <button class="sidebar-item" id="side-nav-calc" title="Calculate Working Hours & Net Pay">
+          <div class="sidebar-item-content">
+            <i data-lucide="calculator"></i>
+            <span>Calculate Hour</span>
+          </div>
+        </button>
         <button class="sidebar-item" id="side-nav-excel">
           <div class="sidebar-item-content">
             <i data-lucide="download"></i>
@@ -1065,6 +1071,189 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Calculate Hour & Payroll Modal -->
+  <div class="modal-backdrop" id="calc-modal">
+    <div class="modal-container" style="max-width: 580px; max-height: 92vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="calculator" style="width: 20px; height: 20px; color: var(--brand-accent);"></i> Calculate Hour &amp; Payroll
+        </h2>
+        <button class="modal-close" id="calc-modal-close-btn" onclick="closeCalcModal()">&times;</button>
+      </div>
+
+      <!-- Segmented Tab Navigation for Calculator vs Batch Tool -->
+      <div class="calc-tab-nav" style="display: flex; background: var(--bg-main, #f1f5f9); padding: 4px; margin: 12px 20px 0; border-radius: 8px; gap: 6px;">
+        <button type="button" class="calc-nav-tab active" id="tab-btn-calc" onclick="switchCalcView('view-calculator')" style="flex: 1; padding: 8px 12px; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+          <i data-lucide="calculator" style="width: 15px; height: 15px;"></i> Payroll Calculator
+        </button>
+        <button type="button" class="calc-nav-tab" id="tab-btn-batch" onclick="switchCalcView('view-batch')" style="flex: 1; padding: 8px 12px; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+          <i data-lucide="list-filter" style="width: 15px; height: 15px;"></i> Batch Tool (-₱20)
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1;">
+        <!-- VIEW 1: PAYROLL CALCULATOR -->
+        <div id="calc-view-calculator" class="calc-app-view active">
+          <p style="font-size: 0.825rem; color: var(--text-muted); margin-top: 0; margin-bottom: 14px;">
+            Enter employee details and working hours to compute gross and net pay in real-time.
+          </p>
+
+          <button type="button" id="calcToggleModeBtn" class="calc-toggle-btn" style="width: 100%; padding: 10px 14px; background: var(--bg-main, #f8fafc); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 8px; font-weight: 600; font-size: 0.825rem; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 14px; transition: all 0.2s;">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px; color: var(--brand-accent);"></i> Accounting Mode (OT &amp; Mandatory Deductions)
+            </span>
+            <span id="calcToggleIcon">▼</span>
+          </button>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="calcEmpName" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Employee Name (Optional)</label>
+            <input type="text" id="calcEmpName" class="form-control" placeholder="e.g. Juan Dela Cruz">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="calcRate" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Daily Rate (₱)</label>
+              <input type="number" id="calcRate" class="form-control" value="500" step="0.01">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="calcHours" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Total Hours</label>
+              <input type="number" id="calcHours" class="form-control" value="80" step="0.5">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="calcLateMins" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Late Minutes</label>
+              <input type="number" id="calcLateMins" class="form-control" value="0">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="calcLateDed" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Deduction / Min (₱)</label>
+              <input type="number" id="calcLateDed" class="form-control" value="1.04" step="0.01">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="calcAllowance" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Allowance / Adjustment (₱)</label>
+            <input type="number" id="calcAllowance" class="form-control" value="20" step="0.01">
+          </div>
+
+          <!-- Advanced / Accounting Mode Fields -->
+          <div id="calcAdvancedFields" class="calc-advanced-section hidden" style="background: rgba(248, 250, 252, 0.8); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+            <div style="font-size: 0.7rem; font-weight: 800; color: var(--brand-accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; border-bottom: 1px solid var(--border-light, #f1f5f9); padding-bottom: 4px;">
+              Earnings &amp; Overtime
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="calcOtHours" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Overtime Hours</label>
+                <input type="number" id="calcOtHours" class="form-control" value="0" step="0.5">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="calcOtMultiplier" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">OT Multiplier</label>
+                <input type="number" id="calcOtMultiplier" class="form-control" value="1.25" step="0.05">
+              </div>
+            </div>
+
+            <div style="font-size: 0.7rem; font-weight: 800; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; border-bottom: 1px solid var(--border-light, #f1f5f9); padding-bottom: 4px;">
+              Mandatory Deductions &amp; Taxes
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="calcTax" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Tax Withheld (₱)</label>
+                <input type="number" id="calcTax" class="form-control" value="0" step="0.01">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="calcGovSss" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">SSS / GSIS (₱)</label>
+                <input type="number" id="calcGovSss" class="form-control" value="0" step="0.01">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="calcGovPhilhealth" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">PhilHealth (₱)</label>
+                <input type="number" id="calcGovPhilhealth" class="form-control" value="0" step="0.01">
+              </div>
+              <div class="form-group" style="margin-bottom: 0;">
+                <label for="calcGovPagibig" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Pag-IBIG (₱)</label>
+                <input type="number" id="calcGovPagibig" class="form-control" value="0" step="0.01">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="calcLoans" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Other Loans / Deductions (₱)</label>
+              <input type="number" id="calcLoans" class="form-control" value="0" step="0.01">
+            </div>
+          </div>
+
+          <!-- Calculation Results Summary Card -->
+          <div class="calc-results-card" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 10px; padding: 16px; margin-top: 14px;">
+            <div class="calc-result-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-muted);">
+              <span id="calcDaysLabel">Equivalent Days (80 ÷ 8)</span>
+              <strong id="calcOutDays" style="color: var(--text-main); font-variant-numeric: tabular-nums;">10.00</strong>
+            </div>
+            <div class="calc-result-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-muted);">
+              <span>Basic Pay</span>
+              <strong id="calcOutBasic" style="color: var(--text-main); font-variant-numeric: tabular-nums;">₱5,000.00</strong>
+            </div>
+            <div class="calc-result-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #10b981;">
+              <span>Allowance / Adjustment</span>
+              <strong id="calcOutAllowance" style="font-variant-numeric: tabular-nums;">+ ₱20.00</strong>
+            </div>
+            <div id="calcRowOvertime" class="calc-result-row hidden" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #10b981;">
+              <span>Overtime Pay</span>
+              <strong id="calcOutOvertime" style="font-variant-numeric: tabular-nums;">+ ₱0.00</strong>
+            </div>
+            <div id="calcRowGross" class="calc-result-row hidden" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--primary-navy); border-top: 1px dashed var(--border-medium); padding-top: 6px;">
+              <span style="font-weight: 700;">Gross Pay</span>
+              <strong id="calcOutGross" style="font-variant-numeric: tabular-nums; font-weight: 700;">₱5,020.00</strong>
+            </div>
+            <div class="calc-result-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
+              <span>Late Deduction</span>
+              <strong id="calcOutLate" style="font-variant-numeric: tabular-nums;">- ₱0.00</strong>
+            </div>
+            <div id="calcRowGov" class="calc-result-row hidden" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
+              <span>Mandatory Deductions &amp; Tax</span>
+              <strong id="calcOutGov" style="font-variant-numeric: tabular-nums;">- ₱0.00</strong>
+            </div>
+            <div id="calcRowLoans" class="calc-result-row hidden" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
+              <span>Loans / Other Deductions</span>
+              <strong id="calcOutLoans" style="font-variant-numeric: tabular-nums;">- ₱0.00</strong>
+            </div>
+            <div class="calc-result-row calc-total-row" style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid var(--primary-navy, #0f172a); padding-top: 12px; margin-top: 10px;">
+              <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-navy);">NET PAY</span>
+              <strong id="calcOutNet" style="font-size: 1.35rem; font-weight: 800; color: #0284c7; font-variant-numeric: tabular-nums;">₱5,020.00</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: BATCH PROCESSOR -->
+        <div id="calc-view-batch" class="calc-app-view" style="display: none;">
+          <p style="font-size: 0.825rem; color: var(--text-muted); margin-top: 0; margin-bottom: 14px;">
+            Paste comma-separated or line-separated stipend amounts. Automatically subtracts <strong>₱20</strong> and formats for instant Excel copy/paste.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="calcBatchInput" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Input Raw Amounts</label>
+            <textarea id="calcBatchInput" class="form-control" rows="4" placeholder="e.g. 3,957.60, 4,515.84, 5,000.00"></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label for="calcBatchOutput" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0;">Excel-Ready Output (Click or button to copy)</label>
+              <button type="button" class="btn btn-secondary btn-icon" id="btnCopyBatchOutput" onclick="copyBatchOutput()" style="font-size: 0.75rem; padding: 4px 8px;">
+                <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copy Output
+              </button>
+            </div>
+            <textarea id="calcBatchOutput" class="form-control" rows="6" readonly onclick="this.select()" placeholder="Processed amounts will appear here formatted line by line..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-secondary" onclick="closeCalcModal()">Close</button>
+        <button type="button" class="btn btn-primary" id="btnCopyCalcNet" onclick="copyCalcNetPay()">
+          <i data-lucide="copy"></i> Copy Net Pay
+        </button>
+      </div>
     </div>
   </div>
 
