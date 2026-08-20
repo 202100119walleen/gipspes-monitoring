@@ -1902,3 +1902,37 @@ body.dark-mode mark.search-highlight, body.dark-mode .search-highlight {
     filter: drop-shadow(0 2px 6px rgba(2, 132, 199, 0.4));
   }
 }
+
+/* DTR Date & Time Added Cell Styles */
+.dtr-datetime-cell {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+}
+
+.dtr-date-text {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--primary-navy);
+}
+
+.dtr-time-tag {
+  font-size: 0.75rem;
+  color: var(--brand-accent);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  padding: 1px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.dtr-time-tag i {
+  width: 11px !important;
+  height: 11px !important;
+  stroke-width: 2.2;
+}

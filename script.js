@@ -1503,9 +1503,13 @@ function getFilteredAndSortedRecords() {
     const q = appState.searchQuery;
     records = records.filter(r => {
       if (isDtr) {
+        const timeAdded = formatTime(r.createdAt || (r.id && /^dtr-(\d{13})$/.test(r.id) ? new Date(parseInt(r.id.replace('dtr-', ''), 10)).toISOString() : null));
         return (r.gipName || '').toLowerCase().includes(q) ||
           (r.quincena || '').toLowerCase().includes(q) ||
           (r.month || '').toLowerCase().includes(q) ||
+          (r.dtrArDateReceived || '').toLowerCase().includes(q) ||
+          (formatDate(r.dtrArDateReceived) || '').toLowerCase().includes(q) ||
+          (timeAdded || '').toLowerCase().includes(q) ||
           (r.remarks || '').toLowerCase().includes(q);
       } else {
         return (r.particulars || '').toLowerCase().includes(q) ||
@@ -2083,7 +2087,38 @@ function renderTable() {
       const gipNameFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.gipName)), searchQuery);
       const periodLabelFormatted = highlightTextInHtml(escapeHtml(`${monthFormatted} - ${quincenaLabel}`), searchQuery);
       const rawDateRec = formatDate(record.dtrArDateReceived);
+      const recordTimestamp = record.createdAt || (record.id && /^dtr-(\d{13})$/.test(record.id) ? new Date(parseInt(record.id.replace('dtr-', ''), 10)).toISOString() : null);
+      const timeAddedStr = formatTime(recordTimestamp);
       const dateRecFormatted = rawDateRec === '-' ? '<span style="color: var(--text-light);">-</span>' : highlightTextInHtml(escapeHtml(rawDateRec), searchQuery);
+      const timeAddedFormatted = timeAddedStr ? highlightTextInHtml(escapeHtml(timeAddedStr), searchQuery) : '';
+
+      let dateCellHtml = '';
+      if (rawDateRec === '-' && !timeAddedStr) {
+        dateCellHtml = '<span style="color: var(--text-light);">-</span>';
+      } else if (rawDateRec !== '-' && timeAddedStr) {
+        dateCellHtml = `
+          <div class="dtr-datetime-cell">
+            <span class="dtr-date-text">${dateRecFormatted}</span>
+            <span class="dtr-time-tag">
+              <i data-lucide="clock"></i>
+              ${timeAddedFormatted}
+            </span>
+          </div>
+        `;
+      } else if (rawDateRec !== '-') {
+        dateCellHtml = `<span class="dtr-date-text">${dateRecFormatted}</span>`;
+      } else {
+        dateCellHtml = `
+          <div class="dtr-datetime-cell">
+            <span style="color: var(--text-light);">-</span>
+            <span class="dtr-time-tag">
+              <i data-lucide="clock"></i>
+              ${timeAddedFormatted}
+            </span>
+          </div>
+        `;
+      }
+
       const remarksFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.remarks || '-')), searchQuery);
 
       return `
@@ -2095,7 +2130,7 @@ function renderTable() {
               ${periodLabelFormatted}
             </span>
           </td>
-          <td>${dateRecFormatted}</td>
+          <td>${dateCellHtml}</td>
           <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${remarksFormatted}</td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
@@ -3926,13 +3961,17 @@ function handleExcelExportFormSubmit(e) {
     const wb = XLSX.utils.book_new();
 
     if (chkDtr) {
-      const dtrDataFormatted = appState.data.dtrRecords.map(r => ({
-        'GIP NAME': (r.gipName || '').toUpperCase(),
-        'MONTH / YEAR': formatMonth(r.month).toUpperCase(),
-        'QUINCENA (PAYROLL PERIOD)': (r.quincena || '1ST QUINCENA (1-15)').toUpperCase(),
-        'DTR & AR DATE RECEIVED (LDNPFO)': r.dtrArDateReceived || 'N/A',
-        'REMARKS': (r.remarks || '').toUpperCase()
-      }));
+      const dtrDataFormatted = appState.data.dtrRecords.map(r => {
+        const timeStr = formatTime(r.createdAt || (r.id && /^dtr-(\d{13})$/.test(r.id) ? new Date(parseInt(r.id.replace('dtr-', ''), 10)).toISOString() : null));
+        return {
+          'GIP NAME': (r.gipName || '').toUpperCase(),
+          'MONTH / YEAR': formatMonth(r.month).toUpperCase(),
+          'QUINCENA (PAYROLL PERIOD)': (r.quincena || '1ST QUINCENA (1-15)').toUpperCase(),
+          'DTR & AR DATE RECEIVED (LDNPFO)': r.dtrArDateReceived ? formatDate(r.dtrArDateReceived) : 'N/A',
+          'TIME ADDED': timeStr || 'N/A',
+          'REMARKS': (r.remarks || '').toUpperCase()
+        };
+      });
       const wsDtr = XLSX.utils.json_to_sheet(dtrDataFormatted);
       XLSX.utils.book_append_sheet(wb, wsDtr, 'GIP DTR & AR');
     }
@@ -4131,14 +4170,18 @@ function exportSingleModule(e, type) {
 
   try {
     if (type === 'dtr') {
-      const dataFormatted = (appState.data.dtrRecords || []).map((r, idx) => ({
-        'NO.': idx + 1,
-        'GIP FULL NAME': (r.gipName || '').toUpperCase(),
-        'MONTH': formatMonth(r.month),
-        'QUINCENA': (r.quincena || '').toUpperCase(),
-        'DATE RECEIVED BY DOLE': r.dtrArDateReceived ? formatDate(r.dtrArDateReceived) : 'N/A',
-        'REMARKS': (r.remarks || '').toUpperCase()
-      }));
+      const dataFormatted = (appState.data.dtrRecords || []).map((r, idx) => {
+        const timeStr = formatTime(r.createdAt || (r.id && /^dtr-(\d{13})$/.test(r.id) ? new Date(parseInt(r.id.replace('dtr-', ''), 10)).toISOString() : null));
+        return {
+          'NO.': idx + 1,
+          'GIP FULL NAME': (r.gipName || '').toUpperCase(),
+          'MONTH': formatMonth(r.month),
+          'QUINCENA': (r.quincena || '').toUpperCase(),
+          'DATE RECEIVED BY DOLE': r.dtrArDateReceived ? formatDate(r.dtrArDateReceived) : 'N/A',
+          'TIME ADDED': timeStr || 'N/A',
+          'REMARKS': (r.remarks || '').toUpperCase()
+        };
+      });
       const ws = XLSX.utils.json_to_sheet(dataFormatted);
       XLSX.utils.book_append_sheet(wb, ws, 'GIP DTR & AR');
       XLSX.writeFile(wb, `GIP_DTR_AR_Records_${dateStr}.xlsx`);
@@ -4358,6 +4401,25 @@ function formatDate(dateStr) {
     return String(dateStr).toUpperCase();
   } catch (e) {
     return String(dateStr || '-').toUpperCase();
+  }
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const str = String(dateStr).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return '';
+    const date = new Date(str);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }).toUpperCase();
+    }
+    return '';
+  } catch (e) {
+    return '';
   }
 }
 
