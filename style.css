@@ -1982,7 +1982,7 @@ body.dark-mode mark.search-highlight, body.dark-mode .search-highlight {
 }
 
 .calc-app-view.active {
-  display: block;
+  display: block !important;
 }
 
 @keyframes fadeInCalc {

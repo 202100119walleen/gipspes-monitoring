@@ -5489,6 +5489,10 @@ function switchCalcView(targetViewId) {
     const copyNetBtn = document.getElementById('btnCopyCalcNet');
     if (copyNetBtn) copyNetBtn.style.display = 'none';
   }
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
 }
 
 function toggleCalcAccountingMode() {
