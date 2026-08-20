@@ -149,6 +149,91 @@ textarea {
   margin-top: 8px;
 }
 
+/* Sidebar Global Year Filter Box */
+.sidebar-year-filter-wrapper {
+  margin: 6px 12px 14px 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-year-filter-wrapper:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.sidebar-year-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sidebar-year-filter-title {
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-year-filter-title i {
+  width: 13px !important;
+  height: 13px !important;
+  color: #38bdf8;
+}
+
+.sidebar-year-active-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.sidebar-year-select-container {
+  position: relative;
+  width: 100%;
+}
+
+.sidebar-year-select {
+  width: 100%;
+  padding: 7px 28px 7px 10px;
+  background: #0f172a;
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: all 0.2s ease;
+}
+
+.sidebar-year-select:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.sidebar-year-arrow {
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px !important;
+  height: 13px !important;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
 .sidebar-item {
   width: 100%;
   background: transparent;

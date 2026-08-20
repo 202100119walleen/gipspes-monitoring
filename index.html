@@ -51,6 +51,25 @@
       </div>
 
       <nav class="sidebar-nav">
+        <!-- Sidebar Global Year Filter -->
+        <div class="sidebar-year-filter-wrapper">
+          <div class="sidebar-year-filter-header">
+            <span class="sidebar-year-filter-title">
+              <i data-lucide="calendar-range"></i> Filter Year
+            </span>
+            <span class="sidebar-year-active-tag" id="sidebar-year-active-tag">All Years</span>
+          </div>
+          <div class="sidebar-year-select-container">
+            <select id="sidebar-year-select" class="sidebar-year-select" title="Filter records and sidebar counts by year">
+              <option value="ALL">All Years (Lifetime)</option>
+              <option value="2026" selected>2026 Records</option>
+              <option value="2025">2025 Records</option>
+              <option value="2024">2024 Records</option>
+            </select>
+            <i data-lucide="chevron-down" class="sidebar-year-arrow"></i>
+          </div>
+        </div>
+
         <div class="nav-section-title">Monitoring Modules</div>
         <button class="sidebar-item active" id="side-nav-dtr" data-tab="dtr">
           <div class="sidebar-item-content">
@@ -109,10 +128,10 @@
         </button>
 
         <div class="nav-section-title">System Tools</div>
-        <button class="sidebar-item" id="side-nav-calc" title="Payroll & Working Hours Calculator">
+        <button class="sidebar-item" id="side-nav-calc" title="Calculate Working Hours & Net Pay">
           <div class="sidebar-item-content">
             <i data-lucide="calculator"></i>
-            <span>Calculator</span>
+            <span>Calculate Hour</span>
           </div>
         </button>
         <button class="sidebar-item" id="side-nav-excel">
@@ -153,7 +172,9 @@
         </div>
 
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <button class="btn" id="btn-download-active-data" onclick="exportActiveModuleData()" style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-color: #059669; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);" title="Download Active Dataset as Excel">
+          <button class="btn" id="btn-download-active-data" onclick="exportActiveModuleData()"
+            style="background: linear-gradient(135deg, #10b981, #059669); color: white; border-color: #059669; font-weight: 600; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);"
+            title="Download Active Dataset as Excel">
             <i data-lucide="download"></i> Download Data
           </button>
           <button class="btn btn-primary" id="btn-add-record">
@@ -237,9 +258,20 @@
             <i data-lucide="search" class="search-icon"></i>
             <input type="text" id="search-input" placeholder="Search by GIP name or particulars..." autocomplete="off">
           </div>
+          <!-- Global Year Filter Dropdown in Toolbar -->
+          <div class="toolbar-year-filter" style="display: flex; align-items: center; gap: 6px;">
+            <select id="toolbar-year-select" class="form-control" style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 700; color: var(--brand-accent); border-color: rgba(56, 189, 248, 0.4);" title="Filter all records by Year">
+              <option value="ALL">Year: All Years</option>
+              <option value="2026" selected>Year: 2026</option>
+              <option value="2025">Year: 2025</option>
+              <option value="2024">Year: 2024</option>
+            </select>
+          </div>
           <!-- Salary Specific Filter & Sort Controls -->
           <div id="salary-toolbar-controls" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <select id="salary-sort-select" class="form-control" style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;" title="Sort Salary Records">
+            <select id="salary-sort-select" class="form-control"
+              style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;"
+              title="Sort Salary Records">
               <option value="name-asc">Sort: Name (A-Z)</option>
               <option value="name-desc">Sort: Name (Z-A)</option>
               <option value="paid-desc">Sort: Highest Paid First</option>
@@ -247,13 +279,17 @@
               <option value="pending-desc">Sort: Most Pending First</option>
             </select>
 
-            <select id="salary-status-filter" class="form-control" style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;" title="Filter by Payment Status">
+            <select id="salary-status-filter" class="form-control"
+              style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;"
+              title="Filter by Payment Status">
               <option value="ALL">Status: All Statuses</option>
               <option value="paid">Status: Paid / Received</option>
               <option value="pending">Status: Pending Only</option>
             </select>
 
-            <select id="salary-quincena-filter" class="form-control" style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;" title="Filter by Specific Quincena Period">
+            <select id="salary-quincena-filter" class="form-control"
+              style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;"
+              title="Filter by Specific Quincena Period">
               <option value="ALL">Period: All Quincenas</option>
             </select>
 
@@ -268,7 +304,8 @@
           <!-- Salary Budget & Financial Summary Indicators Panel -->
           <div id="salary-financial-indicators" class="salary-financial-indicators" style="display: none;">
             <!-- Total Budget Card (Manually Editable) -->
-            <div class="salary-budget-badge budget-total" id="salary-total-budget-badge" onclick="openTotalBudgetModal()" title="Click to edit Total Allocated Budget">
+            <div class="salary-budget-badge budget-total" id="salary-total-budget-badge"
+              onclick="openTotalBudgetModal()" title="Click to edit Total Allocated Budget">
               <div class="badge-icon-box" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
                 <i data-lucide="coins" style="width: 15px; height: 15px;"></i>
               </div>
@@ -276,13 +313,15 @@
                 <span class="badge-label">TOTAL BUDGET:</span>
                 <strong id="salary-total-budget-val" class="badge-value" style="color: #4f46e5;">₱0.00</strong>
               </div>
-              <button type="button" class="btn-edit-budget" onclick="event.stopPropagation(); openTotalBudgetModal();" title="Edit Total Budget">
+              <button type="button" class="btn-edit-budget" onclick="event.stopPropagation(); openTotalBudgetModal();"
+                title="Edit Total Budget">
                 <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
               </button>
             </div>
 
             <!-- Total Paid Card (Auto-Calculated / Read-Only) -->
-            <div class="salary-budget-badge budget-paid" id="salary-total-paid-badge" title="Automatically calculated total paid disbursed stipends (Read-Only)">
+            <div class="salary-budget-badge budget-paid" id="salary-total-paid-badge"
+              title="Automatically calculated total paid disbursed stipends (Read-Only)">
               <div class="badge-icon-box" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
                 <i data-lucide="wallet" style="width: 15px; height: 15px;"></i>
               </div>
@@ -290,11 +329,13 @@
                 <span class="badge-label">TOTAL PAID:</span>
                 <strong id="salary-grand-total-val" class="badge-value" style="color: #0284c7;">₱0.00</strong>
               </div>
-              <span class="badge-lock-tag" title="Auto-calculated from records"><i data-lucide="lock" style="width: 10px; height: 10px;"></i> Auto</span>
+              <span class="badge-lock-tag" title="Auto-calculated from records"><i data-lucide="lock"
+                  style="width: 10px; height: 10px;"></i> Auto</span>
             </div>
 
             <!-- Total Pending Card (Auto-Calculated / Read-Only) -->
-            <div class="salary-budget-badge budget-pending" id="salary-total-pending-badge" title="Automatically calculated total pending unpaid stipends (Read-Only)">
+            <div class="salary-budget-badge budget-pending" id="salary-total-pending-badge"
+              title="Automatically calculated total pending unpaid stipends (Read-Only)">
               <div class="badge-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #d97706;">
                 <i data-lucide="clock" style="width: 15px; height: 15px;"></i>
               </div>
@@ -302,12 +343,16 @@
                 <span class="badge-label">TOTAL PENDING:</span>
                 <strong id="salary-total-pending-val" class="badge-value" style="color: #d97706;">₱0.00</strong>
               </div>
-              <span class="badge-lock-tag" style="color: #d97706; background: rgba(245, 158, 11, 0.12);" title="Auto-calculated from records"><i data-lucide="lock" style="width: 10px; height: 10px;"></i> Auto</span>
+              <span class="badge-lock-tag" style="color: #d97706; background: rgba(245, 158, 11, 0.12);"
+                title="Auto-calculated from records"><i data-lucide="lock" style="width: 10px; height: 10px;"></i>
+                Auto</span>
             </div>
 
             <!-- Remaining Balance Card (Calculated: Total Budget minus Total Paid minus Total Pending) -->
-            <div class="salary-budget-badge budget-remaining" id="salary-remaining-balance-badge" title="Remaining Balance = Total Budget minus Total Paid minus Total Pending">
-              <div class="badge-icon-box" id="remaining-balance-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+            <div class="salary-budget-badge budget-remaining" id="salary-remaining-balance-badge"
+              title="Remaining Balance = Total Budget minus Total Paid minus Total Pending">
+              <div class="badge-icon-box" id="remaining-balance-icon-box"
+                style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
                 <i data-lucide="pie-chart" id="remaining-balance-icon" style="width: 15px; height: 15px;"></i>
               </div>
               <div class="badge-content">
@@ -316,7 +361,8 @@
               </div>
             </div>
           </div>
-          <button class="btn btn-secondary btn-icon" id="btn-clear-filters" title="Reset all search filters, sorting options, and refresh live data">
+          <button class="btn btn-secondary btn-icon" id="btn-clear-filters"
+            title="Reset all search filters, sorting options, and refresh live data">
             <i data-lucide="rotate-ccw"></i> Reset Filters & Update Data
           </button>
           <button class="btn btn-danger btn-icon" id="btn-empty-trash" style="display: none;" title="Empty Recycle Bin">
@@ -405,13 +451,16 @@
               <div
                 style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand-accent); flex-shrink: 0;">
+                  <div
+                    style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand-accent); flex-shrink: 0;">
                     <i data-lucide="upload-cloud" style="width: 22px; height: 22px;"></i>
                   </div>
                   <div>
-                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Drag &amp; Drop Transmittal Picture / Auto-OCR Scan</span>
+                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Drag
+                      &amp; Drop Transmittal Picture / Auto-OCR Scan</span>
                     <p style="font-size: 0.775rem; color: var(--text-muted); margin-top: 2px;">
-                      Drag &amp; drop an image here or click upload. Auto-attaches document photo and extracts text into Particulars.
+                      Drag &amp; drop an image here or click upload. Auto-attaches document photo and extracts text into
+                      Particulars.
                     </p>
                   </div>
                 </div>
@@ -430,30 +479,38 @@
               </div>
 
               <!-- Uploaded Attachment Preview Box (Preserves Original Image Aspect Ratio) -->
-              <div id="transmittal-image-preview-container" style="display: none; margin-top: 14px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-medium); border-radius: 8px;">
+              <div id="transmittal-image-preview-container"
+                style="display: none; margin-top: 14px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-medium); border-radius: 8px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                  <span style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
+                  <span
+                    style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
                     <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> TRANSMITTAL IMAGE ATTACHED
                   </span>
                   <div style="display: flex; gap: 8px;">
-                    <button type="button" class="btn btn-secondary" id="btn-view-modal-image" style="padding: 4px 10px; font-size: 0.75rem;">
+                    <button type="button" class="btn btn-secondary" id="btn-view-modal-image"
+                      style="padding: 4px 10px; font-size: 0.75rem;">
                       <i data-lucide="maximize-2" style="width: 12px; height: 12px;"></i> Full Screen
                     </button>
-                    <button type="button" class="btn btn-danger" id="btn-remove-modal-image" style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
+                    <button type="button" class="btn btn-danger" id="btn-remove-modal-image"
+                      style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
                       <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Remove
                     </button>
                   </div>
                 </div>
-                <div style="text-align: center; background: #0f172a; border-radius: 6px; padding: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; max-height: 240px;">
-                  <img id="transmittal-modal-img-preview" src="" alt="Transmittal Preview" style="max-height: 220px; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">
+                <div
+                  style="text-align: center; background: #0f172a; border-radius: 6px; padding: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; max-height: 240px;">
+                  <img id="transmittal-modal-img-preview" src="" alt="Transmittal Preview"
+                    style="max-height: 220px; width: auto; max-width: 100%; object-fit: contain; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15);">
                 </div>
               </div>
             </div>
 
             <div class="form-group">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                <label for="particulars" style="margin-bottom: 0;">Particulars (Documents Transmitted) <span class="required">*</span></label>
-                <button type="button" class="btn-fix-text" id="btn-fix-particulars" onclick="autoFixParticularsField()" title="Click to auto-fix and clean all spelling, character, and name errors in the text">
+                <label for="particulars" style="margin-bottom: 0;">Particulars (Documents Transmitted) <span
+                    class="required">*</span></label>
+                <button type="button" class="btn-fix-text" id="btn-fix-particulars" onclick="autoFixParticularsField()"
+                  title="Click to auto-fix and clean all spelling, character, and name errors in the text">
                   <i data-lucide="sparkles" style="width: 13px; height: 13px;"></i>
                   <span>FIX</span>
                 </button>
@@ -475,16 +532,20 @@
             </div>
 
             <div class="form-group">
-              <label for="transmittal-program-select">Program / Category <span style="font-weight: 400; color: var(--text-muted); font-size: 0.75rem;">(Optional)</span></label>
+              <label for="transmittal-program-select">Program / Category <span
+                  style="font-weight: 400; color: var(--text-muted); font-size: 0.75rem;">(Optional)</span></label>
               <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <select id="transmittal-program-select" class="form-control" style="flex: 1; min-width: 140px;" onchange="handleProgramSelectChange()">
+                <select id="transmittal-program-select" class="form-control" style="flex: 1; min-width: 140px;"
+                  onchange="handleProgramSelectChange()">
                   <option value="">-- None (Optional) --</option>
                   <option value="GIP">GIP</option>
                   <option value="SPES">SPES</option>
                   <option value="TUPAD">TUPAD</option>
                   <option value="CUSTOM">Custom / Add Text...</option>
                 </select>
-                <input type="text" id="transmittal-custom-program" class="form-control" placeholder="Type custom program/category text..." style="flex: 1.2; min-width: 180px; display: none;">
+                <input type="text" id="transmittal-custom-program" class="form-control"
+                  placeholder="Type custom program/category text..."
+                  style="flex: 1.2; min-width: 180px; display: none;">
               </div>
             </div>
 
@@ -548,15 +609,20 @@
           <div id="fields-compiled" class="module-fields" style="display: none;">
             <!-- Drag & Drop PDF & Photo Upload Zone -->
             <div class="ocr-scan-card compiled-dropzone" id="compiled-ocr-zone">
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+              <div
+                style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand-accent); flex-shrink: 0;">
+                  <div
+                    style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand-accent); flex-shrink: 0;">
                     <i data-lucide="paperclip" style="width: 22px; height: 22px;"></i>
                   </div>
                   <div>
-                    <span style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Document Files &amp; Camera Capture (PDF &amp; Images)</span>
+                    <span
+                      style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Document
+                      Files &amp; Camera Capture (PDF &amp; Images)</span>
                     <p style="font-size: 0.775rem; color: var(--text-muted); margin-top: 2px;">
-                      Attach multiple photos or PDF documents from your device gallery/files or capture direct camera photos.
+                      Attach multiple photos or PDF documents from your device gallery/files or capture direct camera
+                      photos.
                     </p>
                   </div>
                 </div>
@@ -565,26 +631,33 @@
                     style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: var(--brand-accent); color: var(--brand-accent);">
                     <i data-lucide="folder-plus"></i> Select File(s) / PDF
                   </label>
-                  <input type="file" id="compiled-image-file" accept="image/*,application/pdf" multiple style="display: none;">
+                  <input type="file" id="compiled-image-file" accept="image/*,application/pdf" multiple
+                    style="display: none;">
                   <label for="compiled-camera-file" class="btn btn-secondary btn-icon"
                     style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: #10b981; color: #10b981;">
                     <i data-lucide="camera"></i> Take Photo
                   </label>
-                  <input type="file" id="compiled-camera-file" accept="image/*" capture="environment" multiple style="display: none;">
+                  <input type="file" id="compiled-camera-file" accept="image/*" capture="environment" multiple
+                    style="display: none;">
                 </div>
               </div>
 
               <!-- Uploaded Attachments Multi-Item Container -->
-              <div id="compiled-image-preview-container" style="display: none; margin-top: 14px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-medium); border-radius: 8px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px dashed var(--border-medium);">
-                  <span id="compiled-attachments-count-badge" style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
+              <div id="compiled-image-preview-container"
+                style="display: none; margin-top: 14px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-medium); border-radius: 8px;">
+                <div
+                  style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px dashed var(--border-medium);">
+                  <span id="compiled-attachments-count-badge"
+                    style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
                     <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> ATTACHED DOCUMENTS (0)
                   </span>
-                  <button type="button" class="btn btn-danger" id="btn-remove-compiled-image" style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
+                  <button type="button" class="btn btn-danger" id="btn-remove-compiled-image"
+                    style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
                     <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Clear All
                   </button>
                 </div>
-                <div id="compiled-attachments-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 260px; overflow-y: auto;">
+                <div id="compiled-attachments-list"
+                  style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 260px; overflow-y: auto;">
                   <!-- Dynamically populated attachment cards -->
                 </div>
               </div>
@@ -592,12 +665,14 @@
 
             <div class="form-group">
               <label for="compiled-title">Compiled Documents / Title <span class="required">*</span></label>
-              <textarea id="compiled-title" class="form-control" rows="3" placeholder="e.g. COMPLIED GIP DTRs & ARs, ACKNOWLEDGEMENT RECEIPTS, ETC."></textarea>
+              <textarea id="compiled-title" class="form-control" rows="3"
+                placeholder="e.g. COMPLIED GIP DTRs & ARs, ACKNOWLEDGEMENT RECEIPTS, ETC."></textarea>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label for="compiled-received-from">Received From / Sender <span class="required">*</span></label>
-                <input type="text" id="compiled-received-from" class="form-control" placeholder="e.g. DOLE REGIONAL OFFICE / LGU TUBOD / GIP">
+                <input type="text" id="compiled-received-from" class="form-control"
+                  placeholder="e.g. DOLE REGIONAL OFFICE / LGU TUBOD / GIP">
               </div>
               <div class="form-group">
                 <label for="compiled-date-received">Date Received <span class="required">*</span></label>
@@ -618,16 +693,19 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label for="gsis-dob">Date of Birth</label>
-                <input type="text" id="gsis-dob" class="form-control" placeholder="e.g. 8/29/2002" oninput="handleGsisDobInput()" onchange="handleGsisDobInput()">
+                <input type="text" id="gsis-dob" class="form-control" placeholder="e.g. 8/29/2002"
+                  oninput="handleGsisDobInput()" onchange="handleGsisDobInput()">
               </div>
               <div class="form-group">
-                <label for="gsis-age">Age <span style="font-size: 0.725rem; color: #10b981; font-weight: 600;">(Auto-Calculated)</span></label>
+                <label for="gsis-age">Age <span
+                    style="font-size: 0.725rem; color: #10b981; font-weight: 600;">(Auto-Calculated)</span></label>
                 <input type="text" id="gsis-age" class="form-control" placeholder="Auto-calculated from DOB">
               </div>
             </div>
             <div class="form-group">
               <label for="gsis-address">Address</label>
-              <input type="text" id="gsis-address" class="form-control" placeholder="e.g. POB. MATUNGAO, LANAO DEL NORTE">
+              <input type="text" id="gsis-address" class="form-control"
+                placeholder="e.g. POB. MATUNGAO, LANAO DEL NORTE">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
@@ -641,7 +719,8 @@
             </div>
             <div class="form-group">
               <label for="gsis-period">Period of Employment</label>
-              <input type="text" id="gsis-period" class="form-control" placeholder="e.g. JUNE 16, 2026 - DECEMBER 15, 2026">
+              <input type="text" id="gsis-period" class="form-control"
+                placeholder="e.g. JUNE 16, 2026 - DECEMBER 15, 2026">
             </div>
           </div>
 
@@ -675,16 +754,21 @@
       </div>
       <form id="delete-form">
         <div class="modal-body">
-          <p style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 8px;">Are you sure you want to delete this record? It will be moved to the Recycle Bin.</p>
+          <p style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 8px;">Are you sure you want to delete
+            this record? It will be moved to the Recycle Bin.</p>
           <div id="delete-record-summary"
             style="margin-top: 8px; font-weight: 600; color: var(--primary-navy); background: var(--bg-page); padding: 10px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem;">
           </div>
 
           <div class="form-group" style="margin-top: 16px; text-align: left;">
-            <label for="delete-password-input" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-navy);">
-              <i data-lucide="lock" style="width: 13px; height: 13px; vertical-align: middle; color: var(--brand-accent);"></i> Security Password Required <span class="required">*</span>
+            <label for="delete-password-input"
+              style="font-size: 0.85rem; font-weight: 600; color: var(--primary-navy);">
+              <i data-lucide="lock"
+                style="width: 13px; height: 13px; vertical-align: middle; color: var(--brand-accent);"></i> Security
+              Password Required <span class="required">*</span>
             </label>
-            <input type="password" id="delete-password-input" class="form-control" placeholder="Enter password to confirm delete..." required autocomplete="off">
+            <input type="password" id="delete-password-input" class="form-control"
+              placeholder="Enter password to confirm delete..." required autocomplete="off">
           </div>
         </div>
         <div class="modal-footer">
@@ -800,8 +884,10 @@
                 <input type="checkbox" id="export-chk-salary" checked
                   style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
                 <div>
-                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Salary & Payroll Tracking</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Quincena Payroll Disbursements & Payment Matrix</div>
+                  <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">Salary & Payroll Tracking
+                  </div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Quincena Payroll Disbursements & Payment
+                    Matrix</div>
                 </div>
               </div>
               <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
@@ -810,24 +896,30 @@
             <!-- Sub-filter for Salary Download Status -->
             <div id="export-salary-filter-box"
               style="margin-top: -4px; margin-left: 28px; padding: 10px 12px; background: var(--bg-page); border: 1px solid var(--border-color); border-radius: 6px;">
-              <label style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-                <i data-lucide="filter" style="width: 13px; height: 13px; color: var(--brand-accent);"></i> DOWNLOAD SALARY BY STATUS:
+              <label
+                style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                <i data-lucide="filter" style="width: 13px; height: 13px; color: var(--brand-accent);"></i> DOWNLOAD
+                SALARY BY STATUS:
               </label>
               <div style="display: flex; flex-direction: column; gap: 6px;">
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
-                  <input type="radio" name="export-salary-status" id="export-sal-all" value="ALL" checked style="accent-color: var(--brand-accent); width: 15px; height: 15px;">
+                  <input type="radio" name="export-salary-status" id="export-sal-all" value="ALL" checked
+                    style="accent-color: var(--brand-accent); width: 15px; height: 15px;">
                   <span>&#x1F4CB; <strong>All Records</strong> &ndash; Both Paid &amp; Pending (1 sheet)</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
-                  <input type="radio" name="export-salary-status" id="export-sal-paid" value="PAID" style="accent-color: #10b981; width: 15px; height: 15px;">
+                  <input type="radio" name="export-salary-status" id="export-sal-paid" value="PAID"
+                    style="accent-color: #10b981; width: 15px; height: 15px;">
                   <span>&#x2705; <strong>Paid / Received Only</strong> &ndash; Separate sheet</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
-                  <input type="radio" name="export-salary-status" id="export-sal-pending" value="PENDING" style="accent-color: #f59e0b; width: 15px; height: 15px;">
+                  <input type="radio" name="export-salary-status" id="export-sal-pending" value="PENDING"
+                    style="accent-color: #f59e0b; width: 15px; height: 15px;">
                   <span>&#x23F3; <strong>Pending Only</strong> &ndash; Separate sheet</span>
                 </label>
                 <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; cursor: pointer;">
-                  <input type="radio" name="export-salary-status" id="export-sal-both-sep" value="BOTH_SEPARATE" style="accent-color: #6366f1; width: 15px; height: 15px;">
+                  <input type="radio" name="export-salary-status" id="export-sal-both-sep" value="BOTH_SEPARATE"
+                    style="accent-color: #6366f1; width: 15px; height: 15px;">
                   <span>&#x1F4CA; <strong>Both Separately</strong> &ndash; Paid &amp; Pending as 2 sheets</span>
                 </label>
               </div>
@@ -853,7 +945,8 @@
                   style="width: 18px; height: 18px; accent-color: var(--brand-accent);">
                 <div>
                   <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-main);">GIP Information</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">GIP Profiles, GSIS Group Accident Insurance & Beneficiary Directory</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">GIP Profiles, GSIS Group Accident Insurance
+                    & Beneficiary Directory</div>
                 </div>
               </div>
               <span class="quincena-pill quincena-q1" style="font-size: 0.7rem;">UNPROTECTED</span>
@@ -953,36 +1046,50 @@
   </div>
 
   <!-- High-Resolution Image Lightbox Modal -->
-  <div class="modal-backdrop" id="image-lightbox-modal" style="z-index: 1200; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
-    <div class="modal-container" style="max-width: 90vw; width: 900px; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
-      <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 14px 20px;">
-        <h2 style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 1rem;" id="lightbox-modal-title">
-          <i data-lucide="image" style="width: 20px; height: 20px; color: var(--brand-accent);"></i> Transmittal Document Attachment
+  <div class="modal-backdrop" id="image-lightbox-modal"
+    style="z-index: 1200; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);">
+    <div class="modal-container"
+      style="max-width: 90vw; width: 900px; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+      <div class="modal-header"
+        style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 14px 20px;">
+        <h2 style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 1rem;"
+          id="lightbox-modal-title">
+          <i data-lucide="image" style="width: 20px; height: 20px; color: var(--brand-accent);"></i> Transmittal
+          Document Attachment
         </h2>
         <button class="modal-close" id="lightbox-modal-close" style="color: #94a3b8;">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 20px; text-align: center; background: #090d16; min-height: 300px; max-height: 75vh; overflow: auto; display: flex; justify-content: center; align-items: center;">
-        <img id="lightbox-modal-img" src="" alt="Full Attachment" style="max-width: 100%; max-height: 70vh; height: auto; width: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+      <div class="modal-body"
+        style="padding: 20px; text-align: center; background: #090d16; min-height: 300px; max-height: 75vh; overflow: auto; display: flex; justify-content: center; align-items: center;">
+        <img id="lightbox-modal-img" src="" alt="Full Attachment"
+          style="max-width: 100%; max-height: 70vh; height: auto; width: auto; object-fit: contain; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
       </div>
-      <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; justify-content: space-between;">
+      <div class="modal-footer"
+        style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; justify-content: space-between;">
         <span style="font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="info" style="width: 14px; height: 14px;"></i> Original image aspect ratio preserved
         </span>
         <div style="display: flex; gap: 10px;">
-          <a id="lightbox-modal-download-btn" href="#" download="Transmittal_Document.png" class="btn btn-primary" style="font-size: 0.85rem; text-decoration: none;">
+          <a id="lightbox-modal-download-btn" href="#" download="Transmittal_Document.png" class="btn btn-primary"
+            style="font-size: 0.85rem; text-decoration: none;">
             <i data-lucide="download"></i> Download Image
           </a>
-          <button type="button" class="btn btn-secondary" id="lightbox-modal-close-btn" style="font-size: 0.85rem;">Close</button>
+          <button type="button" class="btn btn-secondary" id="lightbox-modal-close-btn"
+            style="font-size: 0.85rem;">Close</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- High-Resolution PDF Document Viewer Modal -->
-  <div class="modal-backdrop" id="pdf-viewer-modal" style="z-index: 1210; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px);">
-    <div class="modal-container" style="max-width: 92vw; width: 950px; height: 88vh; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
-      <div class="modal-header" style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 14px 20px;">
-        <h2 style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 1rem;" id="pdf-modal-title">
+  <div class="modal-backdrop" id="pdf-viewer-modal"
+    style="z-index: 1210; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px);">
+    <div class="modal-container"
+      style="max-width: 92vw; width: 950px; height: 88vh; background: #0f172a; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
+      <div class="modal-header"
+        style="background: #1e293b; border-bottom: 1px solid rgba(255,255,255,0.1); padding: 14px 20px;">
+        <h2 style="display: flex; align-items: center; gap: 10px; color: #f8fafc; font-size: 1rem;"
+          id="pdf-modal-title">
           <i data-lucide="file-text" style="width: 20px; height: 20px; color: #ef4444;"></i> Attached PDF Document
         </h2>
         <button class="modal-close" id="pdf-modal-close" style="color: #94a3b8;">&times;</button>
@@ -990,18 +1097,22 @@
       <div class="modal-body" style="padding: 0; flex: 1; background: #090d16; overflow: hidden; position: relative;">
         <iframe id="pdf-modal-iframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
       </div>
-      <div class="modal-footer" style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; justify-content: space-between;">
+      <div class="modal-footer"
+        style="background: #1e293b; border-top: 1px solid rgba(255,255,255,0.1); padding: 12px 20px; justify-content: space-between;">
         <span style="font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
           <i data-lucide="info" style="width: 14px; height: 14px;"></i> Interactive PDF Document Viewer
         </span>
         <div style="display: flex; gap: 10px;">
-          <a id="pdf-modal-open-new-btn" href="#" target="_blank" class="btn btn-secondary" style="font-size: 0.85rem; text-decoration: none;">
+          <a id="pdf-modal-open-new-btn" href="#" target="_blank" class="btn btn-secondary"
+            style="font-size: 0.85rem; text-decoration: none;">
             <i data-lucide="external-link"></i> Open in New Tab
           </a>
-          <a id="pdf-modal-download-btn" href="#" download="Document.pdf" class="btn btn-primary" style="font-size: 0.85rem; text-decoration: none;">
+          <a id="pdf-modal-download-btn" href="#" download="Document.pdf" class="btn btn-primary"
+            style="font-size: 0.85rem; text-decoration: none;">
             <i data-lucide="download"></i> Download PDF
           </a>
-          <button type="button" class="btn btn-secondary" id="pdf-modal-close-btn" style="font-size: 0.85rem;">Close</button>
+          <button type="button" class="btn btn-secondary" id="pdf-modal-close-btn"
+            style="font-size: 0.85rem;">Close</button>
         </div>
       </div>
     </div>
@@ -1019,54 +1130,75 @@
       <form id="edit-total-budget-form" onsubmit="handleTotalBudgetSubmit(event)">
         <div class="modal-body">
           <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 14px;">
-            Specify the Total Salary Budget allocated for GIPs. The <strong>Remaining Balance</strong> will automatically be calculated as <strong>Total Budget minus Total Paid minus Total Pending</strong>.
+            Specify the Total Salary Budget allocated for GIPs. The <strong>Remaining Balance</strong> will
+            automatically be calculated as <strong>Total Budget minus Total Paid minus Total Pending</strong>.
           </p>
 
           <!-- Current Financial Overview Box -->
-          <div style="background: var(--bg-page); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+          <div
+            style="background: var(--bg-page); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
             <div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Paid</div>
-              <div id="modal-current-paid-val" style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #0284c7; margin-top: 2px;">₱0.00</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                Total Paid</div>
+              <div id="modal-current-paid-val"
+                style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #0284c7; margin-top: 2px;">
+                ₱0.00</div>
             </div>
             <div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Pending</div>
-              <div id="modal-current-pending-val" style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #d97706; margin-top: 2px;">₱0.00</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                Total Pending</div>
+              <div id="modal-current-pending-val"
+                style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #d97706; margin-top: 2px;">
+                ₱0.00</div>
             </div>
             <div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Remaining</div>
-              <div id="modal-current-remaining-val" style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #059669; margin-top: 2px;">₱0.00</div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                Remaining</div>
+              <div id="modal-current-remaining-val"
+                style="font-family: monospace; font-weight: 700; font-size: 0.875rem; color: #059669; margin-top: 2px;">
+                ₱0.00</div>
             </div>
           </div>
 
           <div class="form-group">
             <label for="input-total-budget">Total Budget Amount (₱) <span class="required">*</span></label>
             <div style="position: relative;">
-              <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);">₱</span>
-              <input type="number" id="input-total-budget" class="form-control" style="padding-left: 28px; font-family: monospace; font-weight: 700; font-size: 1.05rem;"
+              <span
+                style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-muted);">₱</span>
+              <input type="number" id="input-total-budget" class="form-control"
+                style="padding-left: 28px; font-family: monospace; font-weight: 700; font-size: 1.05rem;"
                 placeholder="0.00" min="0" step="0.01" required autocomplete="off" oninput="updateBudgetModalPreview()">
             </div>
             <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 6px; display: block;">
               Quick Presets:
-              <a href="#" onclick="setBudgetPreset(500000); return false;" style="color: #4f46e5; font-weight: 600;">₱500K</a> |
-              <a href="#" onclick="setBudgetPreset(1000000); return false;" style="color: #4f46e5; font-weight: 600;">₱1.0M</a> |
-              <a href="#" onclick="setBudgetPreset(1500000); return false;" style="color: #4f46e5; font-weight: 600;">₱1.5M</a> |
-              <a href="#" onclick="setBudgetPreset(2000000); return false;" style="color: #4f46e5; font-weight: 600;">₱2.0M</a> |
-              <a href="#" onclick="setBudgetPreset(2500000); return false;" style="color: #4f46e5; font-weight: 600;">₱2.5M</a>
+              <a href="#" onclick="setBudgetPreset(500000); return false;"
+                style="color: #4f46e5; font-weight: 600;">₱500K</a> |
+              <a href="#" onclick="setBudgetPreset(1000000); return false;"
+                style="color: #4f46e5; font-weight: 600;">₱1.0M</a> |
+              <a href="#" onclick="setBudgetPreset(1500000); return false;"
+                style="color: #4f46e5; font-weight: 600;">₱1.5M</a> |
+              <a href="#" onclick="setBudgetPreset(2000000); return false;"
+                style="color: #4f46e5; font-weight: 600;">₱2.0M</a> |
+              <a href="#" onclick="setBudgetPreset(2500000); return false;"
+                style="color: #4f46e5; font-weight: 600;">₱2.5M</a>
             </small>
           </div>
 
           <!-- Live Preview of New Remaining Balance -->
-          <div id="budget-modal-preview-box" style="background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 0.825rem;">
+          <div id="budget-modal-preview-box"
+            style="background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 0.825rem;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="font-weight: 600; color: var(--primary-navy);">Projected Remaining Balance:</span>
-              <strong id="modal-preview-remaining-val" style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #059669;">₱0.00</strong>
+              <strong id="modal-preview-remaining-val"
+                style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #059669;">₱0.00</strong>
             </div>
           </div>
         </div>
 
         <div class="modal-footer" style="justify-content: space-between;">
           <button type="button" class="btn btn-secondary" onclick="closeTotalBudgetModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #6366f1, #4f46e5); border-color: #4f46e5;">
+          <button type="submit" class="btn btn-primary"
+            style="background: linear-gradient(135deg, #6366f1, #4f46e5); border-color: #4f46e5;">
             <i data-lucide="check"></i> Save Total Budget
           </button>
         </div>
@@ -1079,17 +1211,21 @@
     <div class="modal-container" style="max-width: 580px; max-height: 92vh; display: flex; flex-direction: column;">
       <div class="modal-header">
         <h2 style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="calculator" style="width: 20px; height: 20px; color: var(--brand-accent);"></i> Calculate Hour &amp; Payroll
+          <i data-lucide="calculator" style="width: 20px; height: 20px; color: var(--brand-accent);"></i> Calculate Hour
+          &amp; Payroll
         </h2>
         <button class="modal-close" id="calc-modal-close-btn" onclick="closeCalcModal()">&times;</button>
       </div>
 
       <!-- Segmented Tab Navigation for Calculator vs Batch Tool -->
-      <div class="calc-tab-nav" style="display: flex; background: var(--bg-main, #f1f5f9); padding: 4px; margin: 12px 20px 0; border-radius: 8px; gap: 6px;">
-        <button type="button" class="calc-nav-tab active" id="tab-btn-calc" onclick="switchCalcView('view-calculator')" style="flex: 1; padding: 8px 12px; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+      <div class="calc-tab-nav"
+        style="display: flex; background: var(--bg-main, #f1f5f9); padding: 4px; margin: 12px 20px 0; border-radius: 8px; gap: 6px;">
+        <button type="button" class="calc-nav-tab active" id="tab-btn-calc" onclick="switchCalcView('view-calculator')"
+          style="flex: 1; padding: 8px 12px; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
           <i data-lucide="calculator" style="width: 15px; height: 15px;"></i> Payroll Calculator
         </button>
-        <button type="button" class="calc-nav-tab" id="tab-btn-batch" onclick="switchCalcView('view-batch')" style="flex: 1; padding: 8px 12px; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+        <button type="button" class="calc-nav-tab" id="tab-btn-batch" onclick="switchCalcView('view-batch')"
+          style="flex: 1; padding: 8px 12px; border: none; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
           <i data-lucide="list-filter" style="width: 15px; height: 15px;"></i> Batch Tool (-₱20)
         </button>
       </div>
@@ -1101,126 +1237,170 @@
             Enter employee details and working hours to compute gross and net pay in real-time.
           </p>
 
-          <button type="button" id="calcToggleModeBtn" class="calc-toggle-btn" style="width: 100%; padding: 10px 14px; background: var(--bg-main, #f8fafc); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 8px; font-weight: 600; font-size: 0.825rem; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 14px; transition: all 0.2s;">
+          <button type="button" id="calcToggleModeBtn" class="calc-toggle-btn"
+            style="width: 100%; padding: 10px 14px; background: var(--bg-main, #f8fafc); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 8px; font-weight: 600; font-size: 0.825rem; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 14px; transition: all 0.2s;">
             <span style="display: flex; align-items: center; gap: 6px;">
-              <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px; color: var(--brand-accent);"></i> Accounting Mode (OT &amp; Mandatory Deductions)
+              <i data-lucide="sliders-horizontal" style="width: 14px; height: 14px; color: var(--brand-accent);"></i>
+              Accounting Mode (OT &amp; Mandatory Deductions)
             </span>
             <span id="calcToggleIcon">▼</span>
           </button>
 
           <div class="form-group" style="margin-bottom: 12px;">
-            <label for="calcEmpName" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Employee Name (Optional)</label>
+            <label for="calcEmpName"
+              style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Employee
+              Name (Optional)</label>
             <input type="text" id="calcEmpName" class="form-control" placeholder="e.g. Juan Dela Cruz">
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div class="form-group" style="margin-bottom: 0;">
-              <label for="calcRate" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Daily Rate (₱)</label>
+              <label for="calcRate"
+                style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Daily
+                Rate (₱)</label>
               <input type="number" id="calcRate" class="form-control" value="500" step="0.01">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label for="calcHours" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Total Hours</label>
+              <label for="calcHours"
+                style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Total
+                Hours</label>
               <input type="number" id="calcHours" class="form-control" value="80" step="0.5">
             </div>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
             <div class="form-group" style="margin-bottom: 0;">
-              <label for="calcLateMins" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Late Minutes</label>
+              <label for="calcLateMins"
+                style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Late
+                Minutes</label>
               <input type="number" id="calcLateMins" class="form-control" value="0">
             </div>
             <div class="form-group" style="margin-bottom: 0;">
-              <label for="calcLateDed" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Deduction / Min (₱)</label>
+              <label for="calcLateDed"
+                style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Deduction
+                / Min (₱)</label>
               <input type="number" id="calcLateDed" class="form-control" value="1.04" step="0.01">
             </div>
           </div>
 
           <div class="form-group" style="margin-bottom: 12px;">
-            <label for="calcAllowance" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Allowance / Adjustment (₱)</label>
+            <label for="calcAllowance"
+              style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Allowance
+              / Adjustment (₱)</label>
             <input type="number" id="calcAllowance" class="form-control" value="20" step="0.01">
           </div>
 
           <!-- Advanced / Accounting Mode Fields -->
-          <div id="calcAdvancedFields" class="calc-advanced-section hidden" style="background: rgba(248, 250, 252, 0.8); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
-            <div style="font-size: 0.7rem; font-weight: 800; color: var(--brand-accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; border-bottom: 1px solid var(--border-light, #f1f5f9); padding-bottom: 4px;">
+          <div id="calcAdvancedFields" class="calc-advanced-section hidden"
+            style="background: rgba(248, 250, 252, 0.8); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 8px; padding: 14px; margin-bottom: 14px;">
+            <div
+              style="font-size: 0.7rem; font-weight: 800; color: var(--brand-accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; border-bottom: 1px solid var(--border-light, #f1f5f9); padding-bottom: 4px;">
               Earnings &amp; Overtime
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="calcOtHours" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Overtime Hours</label>
+                <label for="calcOtHours"
+                  style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Overtime
+                  Hours</label>
                 <input type="number" id="calcOtHours" class="form-control" value="0" step="0.5">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="calcOtMultiplier" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">OT Multiplier</label>
+                <label for="calcOtMultiplier"
+                  style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">OT
+                  Multiplier</label>
                 <input type="number" id="calcOtMultiplier" class="form-control" value="1.25" step="0.05">
               </div>
             </div>
 
-            <div style="font-size: 0.7rem; font-weight: 800; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; border-bottom: 1px solid var(--border-light, #f1f5f9); padding-bottom: 4px;">
+            <div
+              style="font-size: 0.7rem; font-weight: 800; color: #dc2626; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; border-bottom: 1px solid var(--border-light, #f1f5f9); padding-bottom: 4px;">
               Mandatory Deductions &amp; Taxes
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="calcTax" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Tax Withheld (₱)</label>
+                <label for="calcTax"
+                  style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Tax
+                  Withheld (₱)</label>
                 <input type="number" id="calcTax" class="form-control" value="0" step="0.01">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="calcGovSss" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">SSS / GSIS (₱)</label>
+                <label for="calcGovSss"
+                  style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">SSS
+                  / GSIS (₱)</label>
                 <input type="number" id="calcGovSss" class="form-control" value="0" step="0.01">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="calcGovPhilhealth" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">PhilHealth (₱)</label>
+                <label for="calcGovPhilhealth"
+                  style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">PhilHealth
+                  (₱)</label>
                 <input type="number" id="calcGovPhilhealth" class="form-control" value="0" step="0.01">
               </div>
               <div class="form-group" style="margin-bottom: 0;">
-                <label for="calcGovPagibig" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Pag-IBIG (₱)</label>
+                <label for="calcGovPagibig"
+                  style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Pag-IBIG
+                  (₱)</label>
                 <input type="number" id="calcGovPagibig" class="form-control" value="0" step="0.01">
               </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-              <label for="calcLoans" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Other Loans / Deductions (₱)</label>
+              <label for="calcLoans"
+                style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Other
+                Loans / Deductions (₱)</label>
               <input type="number" id="calcLoans" class="form-control" value="0" step="0.01">
             </div>
           </div>
 
           <!-- Calculation Results Summary Card -->
-          <div class="calc-results-card" style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 10px; padding: 16px; margin-top: 14px;">
-            <div class="calc-result-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-muted);">
+          <div class="calc-results-card"
+            style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-medium, #e2e8f0); border-radius: 10px; padding: 16px; margin-top: 14px;">
+            <div class="calc-result-row"
+              style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-muted);">
               <span id="calcDaysLabel">Equivalent Days (80 ÷ 8)</span>
-              <strong id="calcOutDays" style="color: var(--text-main); font-variant-numeric: tabular-nums;">10.00</strong>
+              <strong id="calcOutDays"
+                style="color: var(--text-main); font-variant-numeric: tabular-nums;">10.00</strong>
             </div>
-            <div class="calc-result-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-muted);">
+            <div class="calc-result-row"
+              style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--text-muted);">
               <span>Basic Pay</span>
-              <strong id="calcOutBasic" style="color: var(--text-main); font-variant-numeric: tabular-nums;">₱5,000.00</strong>
+              <strong id="calcOutBasic"
+                style="color: var(--text-main); font-variant-numeric: tabular-nums;">₱5,000.00</strong>
             </div>
-            <div class="calc-result-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #10b981;">
+            <div class="calc-result-row"
+              style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #10b981;">
               <span>Allowance / Adjustment</span>
               <strong id="calcOutAllowance" style="font-variant-numeric: tabular-nums;">+ ₱20.00</strong>
             </div>
-            <div id="calcRowOvertime" class="calc-result-row hidden" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #10b981;">
+            <div id="calcRowOvertime" class="calc-result-row hidden"
+              style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #10b981;">
               <span>Overtime Pay</span>
               <strong id="calcOutOvertime" style="font-variant-numeric: tabular-nums;">+ ₱0.00</strong>
             </div>
-            <div id="calcRowGross" class="calc-result-row hidden" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--primary-navy); border-top: 1px dashed var(--border-medium); padding-top: 6px;">
+            <div id="calcRowGross" class="calc-result-row hidden"
+              style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: var(--primary-navy); border-top: 1px dashed var(--border-medium); padding-top: 6px;">
               <span style="font-weight: 700;">Gross Pay</span>
               <strong id="calcOutGross" style="font-variant-numeric: tabular-nums; font-weight: 700;">₱5,020.00</strong>
             </div>
-            <div class="calc-result-row" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
+            <div class="calc-result-row"
+              style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
               <span>Late Deduction</span>
               <strong id="calcOutLate" style="font-variant-numeric: tabular-nums;">- ₱0.00</strong>
             </div>
-            <div id="calcRowGov" class="calc-result-row hidden" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
+            <div id="calcRowGov" class="calc-result-row hidden"
+              style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
               <span>Mandatory Deductions &amp; Tax</span>
               <strong id="calcOutGov" style="font-variant-numeric: tabular-nums;">- ₱0.00</strong>
             </div>
-            <div id="calcRowLoans" class="calc-result-row hidden" style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
+            <div id="calcRowLoans" class="calc-result-row hidden"
+              style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.875rem; color: #ef4444;">
               <span>Loans / Other Deductions</span>
               <strong id="calcOutLoans" style="font-variant-numeric: tabular-nums;">- ₱0.00</strong>
             </div>
-            <div class="calc-result-row calc-total-row" style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid var(--primary-navy, #0f172a); padding-top: 12px; margin-top: 10px;">
+            <div class="calc-result-row calc-total-row"
+              style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid var(--primary-navy, #0f172a); padding-top: 12px; margin-top: 10px;">
               <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-navy);">NET PAY</span>
-              <strong id="calcOutNet" style="font-size: 1.35rem; font-weight: 800; color: #0284c7; font-variant-numeric: tabular-nums;">₱5,020.00</strong>
+              <strong id="calcOutNet"
+                style="font-size: 1.35rem; font-weight: 800; color: #0284c7; font-variant-numeric: tabular-nums;">₱5,020.00</strong>
             </div>
           </div>
         </div>
@@ -1228,22 +1408,30 @@
         <!-- VIEW 2: BATCH PROCESSOR -->
         <div id="calc-view-batch" class="calc-app-view">
           <p style="font-size: 0.825rem; color: var(--text-muted); margin-top: 0; margin-bottom: 14px;">
-            Paste comma-separated or line-separated stipend amounts. Automatically subtracts <strong>₱20</strong> and formats for instant Excel copy/paste.
+            Paste comma-separated or line-separated stipend amounts. Automatically subtracts <strong>₱20</strong> and
+            formats for instant Excel copy/paste.
           </p>
 
           <div class="form-group" style="margin-bottom: 14px;">
-            <label for="calcBatchInput" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Input Raw Amounts</label>
-            <textarea id="calcBatchInput" class="form-control" rows="4" placeholder="e.g. 3,957.60, 4,515.84, 5,000.00"></textarea>
+            <label for="calcBatchInput"
+              style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px;">Input
+              Raw Amounts</label>
+            <textarea id="calcBatchInput" class="form-control" rows="4"
+              placeholder="e.g. 3,957.60, 4,515.84, 5,000.00"></textarea>
           </div>
 
           <div class="form-group" style="margin-bottom: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <label for="calcBatchOutput" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0;">Excel-Ready Output (Click or button to copy)</label>
-              <button type="button" class="btn btn-secondary btn-icon" id="btnCopyBatchOutput" onclick="copyBatchOutput()" style="font-size: 0.75rem; padding: 4px 8px;">
+              <label for="calcBatchOutput"
+                style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0;">Excel-Ready
+                Output (Click or button to copy)</label>
+              <button type="button" class="btn btn-secondary btn-icon" id="btnCopyBatchOutput"
+                onclick="copyBatchOutput()" style="font-size: 0.75rem; padding: 4px 8px;">
                 <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copy Output
               </button>
             </div>
-            <textarea id="calcBatchOutput" class="form-control" rows="6" readonly onclick="this.select()" placeholder="Processed amounts will appear here formatted line by line..."></textarea>
+            <textarea id="calcBatchOutput" class="form-control" rows="6" readonly onclick="this.select()"
+              placeholder="Processed amounts will appear here formatted line by line..."></textarea>
           </div>
         </div>
       </div>

@@ -223,6 +223,7 @@ const DEFAULT_QUINCENA_PERIODS = [
 // Application State Object
 let appState = {
   activeTab: 'dtr', // 'dtr' | 'transmittal' | 'trash' | 'contacts' | 'salary' | 'compiled' | 'gsis'
+  selectedYear: 'ALL',
   searchQuery: '',
   gsisSourceFilter: 'ALL',
   sortColumn: 'createdAt',
@@ -786,6 +787,17 @@ function bindEvents() {
   document.getElementById('side-nav-print').addEventListener('click', handlePrintReport);
   document.getElementById('btn-empty-trash').addEventListener('click', handleEmptyTrash);
 
+  // Global Year Filter Select Listeners
+  const sideYearSelect = document.getElementById('sidebar-year-select');
+  if (sideYearSelect) {
+    sideYearSelect.addEventListener('change', (e) => handleYearFilterChange(e.target.value));
+  }
+
+  const toolYearSelect = document.getElementById('toolbar-year-select');
+  if (toolYearSelect) {
+    toolYearSelect.addEventListener('change', (e) => handleYearFilterChange(e.target.value));
+  }
+
   // Calculate Hour Realtime Listeners
   const calcInputs = document.querySelectorAll('#calc-view-calculator input');
   calcInputs.forEach(input => {
@@ -1211,6 +1223,7 @@ function switchTab(tabName) {
  * Master Render Function
  */
 function renderApp() {
+  updateYearSelectDropdown();
   updateCountsAndStats();
   renderTable();
   if (window.lucide) {
@@ -1222,13 +1235,23 @@ function renderApp() {
  * Update Header Counters & Dashboard Stat Cards
  */
 function updateCountsAndStats() {
-  const dtrCount = appState.data.dtrRecords.length;
-  const trnCount = appState.data.transmittalRecords.length;
-  const trashCount = (appState.data.recycledRecords || []).length;
-  const contactsCount = (appState.data.contactsRecords || []).length;
-  const salaryCount = (appState.data.salaryRecords || []).length;
-  const compiledCount = (appState.data.compiledRecords || []).length;
-  const gsisCount = (appState.data.gsisRecords || []).length;
+  const selYear = appState.selectedYear || 'ALL';
+
+  const dtrFiltered = filterRecordsByYear(appState.data.dtrRecords || [], 'dtr', selYear);
+  const trnFiltered = filterRecordsByYear(appState.data.transmittalRecords || [], 'transmittal', selYear);
+  const trashFiltered = filterRecordsByYear(appState.data.recycledRecords || [], 'trash', selYear);
+  const contactsFiltered = filterRecordsByYear(appState.data.contactsRecords || [], 'contacts', selYear);
+  const salaryFiltered = filterRecordsByYear((appState.data.salaryRecords || []).filter(r => r.id !== 'salary-budget-config'), 'salary', selYear);
+  const compiledFiltered = filterRecordsByYear(appState.data.compiledRecords || [], 'compiled', selYear);
+  const gsisFiltered = filterRecordsByYear(appState.data.gsisRecords || [], 'gsis', selYear);
+
+  const dtrCount = dtrFiltered.length;
+  const trnCount = trnFiltered.length;
+  const trashCount = trashFiltered.length;
+  const contactsCount = contactsFiltered.length;
+  const salaryCount = salaryFiltered.length;
+  const compiledCount = compiledFiltered.length;
+  const gsisCount = gsisFiltered.length;
 
   document.getElementById('side-count-dtr').textContent = dtrCount;
   document.getElementById('side-count-transmittal').textContent = trnCount;
@@ -1260,11 +1283,10 @@ function updateCountsAndStats() {
   if (statGsisCount) statGsisCount.textContent = gsisCount;
   document.getElementById('stat-active-count').textContent = currentDatasetLength;
 
-  // Calculate Grand Total Paid & Grand Total Pending Disbursed across all GIP Salary Records
+  // Calculate Grand Total Paid & Grand Total Pending Disbursed across selected year GIP Salary Records
   let grandTotalPaid = 0;
   let grandTotalPending = 0;
-  (appState.data.salaryRecords || []).forEach(record => {
-    if (record.id === 'salary-budget-config') return;
+  salaryFiltered.forEach(record => {
     const p = record.periods || {};
     Object.values(p).forEach(item => {
       if (item && item.amount) {
@@ -1344,8 +1366,11 @@ function updateCountsAndStats() {
  * Filter & Sort Active Dataset
  */
 function getFilteredAndSortedRecords() {
+  const selYear = appState.selectedYear || 'ALL';
+
   if (appState.activeTab === 'trash') {
-    let records = appState.data.recycledRecords ? [...appState.data.recycledRecords] : [];
+    let rawRecords = appState.data.recycledRecords ? [...appState.data.recycledRecords] : [];
+    let records = filterRecordsByYear(rawRecords, 'trash', selYear);
     if (appState.searchQuery) {
       const q = appState.searchQuery;
       records = records.filter(r => {
@@ -1370,7 +1395,8 @@ function getFilteredAndSortedRecords() {
   }
 
   if (appState.activeTab === 'contacts') {
-    let records = appState.data.contactsRecords ? [...appState.data.contactsRecords] : [];
+    let rawRecords = appState.data.contactsRecords ? [...appState.data.contactsRecords] : [];
+    let records = filterRecordsByYear(rawRecords, 'contacts', selYear);
     if (appState.searchQuery) {
       const q = appState.searchQuery;
       records = records.filter(r =>
@@ -1394,7 +1420,8 @@ function getFilteredAndSortedRecords() {
   }
 
   if (appState.activeTab === 'compiled') {
-    let records = appState.data.compiledRecords ? [...appState.data.compiledRecords] : [];
+    let rawRecords = appState.data.compiledRecords ? [...appState.data.compiledRecords] : [];
+    let records = filterRecordsByYear(rawRecords, 'compiled', selYear);
     if (appState.searchQuery) {
       const q = appState.searchQuery;
       records = records.filter(r =>
@@ -1418,7 +1445,8 @@ function getFilteredAndSortedRecords() {
   }
 
   if (appState.activeTab === 'gsis') {
-    let records = appState.data.gsisRecords ? [...appState.data.gsisRecords] : [];
+    let rawRecords = appState.data.gsisRecords ? [...appState.data.gsisRecords] : [];
+    let records = filterRecordsByYear(rawRecords, 'gsis', selYear);
     if (appState.searchQuery) {
       const q = appState.searchQuery.toLowerCase();
       records = records.filter(r =>
@@ -1442,7 +1470,8 @@ function getFilteredAndSortedRecords() {
   }
 
   if (appState.activeTab === 'salary') {
-    let records = appState.data.salaryRecords ? appState.data.salaryRecords.filter(r => r.id !== 'salary-budget-config') : [];
+    let rawRecords = appState.data.salaryRecords ? appState.data.salaryRecords.filter(r => r.id !== 'salary-budget-config') : [];
+    let records = filterRecordsByYear(rawRecords, 'salary', selYear);
 
     if (appState.searchQuery) {
       const q = appState.searchQuery;
@@ -1518,7 +1547,8 @@ function getFilteredAndSortedRecords() {
   }
 
   const isDtr = appState.activeTab === 'dtr';
-  let records = isDtr ? [...appState.data.dtrRecords] : [...appState.data.transmittalRecords];
+  let rawRecords = isDtr ? [...appState.data.dtrRecords] : [...appState.data.transmittalRecords];
+  let records = filterRecordsByYear(rawRecords, isDtr ? 'dtr' : 'transmittal', selYear);
 
   if (appState.searchQuery) {
     const q = appState.searchQuery;
@@ -5630,4 +5660,222 @@ function copyBatchOutput() {
   }).catch(() => {
     showToast('FAILED TO COPY TO CLIPBOARD', 'danger');
   });
+}
+
+/**
+ * Global Year Filter Helpers
+ */
+function getRecordYear(record, moduleType) {
+  if (!record) return null;
+  const extractYear = (str) => {
+    if (!str) return null;
+    const match = String(str).match(/\b(20\d{2})\b/);
+    return match ? match[1] : null;
+  };
+
+  if (moduleType === 'dtr') {
+    if (record.month) {
+      const parts = String(record.month).split('-');
+      if (parts[0] && parts[0].length === 4) return parts[0];
+    }
+    if (record.dtrArDateReceived) {
+      const parts = String(record.dtrArDateReceived).split('-');
+      if (parts[0] && parts[0].length === 4) return parts[0];
+    }
+    const matchQ = extractYear(record.quincena);
+    if (matchQ) return matchQ;
+    if (record.createdAt) {
+      const d = new Date(record.createdAt);
+      if (!isNaN(d.getTime())) return String(d.getFullYear());
+    }
+  } else if (moduleType === 'transmittal') {
+    if (record.dateTransmitted) {
+      const parts = String(record.dateTransmitted).split('-');
+      if (parts[0] && parts[0].length === 4) return parts[0];
+    }
+    if (record.regionalDateReceived) {
+      const parts = String(record.regionalDateReceived).split('-');
+      if (parts[0] && parts[0].length === 4) return parts[0];
+    }
+    const matchP = extractYear(record.particulars);
+    if (matchP) return matchP;
+    if (record.createdAt) {
+      const d = new Date(record.createdAt);
+      if (!isNaN(d.getTime())) return String(d.getFullYear());
+    }
+  } else if (moduleType === 'contacts') {
+    const matchR = extractYear(record.remarks);
+    if (matchR) return matchR;
+    if (record.createdAt) {
+      const d = new Date(record.createdAt);
+      if (!isNaN(d.getTime())) return String(d.getFullYear());
+    }
+  } else if (moduleType === 'salary') {
+    const p = record.periods || {};
+    const matchP = extractYear(JSON.stringify(p));
+    if (matchP) return matchP;
+    if (record.createdAt) {
+      const d = new Date(record.createdAt);
+      if (!isNaN(d.getTime())) return String(d.getFullYear());
+    }
+  } else if (moduleType === 'compiled') {
+    if (record.dateReceived) {
+      const parts = String(record.dateReceived).split('-');
+      if (parts[0] && parts[0].length === 4) return parts[0];
+    }
+    const matchT = extractYear(record.documentTitle);
+    if (matchT) return matchT;
+    if (record.createdAt) {
+      const d = new Date(record.createdAt);
+      if (!isNaN(d.getTime())) return String(d.getFullYear());
+    }
+  } else if (moduleType === 'gsis') {
+    const matchP = extractYear(record.period);
+    if (matchP) return matchP;
+    const matchS = extractYear(record.sourceFile);
+    if (matchS) return matchS;
+    if (record.createdAt) {
+      const d = new Date(record.createdAt);
+      if (!isNaN(d.getTime())) return String(d.getFullYear());
+    }
+  } else if (moduleType === 'trash') {
+    if (record.deletedAt) {
+      const d = new Date(record.deletedAt);
+      if (!isNaN(d.getTime())) return String(d.getFullYear());
+    }
+    return getRecordYear(record.originalRecord, record.type);
+  }
+
+  if (record.createdAt) {
+    const d = new Date(record.createdAt);
+    if (!isNaN(d.getTime())) return String(d.getFullYear());
+  }
+  return null;
+}
+
+function filterRecordsByYear(records, moduleType, year) {
+  if (!Array.isArray(records)) return [];
+  if (!year || year === 'ALL') return records;
+
+  return records.filter(r => {
+    const recYear = getRecordYear(r, moduleType);
+    if (recYear === year) return true;
+
+    if (moduleType === 'dtr') {
+      return (r.month && String(r.month).includes(year)) ||
+        (r.dtrArDateReceived && String(r.dtrArDateReceived).includes(year)) ||
+        (r.quincena && String(r.quincena).includes(year)) ||
+        (r.createdAt && String(r.createdAt).includes(year));
+    } else if (moduleType === 'transmittal') {
+      return (r.dateTransmitted && String(r.dateTransmitted).includes(year)) ||
+        (r.regionalDateReceived && String(r.regionalDateReceived).includes(year)) ||
+        (r.particulars && String(r.particulars).includes(year)) ||
+        (r.createdAt && String(r.createdAt).includes(year));
+    } else if (moduleType === 'compiled') {
+      return (r.dateReceived && String(r.dateReceived).includes(year)) ||
+        (r.documentTitle && String(r.documentTitle).includes(year)) ||
+        (r.createdAt && String(r.createdAt).includes(year));
+    } else if (moduleType === 'gsis') {
+      return (r.period && String(r.period).includes(year)) ||
+        (r.sourceFile && String(r.sourceFile).includes(year)) ||
+        (r.createdAt && String(r.createdAt).includes(year));
+    } else if (moduleType === 'trash') {
+      return (r.deletedAt && String(r.deletedAt).includes(year)) ||
+        (r.originalRecord && JSON.stringify(r.originalRecord).includes(year));
+    } else if (moduleType === 'salary') {
+      return (r.createdAt && String(r.createdAt).includes(year)) ||
+        (r.periods && JSON.stringify(r.periods).includes(year));
+    } else if (moduleType === 'contacts') {
+      return (r.createdAt && String(r.createdAt).includes(year)) ||
+        (r.remarks && String(r.remarks).includes(year)) ||
+        (!recYear);
+    }
+    return false;
+  });
+}
+
+function getAvailableYears() {
+  const yearSet = new Set();
+  const currentYear = new Date().getFullYear();
+  yearSet.add(String(currentYear)); // Always include current year (e.g. 2026)
+
+  const extractYears = (text) => {
+    if (!text) return;
+    const matches = String(text).match(/\b(20\d{2})\b/g);
+    if (matches) {
+      matches.forEach(y => {
+        const num = parseInt(y, 10);
+        if (num >= 2020 && num <= 2040) yearSet.add(y);
+      });
+    }
+  };
+
+  (appState.data.dtrRecords || []).forEach(r => {
+    extractYears(r.month);
+    extractYears(r.dtrArDateReceived);
+    extractYears(r.quincena);
+    extractYears(r.createdAt);
+  });
+
+  (appState.data.transmittalRecords || []).forEach(r => {
+    extractYears(r.dateTransmitted);
+    extractYears(r.regionalDateReceived);
+    extractYears(r.particulars);
+    extractYears(r.createdAt);
+  });
+
+  (appState.data.compiledRecords || []).forEach(r => {
+    extractYears(r.dateReceived);
+    extractYears(r.documentTitle);
+    extractYears(r.createdAt);
+  });
+
+  (appState.data.gsisRecords || []).forEach(r => {
+    extractYears(r.period);
+    extractYears(r.sourceFile);
+    extractYears(r.createdAt);
+  });
+
+  return Array.from(yearSet).sort((a, b) => b.localeCompare(a));
+}
+
+function updateYearSelectDropdown() {
+  const sideSelect = document.getElementById('sidebar-year-select');
+  const toolSelect = document.getElementById('toolbar-year-select');
+  const currentVal = appState.selectedYear || 'ALL';
+  const availableYears = getAvailableYears();
+
+  const sideOptions = [`<option value="ALL">All Years (Lifetime)</option>`]
+    .concat(availableYears.map(y => `<option value="${y}">${y} Records</option>`))
+    .join('');
+
+  const toolOptions = [`<option value="ALL">Year: All Years</option>`]
+    .concat(availableYears.map(y => `<option value="${y}">Year: ${y}</option>`))
+    .join('');
+
+  if (sideSelect && sideSelect.innerHTML !== sideOptions) {
+    sideSelect.innerHTML = sideOptions;
+    sideSelect.value = currentVal;
+  } else if (sideSelect) {
+    sideSelect.value = currentVal;
+  }
+
+  if (toolSelect && toolSelect.innerHTML !== toolOptions) {
+    toolSelect.innerHTML = toolOptions;
+    toolSelect.value = currentVal;
+  } else if (toolSelect) {
+    toolSelect.value = currentVal;
+  }
+
+  const activeTag = document.getElementById('sidebar-year-active-tag');
+  if (activeTag) {
+    activeTag.textContent = currentVal === 'ALL' ? 'All Years' : currentVal;
+  }
+}
+
+function handleYearFilterChange(newYear) {
+  appState.selectedYear = newYear;
+  updateYearSelectDropdown();
+  renderApp();
+  showToast(newYear === 'ALL' ? 'DISPLAYING ALL YEARS DATA' : `FILTERED TO YEAR ${newYear} DATA`, 'info');
 }
