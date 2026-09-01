@@ -245,7 +245,12 @@ let appState = {
     compiledRecords: [],
     gsisRecords: [],
     totalBudget: 1500000,
-    workProgramBudget: 350000
+    workProgramBudget: 300000,
+    workProgramBudgets: {
+      orientation: 100000,
+      culmination: 150000,
+      supplies: 50000
+    }
   }
 };
 
@@ -1391,16 +1396,70 @@ function updateCountsAndStats() {
 }
 
 function updateFinancialOverview() {
-  const wpBudget = Number(appState.data.workProgramBudget !== undefined ? appState.data.workProgramBudget : 350000);
+  // Update Work Program Financial Overview with individual category allocations
+  const defaultWpBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
+  const wpBudgets = appState.data.workProgramBudgets || defaultWpBudgets;
+  const orientBudget = parseFloat(wpBudgets.orientation) || 0;
+  const culmBudget = parseFloat(wpBudgets.culmination) || 0;
+  const supBudget = parseFloat(wpBudgets.supplies) || 0;
+  const totalWpBudget = orientBudget + culmBudget + supBudget;
+
   const wpRecords = appState.data.compiledRecords || [];
-  const wpDeducted = wpRecords.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
-  const wpRemaining = wpBudget - wpDeducted;
+  let orientDeducted = 0;
+  let culmDeducted = 0;
+  let supDeducted = 0;
+  let otherDeducted = 0;
 
+  wpRecords.forEach(r => {
+    const cat = (r.category || 'ORIENTATION').toUpperCase();
+    const amt = parseFloat(r.amount) || 0;
+    if (cat === 'ORIENTATION') orientDeducted += amt;
+    else if (cat === 'CULMINATION') culmDeducted += amt;
+    else if (cat === 'SUPPLIES') supDeducted += amt;
+    else otherDeducted += amt;
+  });
+
+  const totalWpDeducted = orientDeducted + culmDeducted + supDeducted + otherDeducted;
+  const orientRemaining = orientBudget - orientDeducted;
+  const culmRemaining = culmBudget - culmDeducted;
+  const supRemaining = supBudget - supDeducted;
+  const overallRemaining = totalWpBudget - totalWpDeducted;
+
+  // DOM Updates for Orientation
+  const orientValElem = document.getElementById('wp-orientation-val');
+  const orientSubElem = document.getElementById('wp-orientation-sub');
+  if (orientValElem) orientValElem.textContent = `₱${orientBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (orientSubElem) {
+    const remStr = orientRemaining < 0 ? `-₱${Math.abs(orientRemaining).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : `₱${orientRemaining.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    orientSubElem.textContent = `Bal: ${remStr} (Spent: ₱${orientDeducted.toLocaleString('en-US', { minimumFractionDigits: 2 })})`;
+    orientSubElem.style.color = orientRemaining < 0 ? '#dc2626' : 'var(--text-muted)';
+  }
+
+  // DOM Updates for Culmination
+  const culmValElem = document.getElementById('wp-culmination-val');
+  const culmSubElem = document.getElementById('wp-culmination-sub');
+  if (culmValElem) culmValElem.textContent = `₱${culmBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (culmSubElem) {
+    const remStr = culmRemaining < 0 ? `-₱${Math.abs(culmRemaining).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : `₱${culmRemaining.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    culmSubElem.textContent = `Bal: ${remStr} (Spent: ₱${culmDeducted.toLocaleString('en-US', { minimumFractionDigits: 2 })})`;
+    culmSubElem.style.color = culmRemaining < 0 ? '#dc2626' : 'var(--text-muted)';
+  }
+
+  // DOM Updates for Supplies
+  const supValElem = document.getElementById('wp-supplies-val');
+  const supSubElem = document.getElementById('wp-supplies-sub');
+  if (supValElem) supValElem.textContent = `₱${supBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (supSubElem) {
+    const remStr = supRemaining < 0 ? `-₱${Math.abs(supRemaining).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : `₱${supRemaining.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    supSubElem.textContent = `Bal: ${remStr} (Spent: ₱${supDeducted.toLocaleString('en-US', { minimumFractionDigits: 2 })})`;
+    supSubElem.style.color = supRemaining < 0 ? '#dc2626' : 'var(--text-muted)';
+  }
+
+  // DOM Updates for Total Combined Budget & Overall Remaining
   const wpBudgetElem = document.getElementById('wp-total-budget-val');
-  if (wpBudgetElem) wpBudgetElem.textContent = `₱${wpBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-  const wpDeductedElem = document.getElementById('wp-total-deducted-val');
-  if (wpDeductedElem) wpDeductedElem.textContent = `₱${wpDeducted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const wpDeductedSubElem = document.getElementById('wp-total-deducted-sub');
+  if (wpBudgetElem) wpBudgetElem.textContent = `₱${totalWpBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (wpDeductedSubElem) wpDeductedSubElem.textContent = `Deducted: ₱${totalWpDeducted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const wpRemainingElem = document.getElementById('wp-remaining-balance-val');
   const wpRemainingBadge = document.getElementById('wp-remaining-balance-badge');
@@ -1408,8 +1467,8 @@ function updateFinancialOverview() {
   const wpRemainingIcon = document.getElementById('wp-remaining-icon');
 
   if (wpRemainingElem) {
-    if (wpRemaining >= 0) {
-      wpRemainingElem.textContent = `₱${wpRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (overallRemaining >= 0) {
+      wpRemainingElem.textContent = `₱${overallRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       wpRemainingElem.style.color = '#059669';
       if (wpRemainingBadge) {
         wpRemainingBadge.style.background = 'rgba(16, 185, 129, 0.08)';
@@ -1421,7 +1480,7 @@ function updateFinancialOverview() {
       }
       if (wpRemainingIcon) wpRemainingIcon.setAttribute('data-lucide', 'pie-chart');
     } else {
-      const absRemaining = Math.abs(wpRemaining);
+      const absRemaining = Math.abs(overallRemaining);
       wpRemainingElem.textContent = `-₱${absRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       wpRemainingElem.style.color = '#dc2626';
       if (wpRemainingBadge) {
@@ -3964,24 +4023,21 @@ function openWorkProgramBudgetModal() {
   const modal = document.getElementById('edit-wp-budget-modal');
   if (!modal) return;
 
-  const currentBudget = Number(appState.data.workProgramBudget !== undefined ? appState.data.workProgramBudget : 350000);
-  const wpRecords = appState.data.compiledRecords || [];
-  const totalDeducted = wpRecords.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
-  const remaining = currentBudget - totalDeducted;
+  const defaultWpBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
+  const wpBudgets = appState.data.workProgramBudgets || defaultWpBudgets;
 
-  const inputElem = document.getElementById('wp-budget-amount-input');
-  if (inputElem) inputElem.value = currentBudget > 0 ? currentBudget : '';
+  const orientInput = document.getElementById('wp-budget-orientation');
+  const culmInput = document.getElementById('wp-budget-culmination');
+  const supInput = document.getElementById('wp-budget-supplies');
 
-  const curDeductedElem = document.getElementById('modal-wp-current-deducted-val');
-  if (curDeductedElem) curDeductedElem.textContent = `₱${totalDeducted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-  const curRemainingElem = document.getElementById('modal-wp-current-remaining-val');
-  if (curRemainingElem) curRemainingElem.textContent = `₱${remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (orientInput) orientInput.value = wpBudgets.orientation !== undefined ? wpBudgets.orientation : 100000;
+  if (culmInput) culmInput.value = wpBudgets.culmination !== undefined ? wpBudgets.culmination : 150000;
+  if (supInput) supInput.value = wpBudgets.supplies !== undefined ? wpBudgets.supplies : 50000;
 
   updateWpModalLiveCalculation();
   modal.classList.add('active');
-  if (inputElem) {
-    setTimeout(() => { inputElem.focus(); inputElem.select(); }, 100);
+  if (orientInput) {
+    setTimeout(() => { orientInput.focus(); orientInput.select(); }, 100);
   }
 }
 
@@ -3991,37 +4047,83 @@ function closeWorkProgramBudgetModal() {
 }
 
 function updateWpModalLiveCalculation() {
-  const inputElem = document.getElementById('wp-budget-amount-input');
-  const projElem = document.getElementById('wp-modal-projected-remaining');
-  if (!inputElem || !projElem) return;
+  const orientInput = document.getElementById('wp-budget-orientation');
+  const culmInput = document.getElementById('wp-budget-culmination');
+  const supInput = document.getElementById('wp-budget-supplies');
 
-  const enteredBudget = parseFloat(inputElem.value) || 0;
+  const enteredOrient = parseFloat(orientInput?.value) || 0;
+  const enteredCulm = parseFloat(culmInput?.value) || 0;
+  const enteredSup = parseFloat(supInput?.value) || 0;
+  const combinedTotal = enteredOrient + enteredCulm + enteredSup;
+
   const wpRecords = appState.data.compiledRecords || [];
-  const totalDeducted = wpRecords.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
-  const projectedRemaining = enteredBudget - totalDeducted;
+  let orientDeducted = 0;
+  let culmDeducted = 0;
+  let supDeducted = 0;
+  let otherDeducted = 0;
 
-  if (projectedRemaining >= 0) {
-    projElem.textContent = `₱${projectedRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    projElem.style.color = '#059669';
-  } else {
-    projElem.textContent = `-₱${Math.abs(projectedRemaining).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    projElem.style.color = '#dc2626';
+  wpRecords.forEach(r => {
+    const cat = (r.category || 'ORIENTATION').toUpperCase();
+    const amt = parseFloat(r.amount) || 0;
+    if (cat === 'ORIENTATION') orientDeducted += amt;
+    else if (cat === 'CULMINATION') culmDeducted += amt;
+    else if (cat === 'SUPPLIES') supDeducted += amt;
+    else otherDeducted += amt;
+  });
+
+  const orientBal = enteredOrient - orientDeducted;
+  const culmBal = enteredCulm - culmDeducted;
+  const supBal = enteredSup - supDeducted;
+  const totalDeducted = orientDeducted + culmDeducted + supDeducted + otherDeducted;
+  const projectedRemaining = combinedTotal - totalDeducted;
+
+  const mOrientBal = document.getElementById('modal-wp-orientation-bal');
+  const mCulmBal = document.getElementById('modal-wp-culmination-bal');
+  const mSupBal = document.getElementById('modal-wp-supplies-bal');
+  const mCombined = document.getElementById('modal-wp-combined-total');
+  const projElem = document.getElementById('wp-modal-projected-remaining');
+
+  if (mOrientBal) {
+    mOrientBal.textContent = orientBal < 0 ? `-₱${Math.abs(orientBal).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : `₱${orientBal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    mOrientBal.style.color = orientBal < 0 ? '#dc2626' : '#0284c7';
+  }
+  if (mCulmBal) {
+    mCulmBal.textContent = culmBal < 0 ? `-₱${Math.abs(culmBal).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : `₱${culmBal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    mCulmBal.style.color = culmBal < 0 ? '#dc2626' : '#7c3aed';
+  }
+  if (mSupBal) {
+    mSupBal.textContent = supBal < 0 ? `-₱${Math.abs(supBal).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : `₱${supBal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    mSupBal.style.color = supBal < 0 ? '#dc2626' : '#d97706';
+  }
+  if (mCombined) {
+    mCombined.textContent = `₱${combinedTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  if (projElem) {
+    if (projectedRemaining >= 0) {
+      projElem.textContent = `₱${projectedRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      projElem.style.color = '#059669';
+    } else {
+      projElem.textContent = `-₱${Math.abs(projectedRemaining).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      projElem.style.color = '#dc2626';
+    }
   }
 }
 
 function handleWorkProgramBudgetSubmit(e) {
   if (e) e.preventDefault();
-  const inputElem = document.getElementById('wp-budget-amount-input');
-  const newBudget = parseFloat(inputElem?.value) || 0;
+  const orientInput = document.getElementById('wp-budget-orientation');
+  const culmInput = document.getElementById('wp-budget-culmination');
+  const supInput = document.getElementById('wp-budget-supplies');
 
-  if (newBudget <= 0) {
-    showToast('PLEASE ENTER A VALID WORK PROGRAM BUDGET GREATER THAN ₱0.00', 'danger');
-    return;
-  }
+  const orientation = parseFloat(orientInput?.value) || 0;
+  const culmination = parseFloat(culmInput?.value) || 0;
+  const supplies = parseFloat(supInput?.value) || 0;
 
-  appState.data.workProgramBudget = newBudget;
+  appState.data.workProgramBudgets = { orientation, culmination, supplies };
+  appState.data.workProgramBudget = orientation + culmination + supplies;
   saveToLocalStorage();
-  showToast(`WORK PROGRAM BUDGET UPDATED TO ₱${newBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}!`, 'success');
+
+  showToast('WORK PROGRAM BUDGET ALLOCATIONS SAVED SUCCESSFULLY!', 'success');
   closeWorkProgramBudgetModal();
   updateFinancialOverview();
   renderTable();

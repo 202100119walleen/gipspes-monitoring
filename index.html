@@ -358,45 +358,68 @@
 
           <!-- Work Program Budget & Financial Summary Indicators Panel -->
           <div id="workprogram-financial-indicators" class="salary-financial-indicators" style="display: none;">
-            <!-- Total Work Program Budget Card -->
+            <!-- Orientation Budget Indicator -->
+            <div class="salary-budget-badge" id="wp-orientation-badge" onclick="openWorkProgramBudgetModal()" title="Orientation Budget & Expenses (Click to Edit Allocation)" style="border-color: rgba(2, 132, 199, 0.3); background: rgba(2, 132, 199, 0.04); cursor: pointer;">
+              <div class="badge-icon-box" style="background: rgba(2, 132, 199, 0.15); color: #0284c7;">
+                <i data-lucide="compass" style="width: 15px; height: 15px;"></i>
+              </div>
+              <div class="badge-content">
+                <span class="badge-label" style="color: #0369a1;">ORIENTATION:</span>
+                <strong id="wp-orientation-val" class="badge-value" style="color: #0284c7;">₱0.00</strong>
+                <span id="wp-orientation-sub" style="font-size: 0.65rem; font-weight: 600; color: var(--text-muted);">Bal: ₱0.00</span>
+              </div>
+            </div>
+
+            <!-- Culmination Budget Indicator -->
+            <div class="salary-budget-badge" id="wp-culmination-badge" onclick="openWorkProgramBudgetModal()" title="Culmination Budget & Expenses (Click to Edit Allocation)" style="border-color: rgba(124, 58, 237, 0.3); background: rgba(124, 58, 237, 0.04); cursor: pointer;">
+              <div class="badge-icon-box" style="background: rgba(124, 58, 237, 0.15); color: #7c3aed;">
+                <i data-lucide="award" style="width: 15px; height: 15px;"></i>
+              </div>
+              <div class="badge-content">
+                <span class="badge-label" style="color: #6d28d9;">CULMINATION:</span>
+                <strong id="wp-culmination-val" class="badge-value" style="color: #7c3aed;">₱0.00</strong>
+                <span id="wp-culmination-sub" style="font-size: 0.65rem; font-weight: 600; color: var(--text-muted);">Bal: ₱0.00</span>
+              </div>
+            </div>
+
+            <!-- Supplies Budget Indicator -->
+            <div class="salary-budget-badge" id="wp-supplies-badge" onclick="openWorkProgramBudgetModal()" title="Supplies Budget & Expenses (Click to Edit Allocation)" style="border-color: rgba(217, 119, 6, 0.3); background: rgba(217, 119, 6, 0.04); cursor: pointer;">
+              <div class="badge-icon-box" style="background: rgba(217, 119, 6, 0.15); color: #d97706;">
+                <i data-lucide="box" style="width: 15px; height: 15px;"></i>
+              </div>
+              <div class="badge-content">
+                <span class="badge-label" style="color: #b45309;">SUPPLIES:</span>
+                <strong id="wp-supplies-val" class="badge-value" style="color: #d97706;">₱0.00</strong>
+                <span id="wp-supplies-sub" style="font-size: 0.65rem; font-weight: 600; color: var(--text-muted);">Bal: ₱0.00</span>
+              </div>
+            </div>
+
+            <!-- Total Combined Work Program Budget Card -->
             <div class="salary-budget-badge budget-total" id="wp-total-budget-badge"
-              onclick="openWorkProgramBudgetModal()" title="Click to edit Total Work Program Budget Allocation">
+              onclick="openWorkProgramBudgetModal()" title="Click to edit Work Program Budget Allocations">
               <div class="badge-icon-box" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
                 <i data-lucide="coins" style="width: 15px; height: 15px;"></i>
               </div>
               <div class="badge-content">
                 <span class="badge-label">TOTAL BUDGET:</span>
                 <strong id="wp-total-budget-val" class="badge-value" style="color: #4f46e5;">₱0.00</strong>
+                <span id="wp-total-deducted-sub" style="font-size: 0.65rem; font-weight: 600; color: #dc2626;">Deducted: ₱0.00</span>
               </div>
               <button type="button" class="btn-edit-budget" onclick="event.stopPropagation(); openWorkProgramBudgetModal();"
-                title="Edit Total Budget">
+                title="Edit Budget Allocations">
                 <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
               </button>
             </div>
 
-            <!-- Total Deducted / Disbursed Card -->
-            <div class="salary-budget-badge budget-paid" id="wp-total-deducted-badge"
-              title="Total deducted expenses across Orientation, Culmination, and Supplies (Auto-calculated)">
-              <div class="badge-icon-box" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
-                <i data-lucide="arrow-down-circle" style="width: 15px; height: 15px;"></i>
-              </div>
-              <div class="badge-content">
-                <span class="badge-label">TOTAL DEDUCTED:</span>
-                <strong id="wp-total-deducted-val" class="badge-value" style="color: #dc2626;">₱0.00</strong>
-              </div>
-              <span class="badge-lock-tag" title="Auto-calculated from records"><i data-lucide="lock"
-                  style="width: 10px; height: 10px;"></i> Auto</span>
-            </div>
-
-            <!-- Remaining Balance Card (Total Budget - Total Deductions) -->
+            <!-- Overall Remaining Balance Card -->
             <div class="salary-budget-badge budget-remaining" id="wp-remaining-balance-badge"
-              title="Remaining Balance = Total Budget minus Total Deductions">
+              title="Overall Remaining Balance = Total Work Program Budget minus Total Deductions">
               <div class="badge-icon-box" id="wp-remaining-icon-box"
                 style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
                 <i data-lucide="pie-chart" id="wp-remaining-icon" style="width: 15px; height: 15px;"></i>
               </div>
               <div class="badge-content">
-                <span class="badge-label">REMAINING BALANCE:</span>
+                <span class="badge-label">OVERALL REMAINING:</span>
                 <strong id="wp-remaining-balance-val" class="badge-value" style="color: #059669;">₱0.00</strong>
               </div>
             </div>
@@ -759,65 +782,96 @@
     </div>
   </div>
 
-  <!-- Edit Total Work Program Budget Modal -->
+  <!-- Edit Work Program Budget Allocations Modal -->
   <div class="modal-backdrop" id="edit-wp-budget-modal">
-    <div class="modal-container" style="max-width: 460px;">
+    <div class="modal-container" style="max-width: 520px;">
       <div class="modal-header">
         <h2 style="display: flex; align-items: center; gap: 8px;">
-          <i data-lucide="coins" style="width: 18px; height: 18px; color: #0284c7;"></i> Set Work Program Budget
+          <i data-lucide="coins" style="width: 18px; height: 18px; color: #0284c7;"></i> Set Work Program Budget Allocations
         </h2>
         <button class="modal-close" id="wp-budget-modal-close" onclick="closeWorkProgramBudgetModal()">&times;</button>
       </div>
       <form id="edit-wp-budget-form" onsubmit="handleWorkProgramBudgetSubmit(event)">
         <div class="modal-body">
           <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 14px;">
-            Specify the Total Allocated Budget for the Work Program (Orientation, Culmination, Supplies). The <strong>Remaining Balance</strong> will automatically be calculated as <strong>Total Budget minus Total Deductions</strong>.
+            Set individual budget amounts for <strong>Orientation</strong>, <strong>Culmination</strong>, and <strong>Supplies</strong>. Expenses recorded under each category will be deducted automatically in real time.
           </p>
 
-          <!-- Current Financial Overview Box -->
-          <div
-            style="background: var(--bg-page); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-                Total Deductions</div>
-              <div id="modal-wp-current-deducted-val"
-                style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #dc2626; margin-top: 2px;">
-                ₱0.00</div>
+          <!-- 3 Separate Budget Allocation Inputs -->
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="wp-budget-orientation" style="font-size: 0.8rem; font-weight: 700; color: #0369a1; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="compass" style="width: 14px; height: 14px;"></i> Orientation Activity Budget (₱)
+              </label>
+              <div class="input-with-icon" style="position: relative;">
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #0284c7;">₱</span>
+                <input type="number" id="wp-budget-orientation" class="form-control"
+                  style="padding-left: 28px; font-weight: 700; color: var(--primary-navy);"
+                  placeholder="e.g. 100000.00" step="0.01" min="0" required
+                  oninput="updateWpModalLiveCalculation()">
+              </div>
             </div>
-            <div>
-              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-                Current Remaining</div>
-              <div id="modal-wp-current-remaining-val"
-                style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #059669; margin-top: 2px;">
-                ₱0.00</div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="wp-budget-culmination" style="font-size: 0.8rem; font-weight: 700; color: #6d28d9; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="award" style="width: 14px; height: 14px;"></i> Culmination Activity Budget (₱)
+              </label>
+              <div class="input-with-icon" style="position: relative;">
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #7c3aed;">₱</span>
+                <input type="number" id="wp-budget-culmination" class="form-control"
+                  style="padding-left: 28px; font-weight: 700; color: var(--primary-navy);"
+                  placeholder="e.g. 150000.00" step="0.01" min="0" required
+                  oninput="updateWpModalLiveCalculation()">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label for="wp-budget-supplies" style="font-size: 0.8rem; font-weight: 700; color: #b45309; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="box" style="width: 14px; height: 14px;"></i> Supplies &amp; Materials Budget (₱)
+              </label>
+              <div class="input-with-icon" style="position: relative;">
+                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #d97706;">₱</span>
+                <input type="number" id="wp-budget-supplies" class="form-control"
+                  style="padding-left: 28px; font-weight: 700; color: var(--primary-navy);"
+                  placeholder="e.g. 50000.00" step="0.01" min="0" required
+                  oninput="updateWpModalLiveCalculation()">
+              </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="wp-budget-amount-input" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">
-              Total Work Program Budget Allocation (₱) <span class="required">*</span>
-            </label>
-            <div class="input-with-icon" style="position: relative;">
-              <span
-                style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--brand-accent); font-size: 0.95rem;">₱</span>
-              <input type="number" id="wp-budget-amount-input" class="form-control"
-                style="padding-left: 28px; font-weight: 700; font-size: 1rem; color: var(--primary-navy);"
-                placeholder="e.g. 350000.00" step="0.01" min="0" required
-                oninput="updateWpModalLiveCalculation()">
+          <!-- Live Breakdown Summary Box inside Modal -->
+          <div style="background: var(--bg-page); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px dashed var(--border-light);">
+              <div>
+                <div style="font-size: 0.675rem; font-weight: 700; color: #0369a1;">ORIENTATION BAL</div>
+                <div id="modal-wp-orientation-bal" style="font-family: monospace; font-weight: 700; font-size: 0.85rem; color: #0284c7; margin-top: 2px;">₱0.00</div>
+              </div>
+              <div>
+                <div style="font-size: 0.675rem; font-weight: 700; color: #6d28d9;">CULMINATION BAL</div>
+                <div id="modal-wp-culmination-bal" style="font-family: monospace; font-weight: 700; font-size: 0.85rem; color: #7c3aed; margin-top: 2px;">₱0.00</div>
+              </div>
+              <div>
+                <div style="font-size: 0.675rem; font-weight: 700; color: #b45309;">SUPPLIES BAL</div>
+                <div id="modal-wp-supplies-bal" style="font-family: monospace; font-weight: 700; font-size: 0.85rem; color: #d97706; margin-top: 2px;">₱0.00</div>
+              </div>
             </div>
-          </div>
 
-          <!-- Live Projected Balance Box -->
-          <div id="wp-modal-projected-box"
-            style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-size: 0.775rem; font-weight: 600; color: var(--text-muted);">Projected Remaining Balance:</span>
-            <span id="wp-modal-projected-remaining" style="font-weight: 700; font-size: 0.95rem; color: #059669;">₱0.00</span>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <span style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted);">COMBINED TOTAL:</span>
+                <strong id="modal-wp-combined-total" style="font-size: 0.95rem; color: #4f46e5; margin-left: 6px;">₱0.00</strong>
+              </div>
+              <div>
+                <span style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted);">NET REMAINING:</span>
+                <strong id="wp-modal-projected-remaining" style="font-size: 0.95rem; color: #059669; margin-left: 6px;">₱0.00</strong>
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeWorkProgramBudgetModal()">Cancel</button>
           <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
-            <i data-lucide="check"></i> Save Budget
+            <i data-lucide="check"></i> Save Budget Allocations
           </button>
         </div>
       </form>
