@@ -2804,11 +2804,6 @@ function openRecordModal(id = null) {
 
   document.getElementById('particulars-preview-wrapper').style.display = 'none';
 
-  const setReq = (id, req) => {
-    const el = document.getElementById(id);
-    if (el) el.required = req;
-  };
-
   if (isDtr) {
     dtrFields.style.display = 'block';
     trnFields.style.display = 'none';
@@ -2816,18 +2811,6 @@ function openRecordModal(id = null) {
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'none';
     if (gsisFields) gsisFields.style.display = 'none';
-    setReq('gip-name', true);
-    setReq('record-month', true);
-    setReq('record-quincena', true);
-    setReq('particulars', false);
-    setReq('contact-gip-name', false);
-    setReq('contact-assignment', false);
-    setReq('contact-number', false);
-    setReq('salary-gip-name', false);
-    setReq('compiled-title', false);
-    setReq('compiled-received-from', false);
-    setReq('compiled-date-received', false);
-    setReq('gsis-name', false);
   } else if (isContacts) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
@@ -2835,18 +2818,6 @@ function openRecordModal(id = null) {
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'none';
     if (gsisFields) gsisFields.style.display = 'none';
-    setReq('gip-name', false);
-    setReq('record-month', false);
-    setReq('record-quincena', false);
-    setReq('particulars', false);
-    setReq('contact-gip-name', true);
-    setReq('contact-assignment', true);
-    setReq('contact-number', true);
-    setReq('salary-gip-name', false);
-    setReq('compiled-title', false);
-    setReq('compiled-received-from', false);
-    setReq('compiled-date-received', false);
-    setReq('gsis-name', false);
   } else if (isSalary) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
@@ -2854,18 +2825,6 @@ function openRecordModal(id = null) {
     if (salFields) salFields.style.display = 'block';
     if (compiledFields) compiledFields.style.display = 'none';
     if (gsisFields) gsisFields.style.display = 'none';
-    setReq('gip-name', false);
-    setReq('record-month', false);
-    setReq('record-quincena', false);
-    setReq('particulars', false);
-    setReq('contact-gip-name', false);
-    setReq('contact-assignment', false);
-    setReq('contact-number', false);
-    setReq('salary-gip-name', true);
-    setReq('compiled-title', false);
-    setReq('compiled-received-from', false);
-    setReq('compiled-date-received', false);
-    setReq('gsis-name', false);
     renderSalaryModalInputs(id ? appState.data.salaryRecords.find(r => r.id === id) : null);
   } else if (isCompiled) {
     dtrFields.style.display = 'none';
@@ -2874,18 +2833,6 @@ function openRecordModal(id = null) {
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'block';
     if (gsisFields) gsisFields.style.display = 'none';
-    setReq('gip-name', false);
-    setReq('record-month', false);
-    setReq('record-quincena', false);
-    setReq('particulars', false);
-    setReq('contact-gip-name', false);
-    setReq('contact-assignment', false);
-    setReq('contact-number', false);
-    setReq('salary-gip-name', false);
-    setReq('compiled-title', true);
-    setReq('compiled-received-from', true);
-    setReq('compiled-date-received', true);
-    setReq('gsis-name', false);
   } else if (isGsis) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
@@ -2893,18 +2840,6 @@ function openRecordModal(id = null) {
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'none';
     if (gsisFields) gsisFields.style.display = 'block';
-    setReq('gip-name', false);
-    setReq('record-month', false);
-    setReq('record-quincena', false);
-    setReq('particulars', false);
-    setReq('contact-gip-name', false);
-    setReq('contact-assignment', false);
-    setReq('contact-number', false);
-    setReq('salary-gip-name', false);
-    setReq('compiled-title', false);
-    setReq('compiled-received-from', false);
-    setReq('compiled-date-received', false);
-    setReq('gsis-name', true);
   } else {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'block';
@@ -2912,25 +2847,13 @@ function openRecordModal(id = null) {
     if (salFields) salFields.style.display = 'none';
     if (compiledFields) compiledFields.style.display = 'none';
     if (gsisFields) gsisFields.style.display = 'none';
-    setReq('gip-name', false);
-    setReq('record-month', false);
-    setReq('record-quincena', false);
-    setReq('particulars', true);
-    setReq('contact-gip-name', false);
-    setReq('contact-assignment', false);
-    setReq('contact-number', false);
-    setReq('salary-gip-name', false);
-    setReq('compiled-title', false);
-    setReq('compiled-received-from', false);
-    setReq('compiled-date-received', false);
-    setReq('gsis-name', false);
   }
 
   if (id) {
     if (isDtr) modalTitle.textContent = 'EDIT GIP DTR & AR RECORD';
     else if (isContacts) modalTitle.textContent = 'EDIT GIP CONTACT RECORD';
     else if (isSalary) modalTitle.textContent = 'EDIT GIP SALARY RECORD';
-    else if (isCompiled) modalTitle.textContent = 'EDIT DOCUMENT RECORD';
+    else if (isCompiled) modalTitle.textContent = 'EDIT WORK PROGRAM EXPENSE';
     else if (isGsis) modalTitle.textContent = 'EDIT GIP INFORMATION RECORD';
     else modalTitle.textContent = 'EDIT TRANSMITTAL RECORD';
 
@@ -3310,21 +3233,28 @@ async function handleFormSubmit(e) {
       updatedAt: nowISO
     };
 
+    if (!appState.data.contactsRecords) appState.data.contactsRecords = [];
+
     if (recordId) {
       const index = appState.data.contactsRecords.findIndex(r => r.id === recordId);
       if (index !== -1) {
         appState.data.contactsRecords[index] = { ...appState.data.contactsRecords[index], ...payload };
       }
+      saveToLocalStorage();
 
       if (isSupabaseConnected && supabaseClient) {
-        await supabaseClient.from('gip_contacts').upsert({
-          id: recordId,
-          gip_name: gipName,
-          assignment,
-          contact_number: contactNumber,
-          remarks,
-          updated_at: nowISO
-        });
+        try {
+          await supabaseClient.from('gip_contacts').upsert({
+            id: recordId,
+            gip_name: gipName,
+            assignment,
+            contact_number: contactNumber,
+            remarks,
+            updated_at: nowISO
+          });
+        } catch (err) {
+          console.warn('Supabase contact update note:', err);
+        }
       }
 
       showToast('GIP CONTACT UPDATED SUCCESSFULLY!', 'success');
@@ -3332,21 +3262,31 @@ async function handleFormSubmit(e) {
       const newId = 'cnt-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
       appState.data.contactsRecords.unshift(newRecord);
+      saveToLocalStorage();
 
       if (isSupabaseConnected && supabaseClient) {
-        await supabaseClient.from('gip_contacts').upsert({
-          id: newId,
-          gip_name: gipName,
-          assignment,
-          contact_number: contactNumber,
-          remarks,
-          created_at: nowISO,
-          updated_at: nowISO
-        });
+        try {
+          await supabaseClient.from('gip_contacts').upsert({
+            id: newId,
+            gip_name: gipName,
+            assignment,
+            contact_number: contactNumber,
+            remarks,
+            created_at: nowISO,
+            updated_at: nowISO
+          });
+        } catch (err) {
+          console.warn('Supabase contact insert note:', err);
+        }
       }
 
       showToast('NEW GIP CONTACT ADDED SUCCESSFULLY!', 'success');
     }
+
+    closeRecordModal();
+    saveToLocalStorage();
+    renderApp();
+    return;
   } else if (isDtr) {
     const gipName = formatEtAl(document.getElementById('gip-name').value.trim().toUpperCase());
     const month = document.getElementById('record-month').value;
@@ -3371,25 +3311,32 @@ async function handleFormSubmit(e) {
       updatedAt: nowISO
     };
 
+    if (!appState.data.dtrRecords) appState.data.dtrRecords = [];
+
     if (recordId) {
       const index = appState.data.dtrRecords.findIndex(r => r.id === recordId);
       if (index !== -1) {
         appState.data.dtrRecords[index] = { ...appState.data.dtrRecords[index], ...payload };
       }
+      saveToLocalStorage();
 
       if (isSupabaseConnected && supabaseClient) {
-        const { error: sbErr } = await supabaseClient.from('gip_dtr_ar_records').upsert({
-          id: recordId,
-          gip_name: gipName,
-          month,
-          quincena,
-          dtr_ar_date_received: dtrArDateReceived,
-          transmittal_date: transmittalDate,
-          remarks: transmittalDate || remarks || '',
-          is_printed: isPrinted,
-          updated_at: nowISO
-        });
-        if (sbErr) console.warn('Supabase update note:', sbErr.message);
+        try {
+          const { error: sbErr } = await supabaseClient.from('gip_dtr_ar_records').upsert({
+            id: recordId,
+            gip_name: gipName,
+            month,
+            quincena,
+            dtr_ar_date_received: dtrArDateReceived,
+            transmittal_date: transmittalDate,
+            remarks: transmittalDate || remarks || '',
+            is_printed: isPrinted,
+            updated_at: nowISO
+          });
+          if (sbErr) console.warn('Supabase update note:', sbErr.message);
+        } catch (err) {
+          console.warn('Supabase dtr update note:', err);
+        }
       }
 
       showToast('GIP RECORD UPDATED SUCCESSFULLY!', 'success');
@@ -3397,25 +3344,35 @@ async function handleFormSubmit(e) {
       const newId = 'dtr-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
       appState.data.dtrRecords.unshift(newRecord);
+      saveToLocalStorage();
 
       if (isSupabaseConnected && supabaseClient) {
-        const { error: sbErr } = await supabaseClient.from('gip_dtr_ar_records').upsert({
-          id: newId,
-          gip_name: gipName,
-          month,
-          quincena,
-          dtr_ar_date_received: dtrArDateReceived,
-          transmittal_date: transmittalDate,
-          remarks: transmittalDate || remarks || '',
-          is_printed: isPrinted,
-          created_at: nowISO,
-          updated_at: nowISO
-        });
-        if (sbErr) console.warn('Supabase insert note:', sbErr.message);
+        try {
+          const { error: sbErr } = await supabaseClient.from('gip_dtr_ar_records').upsert({
+            id: newId,
+            gip_name: gipName,
+            month,
+            quincena,
+            dtr_ar_date_received: dtrArDateReceived,
+            transmittal_date: transmittalDate,
+            remarks: transmittalDate || remarks || '',
+            is_printed: isPrinted,
+            created_at: nowISO,
+            updated_at: nowISO
+          });
+          if (sbErr) console.warn('Supabase insert note:', sbErr.message);
+        } catch (err) {
+          console.warn('Supabase dtr insert note:', err);
+        }
       }
 
       showToast('NEW GIP RECORD ADDED SUCCESSFULLY!', 'success');
     }
+
+    closeRecordModal();
+    saveToLocalStorage();
+    renderApp();
+    return;
   } else {
     const particulars = formatEtAl(document.getElementById('particulars').value.trim().toUpperCase());
     const programSelect = document.getElementById('transmittal-program-select');
@@ -3446,6 +3403,8 @@ async function handleFormSubmit(e) {
       updatedAt: nowISO
     };
 
+    if (!appState.data.transmittalRecords) appState.data.transmittalRecords = [];
+
     if (recordId) {
       const index = appState.data.transmittalRecords.findIndex(r => r.id === recordId);
       if (index !== -1) {
@@ -3454,17 +3413,21 @@ async function handleFormSubmit(e) {
       saveToLocalStorage();
 
       if (isSupabaseConnected && supabaseClient) {
-        const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
-          id: recordId,
-          program: program || '',
-          particulars,
-          date_transmitted: dateTransmitted || '',
-          regional_date_received: regionalDateReceived || '',
-          image_url: payload.imageUrl || null,
-          remarks: remarks || '',
-          updated_at: nowISO
-        });
-        if (sbErr) console.warn('Supabase update note:', sbErr.message);
+        try {
+          const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
+            id: recordId,
+            program: program || '',
+            particulars,
+            date_transmitted: dateTransmitted || '',
+            regional_date_received: regionalDateReceived || '',
+            image_url: payload.imageUrl || null,
+            remarks: remarks || '',
+            updated_at: nowISO
+          });
+          if (sbErr) console.warn('Supabase update note:', sbErr.message);
+        } catch (err) {
+          console.warn('Supabase transmittal update note:', err);
+        }
       }
 
       showToast('TRANSMITTAL RECORD UPDATED SUCCESSFULLY!', 'success');
@@ -3475,22 +3438,31 @@ async function handleFormSubmit(e) {
       saveToLocalStorage();
 
       if (isSupabaseConnected && supabaseClient) {
-        const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
-          id: newId,
-          program: program || '',
-          particulars,
-          date_transmitted: dateTransmitted || '',
-          regional_date_received: regionalDateReceived || '',
-          image_url: payload.imageUrl || null,
-          remarks: remarks || '',
-          created_at: nowISO,
-          updated_at: nowISO
-        });
-        if (sbErr) console.warn('Supabase insert note:', sbErr.message);
+        try {
+          const { error: sbErr } = await supabaseClient.from('transmittal_records').upsert({
+            id: newId,
+            program: program || '',
+            particulars,
+            date_transmitted: dateTransmitted || '',
+            regional_date_received: regionalDateReceived || '',
+            image_url: payload.imageUrl || null,
+            remarks: remarks || '',
+            created_at: nowISO,
+            updated_at: nowISO
+          });
+          if (sbErr) console.warn('Supabase insert note:', sbErr.message);
+        } catch (err) {
+          console.warn('Supabase transmittal insert note:', err);
+        }
       }
 
       showToast('NEW TRANSMITTAL RECORD ADDED SUCCESSFULLY!', 'success');
     }
+
+    closeRecordModal();
+    saveToLocalStorage();
+    renderApp();
+    return;
   }
 
   saveToLocalStorage();

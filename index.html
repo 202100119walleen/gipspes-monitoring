@@ -475,7 +475,7 @@
         <h2 id="modal-title">Add New Record</h2>
         <button class="modal-close" id="modal-close-btn">&times;</button>
       </div>
-      <form id="record-form">
+      <form id="record-form" novalidate>
         <input type="hidden" id="form-record-id">
         <div class="modal-body">
 
@@ -483,16 +483,16 @@
           <div id="fields-dtr" class="module-fields">
             <div class="form-group">
               <label for="gip-name">GIP Name <span class="required">*</span></label>
-              <input type="text" id="gip-name" class="form-control" placeholder="e.g. Juan De La Cruz" required>
+              <input type="text" id="gip-name" class="form-control" placeholder="e.g. Juan De La Cruz">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label for="record-month">Month / Year <span class="required">*</span></label>
-                <input type="month" id="record-month" class="form-control" required>
+                <input type="month" id="record-month" class="form-control">
               </div>
               <div class="form-group">
                 <label for="record-quincena">Quincena (Payroll Period) <span class="required">*</span></label>
-                <select id="record-quincena" class="form-control" required>
+                <select id="record-quincena" class="form-control">
                   <option value="1st Quincena (1-15)">1st Quincena (1st - 15th)</option>
                   <option value="2nd Quincena (16-31)">2nd Quincena (16th - 31st)</option>
                 </select>
@@ -594,8 +594,7 @@
                 </button>
               </div>
               <textarea id="particulars" class="form-control" style="min-height: 120px;"
-                placeholder="Paste, type, or extract document particulars here (e.g. Transmittal Letter #2026-081, 15 sets DTR & AR for August 1st Quincena)..."
-                required></textarea>
+                placeholder="Paste, type, or extract document particulars here (e.g. Transmittal Letter #2026-081, 15 sets DTR & AR for August 1st Quincena)..."></textarea>
               <small style="color: var(--text-muted); font-size: 0.775rem; margin-top: 4px; display: block;">
                 Tip: Click <b>FIX</b> to automatically clean character errors, fix names, and re-format particulars.
               </small>
@@ -697,14 +696,14 @@
               </div>
               <div class="form-group">
                 <label for="compiled-amount">Amount in PHP (₱) <span class="required">*</span></label>
-                <input type="number" id="compiled-amount" class="form-control" placeholder="e.g. 15000.00" step="0.01" min="0" required style="font-weight: 700; color: #0284c7;">
+                <input type="number" id="compiled-amount" class="form-control" placeholder="e.g. 15000.00" step="0.01" min="0" style="font-weight: 700; color: #0284c7;">
               </div>
             </div>
 
             <div class="form-group">
               <label for="compiled-title">Particulars / Item Description <span class="required">*</span></label>
               <textarea id="compiled-title" class="form-control" rows="3"
-                placeholder="e.g. MEALS &amp; SNACKS FOR 50 GIPS, CERTIFICATES &amp; TARPAULIN, BOND PAPERS &amp; FOLDERS..." required></textarea>
+                placeholder="e.g. MEALS &amp; SNACKS FOR 50 GIPS, CERTIFICATES &amp; TARPAULIN, BOND PAPERS &amp; FOLDERS..."></textarea>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
