@@ -113,8 +113,8 @@
 
         <button class="sidebar-item" id="side-nav-compiled" data-tab="compiled">
           <div class="sidebar-item-content">
-            <i data-lucide="folder-check"></i>
-            <span>Documents Received</span>
+            <i data-lucide="briefcase"></i>
+            <span>Work Program</span>
           </div>
           <span class="sidebar-badge" id="side-count-compiled">0</span>
         </button>
@@ -215,13 +215,13 @@
             <i data-lucide="file-check"></i>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" id="stat-card-compiled" style="cursor: pointer;">
           <div class="stat-info">
-            <div class="stat-label">Documents Received</div>
+            <div class="stat-label">Work Program</div>
             <div class="stat-value" id="stat-compiled-count">0</div>
           </div>
-          <div class="stat-icon received">
-            <i data-lucide="folder-check"></i>
+          <div class="stat-icon received" style="background: rgba(14, 165, 233, 0.15); color: #0284c7;">
+            <i data-lucide="briefcase"></i>
           </div>
         </div>
         <div class="stat-card" id="stat-card-gsis" style="cursor: pointer;">
@@ -352,6 +352,52 @@
               <div class="badge-content">
                 <span class="badge-label">REMAINING BALANCE:</span>
                 <strong id="salary-remaining-balance-val" class="badge-value" style="color: #059669;">₱0.00</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Work Program Budget & Financial Summary Indicators Panel -->
+          <div id="workprogram-financial-indicators" class="salary-financial-indicators" style="display: none;">
+            <!-- Total Work Program Budget Card -->
+            <div class="salary-budget-badge budget-total" id="wp-total-budget-badge"
+              onclick="openWorkProgramBudgetModal()" title="Click to edit Total Work Program Budget Allocation">
+              <div class="badge-icon-box" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+                <i data-lucide="coins" style="width: 15px; height: 15px;"></i>
+              </div>
+              <div class="badge-content">
+                <span class="badge-label">TOTAL BUDGET:</span>
+                <strong id="wp-total-budget-val" class="badge-value" style="color: #4f46e5;">₱0.00</strong>
+              </div>
+              <button type="button" class="btn-edit-budget" onclick="event.stopPropagation(); openWorkProgramBudgetModal();"
+                title="Edit Total Budget">
+                <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
+              </button>
+            </div>
+
+            <!-- Total Deducted / Disbursed Card -->
+            <div class="salary-budget-badge budget-paid" id="wp-total-deducted-badge"
+              title="Total deducted expenses across Orientation, Culmination, and Supplies (Auto-calculated)">
+              <div class="badge-icon-box" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                <i data-lucide="arrow-down-circle" style="width: 15px; height: 15px;"></i>
+              </div>
+              <div class="badge-content">
+                <span class="badge-label">TOTAL DEDUCTED:</span>
+                <strong id="wp-total-deducted-val" class="badge-value" style="color: #dc2626;">₱0.00</strong>
+              </div>
+              <span class="badge-lock-tag" title="Auto-calculated from records"><i data-lucide="lock"
+                  style="width: 10px; height: 10px;"></i> Auto</span>
+            </div>
+
+            <!-- Remaining Balance Card (Total Budget - Total Deductions) -->
+            <div class="salary-budget-badge budget-remaining" id="wp-remaining-balance-badge"
+              title="Remaining Balance = Total Budget minus Total Deductions">
+              <div class="badge-icon-box" id="wp-remaining-icon-box"
+                style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                <i data-lucide="pie-chart" id="wp-remaining-icon" style="width: 15px; height: 15px;"></i>
+              </div>
+              <div class="badge-content">
+                <span class="badge-label">REMAINING BALANCE:</span>
+                <strong id="wp-remaining-balance-val" class="badge-value" style="color: #059669;">₱0.00</strong>
               </div>
             </div>
           </div>
@@ -614,81 +660,42 @@
             </div>
           </div>
 
-          <!-- Fields for Documents Received Module -->
+          <!-- Fields for Work Program Module -->
           <div id="fields-compiled" class="module-fields" style="display: none;">
-            <!-- Drag & Drop PDF & Photo Upload Zone -->
-            <div class="ocr-scan-card compiled-dropzone" id="compiled-ocr-zone">
-              <div
-                style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <div
-                    style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand-accent); flex-shrink: 0;">
-                    <i data-lucide="paperclip" style="width: 22px; height: 22px;"></i>
-                  </div>
-                  <div>
-                    <span
-                      style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy); display: block;">Document
-                      Files &amp; Camera Capture (PDF &amp; Images)</span>
-                    <p style="font-size: 0.775rem; color: var(--text-muted); margin-top: 2px;">
-                      Attach multiple photos or PDF documents from your device gallery/files or capture direct camera
-                      photos.
-                    </p>
-                  </div>
-                </div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <label for="compiled-image-file" class="btn btn-secondary btn-icon"
-                    style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: var(--brand-accent); color: var(--brand-accent);">
-                    <i data-lucide="folder-plus"></i> Select File(s) / PDF
-                  </label>
-                  <input type="file" id="compiled-image-file" accept="image/*,application/pdf" multiple
-                    style="display: none;">
-                  <label for="compiled-camera-file" class="btn btn-secondary btn-icon"
-                    style="font-size: 0.8rem; cursor: pointer; white-space: nowrap; border-color: #10b981; color: #10b981;">
-                    <i data-lucide="camera"></i> Take Photo
-                  </label>
-                  <input type="file" id="compiled-camera-file" accept="image/*" capture="environment" multiple
-                    style="display: none;">
-                </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="compiled-category">Work Program Activity / Category <span class="required">*</span></label>
+                <select id="compiled-category" class="form-control" style="font-weight: 700;">
+                  <option value="ORIENTATION" selected>ORIENTATION (Activity &amp; Training)</option>
+                  <option value="CULMINATION">CULMINATION (Culminating Activity)</option>
+                  <option value="SUPPLIES">SUPPLIES (Office / Program Materials)</option>
+                  <option value="OTHER">OTHER (Other Program Expenses)</option>
+                </select>
               </div>
-
-              <!-- Uploaded Attachments Multi-Item Container -->
-              <div id="compiled-image-preview-container"
-                style="display: none; margin-top: 14px; padding: 12px; background: var(--card-bg); border: 1px solid var(--border-medium); border-radius: 8px;">
-                <div
-                  style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px dashed var(--border-medium);">
-                  <span id="compiled-attachments-count-badge"
-                    style="font-size: 0.775rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
-                    <i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> ATTACHED DOCUMENTS (0)
-                  </span>
-                  <button type="button" class="btn btn-danger" id="btn-remove-compiled-image"
-                    style="padding: 4px 10px; font-size: 0.75rem; background: #ef4444; border-color: #dc2626;">
-                    <i data-lucide="trash-2" style="width: 12px; height: 12px;"></i> Clear All
-                  </button>
-                </div>
-                <div id="compiled-attachments-list"
-                  style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 260px; overflow-y: auto;">
-                  <!-- Dynamically populated attachment cards -->
-                </div>
+              <div class="form-group">
+                <label for="compiled-amount">Amount in PHP (₱) <span class="required">*</span></label>
+                <input type="number" id="compiled-amount" class="form-control" placeholder="e.g. 15000.00" step="0.01" min="0" required style="font-weight: 700; color: #0284c7;">
               </div>
             </div>
 
             <div class="form-group">
-              <label for="compiled-title">Compiled Documents / Title <span class="required">*</span></label>
+              <label for="compiled-title">Particulars / Item Description <span class="required">*</span></label>
               <textarea id="compiled-title" class="form-control" rows="3"
-                placeholder="e.g. COMPLIED GIP DTRs & ARs, ACKNOWLEDGEMENT RECEIPTS, ETC."></textarea>
+                placeholder="e.g. MEALS &amp; SNACKS FOR 50 GIPS, CERTIFICATES &amp; TARPAULIN, BOND PAPERS &amp; FOLDERS..." required></textarea>
             </div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
-                <label for="compiled-received-from">Received From / Sender <span class="required">*</span></label>
-                <input type="text" id="compiled-received-from" class="form-control"
-                  placeholder="e.g. DOLE REGIONAL OFFICE / LGU TUBOD / GIP">
-              </div>
-              <div class="form-group">
-                <label for="compiled-date-received">Date Received <span class="required">*</span></label>
+                <label for="compiled-date-received">Date of Disbursement / Expense <span class="required">*</span></label>
                 <input type="date" id="compiled-date-received" class="form-control">
                 <button type="button" class="btn btn-secondary btn-today" data-target="compiled-date-received">
                   <i data-lucide="calendar-check" style="width: 13px; height: 13px;"></i> Set Today
                 </button>
+              </div>
+              <div class="form-group">
+                <label for="compiled-remarks">Remarks / Voucher / Payee</label>
+                <input type="text" id="compiled-remarks" class="form-control"
+                  placeholder="e.g. CHECK #2026-081, PAID TO CATERER / SUPPLIER">
               </div>
             </div>
           </div>
@@ -752,7 +759,72 @@
     </div>
   </div>
 
-  <!-- Delete Confirmation Modal -->
+  <!-- Edit Total Work Program Budget Modal -->
+  <div class="modal-backdrop" id="edit-wp-budget-modal">
+    <div class="modal-container" style="max-width: 460px;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="coins" style="width: 18px; height: 18px; color: #0284c7;"></i> Set Work Program Budget
+        </h2>
+        <button class="modal-close" id="wp-budget-modal-close" onclick="closeWorkProgramBudgetModal()">&times;</button>
+      </div>
+      <form id="edit-wp-budget-form" onsubmit="handleWorkProgramBudgetSubmit(event)">
+        <div class="modal-body">
+          <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 14px;">
+            Specify the Total Allocated Budget for the Work Program (Orientation, Culmination, Supplies). The <strong>Remaining Balance</strong> will automatically be calculated as <strong>Total Budget minus Total Deductions</strong>.
+          </p>
+
+          <!-- Current Financial Overview Box -->
+          <div
+            style="background: var(--bg-page); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                Total Deductions</div>
+              <div id="modal-wp-current-deducted-val"
+                style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #dc2626; margin-top: 2px;">
+                ₱0.00</div>
+            </div>
+            <div>
+              <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                Current Remaining</div>
+              <div id="modal-wp-current-remaining-val"
+                style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #059669; margin-top: 2px;">
+                ₱0.00</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="wp-budget-amount-input" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">
+              Total Work Program Budget Allocation (₱) <span class="required">*</span>
+            </label>
+            <div class="input-with-icon" style="position: relative;">
+              <span
+                style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--brand-accent); font-size: 0.95rem;">₱</span>
+              <input type="number" id="wp-budget-amount-input" class="form-control"
+                style="padding-left: 28px; font-weight: 700; font-size: 1rem; color: var(--primary-navy);"
+                placeholder="e.g. 350000.00" step="0.01" min="0" required
+                oninput="updateWpModalLiveCalculation()">
+            </div>
+          </div>
+
+          <!-- Live Projected Balance Box -->
+          <div id="wp-modal-projected-box"
+            style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 0.775rem; font-weight: 600; color: var(--text-muted);">Projected Remaining Balance:</span>
+            <span id="wp-modal-projected-remaining" style="font-weight: 700; font-size: 0.95rem; color: #059669;">₱0.00</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeWorkProgramBudgetModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
+            <i data-lucide="check"></i> Save Budget
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Interactive Working Hours Calculator Modal -->
   <div class="modal-backdrop" id="delete-modal">
     <div class="modal-container" style="max-width: 440px;">
       <div class="modal-header">

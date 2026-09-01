@@ -60,12 +60,16 @@ CREATE TABLE IF NOT EXISTS gip_salary_records (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Create Compiled Documents Received Monitoring Table
+-- 6. Create Work Program & Financial Expenses Table
 CREATE TABLE IF NOT EXISTS gip_compiled_documents (
   id TEXT PRIMARY KEY,
-  document_title TEXT NOT NULL,
-  received_from TEXT,
+  category TEXT DEFAULT 'ORIENTATION',
+  particulars TEXT NOT NULL,
+  document_title TEXT,
+  amount NUMERIC DEFAULT 0,
   date_received TEXT,
+  date_expense TEXT,
+  received_from TEXT,
   remarks TEXT,
   image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -97,6 +101,10 @@ ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS remarks TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE transmittal_records ADD COLUMN IF NOT EXISTS program TEXT DEFAULT 'GIP';
 
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'ORIENTATION';
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS particulars TEXT;
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS amount NUMERIC DEFAULT 0;
+ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS date_expense TEXT;
 ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS document_title TEXT;
 ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS received_from TEXT;
 ALTER TABLE gip_compiled_documents ADD COLUMN IF NOT EXISTS date_received TEXT;

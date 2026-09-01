@@ -244,7 +244,8 @@ let appState = {
     salaryRecords: [],
     compiledRecords: [],
     gsisRecords: [],
-    totalBudget: 1500000
+    totalBudget: 1500000,
+    workProgramBudget: 350000
   }
 };
 
@@ -610,9 +611,12 @@ async function fetchRecordsFromSupabase() {
       const filteredDocData = docData.filter(r => r.id !== 'doc-101');
       const formattedCloudDoc = filteredDocData.map(r => ({
         id: r.id,
-        documentTitle: formatEtAl(r.document_title),
-        receivedFrom: formatEtAl(r.received_from),
-        dateReceived: r.date_received,
+        category: (r.category || 'ORIENTATION').toUpperCase(),
+        particulars: formatEtAl(r.particulars || r.document_title),
+        documentTitle: formatEtAl(r.particulars || r.document_title),
+        amount: parseFloat(r.amount) || 0,
+        dateReceived: r.date_received || r.date_expense,
+        dateExpense: r.date_received || r.date_expense,
         remarks: formatEtAl(r.remarks),
         attachments: r.attachments || (r.image_url ? [{ id: 'att-cloud', name: 'Document_Photo.jpg', type: 'image', url: r.image_url }] : []),
         imageUrl: r.image_url || r.imageUrl || null,
@@ -718,9 +722,11 @@ async function pushLocalDataToSupabase() {
     if (appState.data.compiledRecords && appState.data.compiledRecords.length > 0) {
       const docPayload = appState.data.compiledRecords.map(r => ({
         id: r.id,
-        document_title: r.documentTitle,
-        received_from: r.receivedFrom || '',
-        date_received: r.dateReceived || '',
+        category: (r.category || 'ORIENTATION').toUpperCase(),
+        particulars: r.particulars || r.documentTitle || '',
+        document_title: r.particulars || r.documentTitle || '',
+        amount: parseFloat(r.amount) || 0,
+        date_received: r.dateReceived || r.dateExpense || '',
         remarks: r.remarks || '',
         attachments: r.attachments || [],
         image_url: r.imageUrl || (r.attachments && r.attachments.length > 0 ? r.attachments[0].url : null),
@@ -1172,6 +1178,12 @@ function switchTab(tabName) {
   } else if (totalBadge) {
     totalBadge.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
   }
+
+  const wpIndicatorsPanel = document.getElementById('workprogram-financial-indicators');
+  if (wpIndicatorsPanel) {
+    wpIndicatorsPanel.style.display = (tabName === 'compiled') ? 'flex' : 'none';
+  }
+
   if (salControls) {
     salControls.style.display = (tabName === 'salary') ? 'flex' : 'none';
     if (tabName === 'salary') renderSalaryFilterOptions();
@@ -1184,7 +1196,7 @@ function switchTab(tabName) {
   else if (tabName === 'contacts') downloadLabel = 'Contacts';
   else if (tabName === 'salary') downloadLabel = 'Salary Data';
   else if (tabName === 'gsis') downloadLabel = 'GIP Information';
-  else if (tabName === 'compiled') downloadLabel = 'Documents';
+  else if (tabName === 'compiled') downloadLabel = 'Work Program Data';
   else if (tabName === 'trash') downloadLabel = 'Recycle Bin';
 
   if (btnDownloadActive) {
@@ -1213,8 +1225,8 @@ function switchTab(tabName) {
     btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'compiled') {
-    viewTitle.textContent = 'DOCUMENTS RECEIVED MONITORING';
-    viewSubtitle.textContent = 'TRACKING & MONITORING OF COMPLIED DOCUMENTS RECEIVED BY DOLE LDNPFO';
+    viewTitle.textContent = 'WORK PROGRAM MONITORING';
+    viewSubtitle.textContent = 'FINANCIAL ALLOCATION & DISBURSEMENT TRACKING (ORIENTATION, CULMINATION, SUPPLIES)';
     btnAdd.style.display = 'inline-flex';
     btnEmptyTrash.style.display = 'none';
   } else if (tabName === 'gsis') {
@@ -1374,6 +1386,53 @@ function updateCountsAndStats() {
         remainingIconBoxElem.style.color = '#10b981';
       }
       if (remainingIconElem) remainingIconElem.setAttribute('data-lucide', 'pie-chart');
+    }
+  }
+}
+
+function updateFinancialOverview() {
+  const wpBudget = Number(appState.data.workProgramBudget !== undefined ? appState.data.workProgramBudget : 350000);
+  const wpRecords = appState.data.compiledRecords || [];
+  const wpDeducted = wpRecords.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const wpRemaining = wpBudget - wpDeducted;
+
+  const wpBudgetElem = document.getElementById('wp-total-budget-val');
+  if (wpBudgetElem) wpBudgetElem.textContent = `₱${wpBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const wpDeductedElem = document.getElementById('wp-total-deducted-val');
+  if (wpDeductedElem) wpDeductedElem.textContent = `₱${wpDeducted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const wpRemainingElem = document.getElementById('wp-remaining-balance-val');
+  const wpRemainingBadge = document.getElementById('wp-remaining-balance-badge');
+  const wpRemainingIconBox = document.getElementById('wp-remaining-icon-box');
+  const wpRemainingIcon = document.getElementById('wp-remaining-icon');
+
+  if (wpRemainingElem) {
+    if (wpRemaining >= 0) {
+      wpRemainingElem.textContent = `₱${wpRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      wpRemainingElem.style.color = '#059669';
+      if (wpRemainingBadge) {
+        wpRemainingBadge.style.background = 'rgba(16, 185, 129, 0.08)';
+        wpRemainingBadge.style.borderColor = 'rgba(16, 185, 129, 0.25)';
+      }
+      if (wpRemainingIconBox) {
+        wpRemainingIconBox.style.background = 'rgba(16, 185, 129, 0.15)';
+        wpRemainingIconBox.style.color = '#10b981';
+      }
+      if (wpRemainingIcon) wpRemainingIcon.setAttribute('data-lucide', 'pie-chart');
+    } else {
+      const absRemaining = Math.abs(wpRemaining);
+      wpRemainingElem.textContent = `-₱${absRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      wpRemainingElem.style.color = '#dc2626';
+      if (wpRemainingBadge) {
+        wpRemainingBadge.style.background = 'rgba(239, 68, 68, 0.1)';
+        wpRemainingBadge.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+      }
+      if (wpRemainingIconBox) {
+        wpRemainingIconBox.style.background = 'rgba(239, 68, 68, 0.2)';
+        wpRemainingIconBox.style.color = '#dc2626';
+      }
+      if (wpRemainingIcon) wpRemainingIcon.setAttribute('data-lucide', 'alert-triangle');
     }
   }
 }
@@ -2014,19 +2073,22 @@ function renderTable() {
 
     tableHead.innerHTML = `
       <tr>
-        <th onclick="handleSort('documentTitle')">
-          <div class="th-content">COMPILED DOCUMENTS / TITLE ${getSortIcon('documentTitle')}</div>
+        <th onclick="handleSort('category')" style="width: 18%;">
+          <div class="th-content">ACTIVITY / CATEGORY ${getSortIcon('category')}</div>
         </th>
-        <th onclick="handleSort('receivedFrom')">
-          <div class="th-content">RECEIVED FROM / SENDER ${getSortIcon('receivedFrom')}</div>
+        <th onclick="handleSort('particulars')" style="width: 32%;">
+          <div class="th-content">PARTICULARS / ITEM DESCRIPTION ${getSortIcon('particulars')}</div>
         </th>
-        <th onclick="handleSort('dateReceived')">
-          <div class="th-content">DATE RECEIVED ${getSortIcon('dateReceived')}</div>
+        <th onclick="handleSort('dateReceived')" style="width: 16%;">
+          <div class="th-content">DATE OF EXPENSE ${getSortIcon('dateReceived')}</div>
         </th>
-        <th>
+        <th onclick="handleSort('amount')" style="width: 15%;">
+          <div class="th-content">AMOUNT (₱) ${getSortIcon('amount')}</div>
+        </th>
+        <th style="width: 11%;">
           <div class="th-content">REMARKS</div>
         </th>
-        <th style="text-align: right;">ACTIONS</th>
+        <th style="width: 8%; text-align: right;">ACTIONS</th>
       </tr>
     `;
 
@@ -2035,7 +2097,7 @@ function renderTable() {
     if (records.length === 0) {
       tableBody.innerHTML = '';
       emptyState.style.display = 'block';
-      if (emptyMsg) emptyMsg.textContent = 'No compiled documents received found. Click "+ Add New Record" to create one.';
+      if (emptyMsg) emptyMsg.textContent = 'No work program expenses recorded. Click "+ Add New Record" to log an expense.';
       return;
     }
 
@@ -2043,71 +2105,60 @@ function renderTable() {
 
     tableBody.innerHTML = records.map(record => {
       const searchQuery = appState.searchQuery ? appState.searchQuery.trim() : '';
-      const titleText = escapeHtml(formatEtAl(record.documentTitle || record.particulars || ''));
-      const highlightedTitle = highlightTextInHtml(titleText, searchQuery);
-
-      const attachments = record.attachments && Array.isArray(record.attachments) && record.attachments.length > 0 
-        ? record.attachments 
-        : (record.imageUrl ? [{ id: 'att-legacy', name: 'Document_Photo.jpg', type: 'image', url: record.imageUrl }] : []);
-
-      let attachmentBtnsHtml = '';
-      if (attachments.length > 0) {
-        attachmentBtnsHtml = `<div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">` + attachments.map((att, idx) => {
-          if (att.type === 'pdf') {
-            return `
-              <button type="button" class="btn-show-attached-pdf" onclick="openPdfViewerModal('${escapeHtml(att.url)}', '${escapeHtml(att.name)}')" title="Click to view attached PDF: ${escapeHtml(att.name)}" style="background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.725rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                <i data-lucide="file-text" style="width: 12px; height: 12px; color: #ef4444;"></i> PDF ${attachments.length > 1 ? (idx + 1) : ''}
-              </button>
-            `;
-          } else {
-            return `
-              <button type="button" class="btn-show-attached-img" onclick="openImageLightbox('${escapeHtml(att.url)}', 'COMPILED DOCUMENT PHOTO (${idx + 1}/${attachments.length})')" title="Click to view attached photo: ${escapeHtml(att.name)}" style="margin-left: 0;">
-                <i data-lucide="image" style="width: 12px; height: 12px;"></i> Photo ${attachments.length > 1 ? (idx + 1) : ''}
-              </button>
-            `;
-          }
-        }).join('') + `</div>`;
+      const category = (record.category || 'ORIENTATION').toUpperCase();
+      let catBadgeClass = 'wp-cat-orientation';
+      let catIcon = 'compass';
+      if (category === 'CULMINATION') {
+        catBadgeClass = 'wp-cat-culmination';
+        catIcon = 'award';
+      } else if (category === 'SUPPLIES') {
+        catBadgeClass = 'wp-cat-supplies';
+        catIcon = 'box';
+      } else if (category === 'OTHER') {
+        catBadgeClass = 'wp-cat-other';
+        catIcon = 'tag';
       }
 
-      const titleCellHtml = `
-        <div style="display: flex; flex-direction: column; gap: 2px;">
-          <span style="font-weight: 600; font-size: 0.925rem; color: var(--primary-navy);">${highlightedTitle}</span>
-          ${attachmentBtnsHtml}
-        </div>
+      const catBadgeHtml = `
+        <span class="wp-category-badge ${catBadgeClass}">
+          <i data-lucide="${catIcon}" style="width: 12px; height: 12px;"></i>
+          ${category}
+        </span>
       `;
 
-      const senderFormatted = highlightTextInHtml(escapeHtml(record.receivedFrom || '-'), searchQuery);
-      const dateRecFormatted = highlightTextInHtml(escapeHtml(formatDate(record.dateReceived)), searchQuery);
+      const titleText = escapeHtml(formatEtAl(record.particulars || record.documentTitle || ''));
+      const highlightedTitle = highlightTextInHtml(titleText, searchQuery);
+
+      const amountNum = parseFloat(record.amount) || 0;
+      const amountFormatted = `₱${amountNum.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      const dateExpFormatted = highlightTextInHtml(escapeHtml(formatDate(record.dateReceived || record.dateExpense)), searchQuery);
       const remarksFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.remarks || '-')), searchQuery);
 
       return `
         <tr>
-          <td>${titleCellHtml}</td>
-          <td>
-            <span class="quincena-pill quincena-q1">
-              <i data-lucide="building" style="width: 12px; height: 12px;"></i>
-              ${senderFormatted}
-            </span>
-          </td>
-          <td>${dateRecFormatted}</td>
+          <td>${catBadgeHtml}</td>
+          <td style="font-weight: 600; font-size: 0.9rem; color: var(--primary-navy);">${highlightedTitle}</td>
+          <td>${dateExpFormatted}</td>
+          <td style="font-family: monospace; font-weight: 700; font-size: 0.95rem; color: #dc2626;">-${amountFormatted}</td>
           <td>
             ${(record.remarks && record.remarks.trim() && record.remarks.trim() !== '-') ? `
-              <div class="remarks-preview-card" onclick="openRemarksViewerModal('${record.id}', '${escapeHtml(record.documentTitle || record.particulars || 'Compiled Document').replace(/'/g, "\\'")}', '${escapeHtml(record.remarks).replace(/'/g, "\\'")}', 'compiled')" title="Click to view & edit remarks">
+              <div class="remarks-preview-card" onclick="openRemarksViewerModal('${record.id}', '${escapeHtml(record.particulars || record.documentTitle || 'Work Program').replace(/'/g, "\\'")}', '${escapeHtml(record.remarks).replace(/'/g, "\\'")}', 'compiled')" title="Click to view & edit remarks">
                 <i data-lucide="file-text" class="remarks-card-icon"></i>
                 <span class="remarks-card-text">${remarksFormatted}</span>
               </div>
             ` : `
-              <button type="button" class="btn-add-remark-hint" onclick="openRemarksViewerModal('${record.id}', '${escapeHtml(record.documentTitle || record.particulars || 'Compiled Document').replace(/'/g, "\\'")}', '', 'compiled')" title="Click to add remarks">
+              <button type="button" class="btn-add-remark-hint" onclick="openRemarksViewerModal('${record.id}', '${escapeHtml(record.particulars || record.documentTitle || 'Work Program').replace(/'/g, "\\'")}', '', 'compiled')" title="Click to add remarks">
                 <i data-lucide="plus" style="width: 11px; height: 11px;"></i> Add
               </button>
             `}
           </td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
-              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Document Record">
+              <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Expense">
                 <i data-lucide="edit-3"></i>
               </button>
-              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Document Record">
+              <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete Expense">
                 <i data-lucide="trash-2"></i>
               </button>
             </div>
@@ -2865,16 +2916,12 @@ function openRecordModal(id = null) {
         document.getElementById('salary-gip-name').value = (record.gipName || '').toUpperCase();
         renderSalaryModalInputs(record);
       } else if (isCompiled) {
-        document.getElementById('compiled-title').value = (record.documentTitle || '').toUpperCase();
-        document.getElementById('compiled-received-from').value = (record.receivedFrom || '').toUpperCase();
-        document.getElementById('compiled-date-received').value = record.dateReceived || '';
-        currentCompiledAttachments = [];
-        if (record.attachments && Array.isArray(record.attachments)) {
-          currentCompiledAttachments = [...record.attachments];
-        } else if (record.imageUrl) {
-          currentCompiledAttachments = [{ id: 'att-legacy', name: 'Document_Photo.jpg', type: 'image', url: record.imageUrl, size: 0 }];
-        }
-        updateCompiledModalImagePreview();
+        document.getElementById('compiled-category').value = (record.category || 'ORIENTATION').toUpperCase();
+        document.getElementById('compiled-amount').value = record.amount !== undefined ? record.amount : '';
+        document.getElementById('compiled-title').value = (record.particulars || record.documentTitle || '').toUpperCase();
+        document.getElementById('compiled-date-received').value = record.dateReceived || record.dateExpense || '';
+        document.getElementById('compiled-remarks').value = (record.remarks || '').toUpperCase();
+        document.getElementById('record-remarks').value = (record.remarks || '').toUpperCase();
       } else if (isGsis) {
         document.getElementById('gsis-name').value = (record.name || '').toUpperCase();
         document.getElementById('gsis-dob').value = record.dob || '';
@@ -2931,8 +2978,6 @@ function openRecordModal(id = null) {
     }
     currentTransmittalImageUrl = null;
     updateTransmittalModalImagePreview();
-    currentCompiledAttachments = [];
-    updateCompiledModalImagePreview();
   }
 
   const remarksField = document.getElementById('record-remarks');
@@ -3046,25 +3091,25 @@ async function handleFormSubmit(e) {
   }
 
   if (isCompiled) {
-    const documentTitle = formatEtAl(document.getElementById('compiled-title').value.trim().toUpperCase());
-    const receivedFrom = formatEtAl(document.getElementById('compiled-received-from').value.trim().toUpperCase());
-    const dateReceived = document.getElementById('compiled-date-received').value;
+    const category = (document.getElementById('compiled-category').value || 'ORIENTATION').toUpperCase();
+    const amount = parseFloat(document.getElementById('compiled-amount').value) || 0;
+    const particulars = formatEtAl(document.getElementById('compiled-title').value.trim().toUpperCase());
+    const dateReceived = document.getElementById('compiled-date-received').value || new Date().toISOString().substring(0, 10);
+    const compileRemarks = (document.getElementById('compiled-remarks').value || document.getElementById('record-remarks').value || '').trim().toUpperCase();
 
-    if (!documentTitle || !receivedFrom || !dateReceived) {
-      showToast('ALL REQUIRED FIELDS FOR DOCUMENT RECORD MUST BE FILLED', 'danger');
+    if (!particulars) {
+      showToast('PARTICULARS / ITEM DESCRIPTION IS REQUIRED', 'danger');
       return;
     }
 
-    const firstImg = currentCompiledAttachments.find(a => a.type === 'image');
-    const primaryImgUrl = firstImg ? firstImg.url : (currentCompiledAttachments.length > 0 ? currentCompiledAttachments[0].url : null);
-
     const payload = {
-      documentTitle,
-      receivedFrom,
+      category,
+      particulars,
+      documentTitle: particulars,
+      amount,
       dateReceived,
-      remarks,
-      attachments: currentCompiledAttachments,
-      imageUrl: primaryImgUrl,
+      dateExpense: dateReceived,
+      remarks: compileRemarks,
       updatedAt: nowISO
     };
 
@@ -3080,20 +3125,20 @@ async function handleFormSubmit(e) {
       if (isSupabaseConnected && supabaseClient) {
         const { error: sbErr } = await supabaseClient.from('gip_compiled_documents').upsert({
           id: recordId,
-          document_title: documentTitle,
-          received_from: receivedFrom,
+          category,
+          particulars,
+          document_title: particulars,
+          amount,
           date_received: dateReceived,
-          remarks,
-          attachments: currentCompiledAttachments,
-          image_url: primaryImgUrl,
+          remarks: compileRemarks,
           updated_at: nowISO
         });
         if (sbErr) console.warn('Supabase update note:', sbErr.message);
       }
 
-      showToast('DOCUMENT RECORD UPDATED SUCCESSFULLY!', 'success');
+      showToast('WORK PROGRAM EXPENSE UPDATED SUCCESSFULLY!', 'success');
     } else {
-      const newId = 'doc-' + Date.now();
+      const newId = 'wp-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
       appState.data.compiledRecords.unshift(newRecord);
       saveToLocalStorage();
@@ -3101,24 +3146,25 @@ async function handleFormSubmit(e) {
       if (isSupabaseConnected && supabaseClient) {
         const { error: sbErr } = await supabaseClient.from('gip_compiled_documents').upsert({
           id: newId,
-          document_title: documentTitle,
-          received_from: receivedFrom,
+          category,
+          particulars,
+          document_title: particulars,
+          amount,
           date_received: dateReceived,
-          remarks,
-          attachments: currentCompiledAttachments,
-          image_url: primaryImgUrl,
+          remarks: compileRemarks,
           created_at: nowISO,
           updated_at: nowISO
         });
         if (sbErr) console.warn('Supabase insert note:', sbErr.message);
       }
 
-      showToast('NEW DOCUMENT RECORD ADDED SUCCESSFULLY!', 'success');
+      showToast('NEW WORK PROGRAM EXPENSE ADDED SUCCESSFULLY!', 'success');
     }
 
     closeRecordModal();
     saveToLocalStorage();
     renderApp();
+    updateFinancialOverview();
     return;
   }
 
@@ -3563,6 +3609,7 @@ async function confirmDeleteRecord(e) {
   saveToLocalStorage();
   closeDeleteModal();
   renderApp();
+  updateFinancialOverview();
   showToast('RECORD MOVED TO RECYCLE BIN (AUTO-PURGES IN 30 DAYS)', 'info');
 }
 
@@ -3677,57 +3724,7 @@ async function restoreRecord(trashId) {
   saveToLocalStorage();
   closeDeleteModal();
   renderApp();
-  showToast('RECORD MOVED TO RECYCLE BIN (AUTO-PURGES IN 30 DAYS)', 'info');
-}
-
-/**
- * Restore Record from Recycle Bin
- */
-async function restoreRecord(trashId) {
-  if (!appState.data.recycledRecords) return;
-
-  const index = appState.data.recycledRecords.findIndex(r => r.id === trashId);
-  if (index === -1) return;
-
-  const item = appState.data.recycledRecords[index];
-  const orig = item.originalRecord;
-  const isDtr = item.type === 'dtr';
-
-  if (isDtr) {
-    appState.data.dtrRecords.unshift(orig);
-    if (isSupabaseConnected && supabaseClient) {
-      await supabaseClient.from('gip_dtr_ar_records').upsert({
-        id: orig.id,
-        gip_name: orig.gipName,
-        month: orig.month,
-        quincena: orig.quincena,
-        dtr_ar_date_received: orig.dtrArDateReceived,
-        remarks: orig.remarks,
-        created_at: orig.createdAt,
-        updated_at: new Date().toISOString()
-      });
-      await supabaseClient.from('recycled_records').delete().eq('id', trashId);
-    }
-  } else {
-    appState.data.transmittalRecords.unshift(orig);
-    if (isSupabaseConnected && supabaseClient) {
-      await supabaseClient.from('transmittal_records').upsert({
-        id: orig.id,
-        particulars: orig.particulars,
-        prepared_by: orig.preparedBy,
-        date_transmitted: orig.dateTransmitted,
-        regional_date_received: orig.regionalDateReceived,
-        remarks: orig.remarks,
-        created_at: orig.createdAt,
-        updated_at: new Date().toISOString()
-      });
-      await supabaseClient.from('recycled_records').delete().eq('id', trashId);
-    }
-  }
-
-  appState.data.recycledRecords.splice(index, 1);
-  saveToLocalStorage();
-  renderApp();
+  updateFinancialOverview();
   showToast('RECORD RESTORED SUCCESSFULLY!', 'success');
 }
 
@@ -3942,72 +3939,92 @@ function closeTotalBudgetModal() {
   }
 }
 
-async function quickPromptEditBudget() {
-  const current = parseFloat(appState.data.totalBudget) || 0;
-  const res = prompt('Enter new Total Salary Budget Amount (₱):', current > 0 ? current : '1500000.00');
-  if (res === null) return;
-  const val = parseFloat(res.replace(/[^0-9.]/g, ''));
-  if (isNaN(val) || val < 0) {
-    showToast('INVALID BUDGET AMOUNT ENTERED!', 'danger');
-    return;
-  }
-  await saveTotalBudget(val);
-  showToast(`TOTAL SALARY BUDGET UPDATED TO ₱${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}!`, 'success');
-}
-
-function setBudgetPreset(amount) {
-  const input = document.getElementById('input-total-budget');
-  if (input) {
-    input.value = amount;
-    updateBudgetModalPreview();
-  }
-}
-
-function updateBudgetModalPreview() {
-  const input = document.getElementById('input-total-budget');
-  const preview = document.getElementById('modal-preview-remaining-val');
-
-  let grandTotalPaid = 0;
-  let grandTotalPending = 0;
-  (appState.data.salaryRecords || []).forEach(record => {
-    if (record.id === 'salary-budget-config') return;
-    const p = record.periods || {};
-    Object.values(p).forEach(item => {
-      if (item && item.amount) {
-        let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
-        if (!isNaN(numAmt) && numAmt > 0) {
-          if (item.status === 'received') {
-            grandTotalPaid += numAmt;
-          } else if (item.status === 'pending') {
-            grandTotalPending += numAmt;
-          }
-        }
-      }
-    });
-  });
-
-  const newBudget = parseFloat(input?.value) || 0;
-  const newRem = newBudget - grandTotalPaid;
-
-  if (preview) {
-    preview.textContent = `${newRem < 0 ? '-' : ''}₱${Math.abs(newRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    preview.style.color = newRem < 0 ? '#dc2626' : '#059669';
-  }
-}
-
 async function handleTotalBudgetSubmit(event) {
   if (event) event.preventDefault();
   const input = document.getElementById('input-total-budget');
   const val = parseFloat(input?.value) || 0;
 
-  if (val < 0) {
-    showToast('BUDGET AMOUNT CANNOT BE NEGATIVE!', 'danger');
+  if (val <= 0) {
+    showToast('PLEASE ENTER A VALID BUDGET GREATER THAN ₱0.00', 'danger');
     return;
   }
 
-  await saveTotalBudget(val);
+  appState.data.totalBudget = val;
+  saveToLocalStorage();
+  showToast(`TOTAL BUDGET UPDATED TO ₱${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}!`, 'success');
   closeTotalBudgetModal();
-  showToast(`TOTAL SALARY BUDGET UPDATED TO ₱${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}!`, 'success');
+  updateFinancialOverview();
+  renderTable();
+}
+
+/**
+ * Work Program Budget Modal & Handlers
+ */
+function openWorkProgramBudgetModal() {
+  const modal = document.getElementById('edit-wp-budget-modal');
+  if (!modal) return;
+
+  const currentBudget = Number(appState.data.workProgramBudget !== undefined ? appState.data.workProgramBudget : 350000);
+  const wpRecords = appState.data.compiledRecords || [];
+  const totalDeducted = wpRecords.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const remaining = currentBudget - totalDeducted;
+
+  const inputElem = document.getElementById('wp-budget-amount-input');
+  if (inputElem) inputElem.value = currentBudget > 0 ? currentBudget : '';
+
+  const curDeductedElem = document.getElementById('modal-wp-current-deducted-val');
+  if (curDeductedElem) curDeductedElem.textContent = `₱${totalDeducted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const curRemainingElem = document.getElementById('modal-wp-current-remaining-val');
+  if (curRemainingElem) curRemainingElem.textContent = `₱${remaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  updateWpModalLiveCalculation();
+  modal.classList.add('active');
+  if (inputElem) {
+    setTimeout(() => { inputElem.focus(); inputElem.select(); }, 100);
+  }
+}
+
+function closeWorkProgramBudgetModal() {
+  const modal = document.getElementById('edit-wp-budget-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function updateWpModalLiveCalculation() {
+  const inputElem = document.getElementById('wp-budget-amount-input');
+  const projElem = document.getElementById('wp-modal-projected-remaining');
+  if (!inputElem || !projElem) return;
+
+  const enteredBudget = parseFloat(inputElem.value) || 0;
+  const wpRecords = appState.data.compiledRecords || [];
+  const totalDeducted = wpRecords.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const projectedRemaining = enteredBudget - totalDeducted;
+
+  if (projectedRemaining >= 0) {
+    projElem.textContent = `₱${projectedRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    projElem.style.color = '#059669';
+  } else {
+    projElem.textContent = `-₱${Math.abs(projectedRemaining).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    projElem.style.color = '#dc2626';
+  }
+}
+
+function handleWorkProgramBudgetSubmit(e) {
+  if (e) e.preventDefault();
+  const inputElem = document.getElementById('wp-budget-amount-input');
+  const newBudget = parseFloat(inputElem?.value) || 0;
+
+  if (newBudget <= 0) {
+    showToast('PLEASE ENTER A VALID WORK PROGRAM BUDGET GREATER THAN ₱0.00', 'danger');
+    return;
+  }
+
+  appState.data.workProgramBudget = newBudget;
+  saveToLocalStorage();
+  showToast(`WORK PROGRAM BUDGET UPDATED TO ₱${newBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}!`, 'success');
+  closeWorkProgramBudgetModal();
+  updateFinancialOverview();
+  renderTable();
 }
 
 async function saveTotalBudget(newBudget) {
@@ -4447,16 +4464,16 @@ function exportSingleModule(e, type) {
     } else if (type === 'compiled') {
       const dataFormatted = (appState.data.compiledRecords || []).map((r, idx) => ({
         'NO.': idx + 1,
-        'DOCUMENT TITLE': (r.documentTitle || '').toUpperCase(),
-        'RECEIVED FROM': (r.receivedFrom || '').toUpperCase(),
-        'DATE RECEIVED': r.dateReceived ? formatDate(r.dateReceived) : 'N/A',
-        'ATTACHMENTS COUNT': (r.attachments || []).length,
-        'REMARKS': (r.remarks || '').toUpperCase()
+        'ACTIVITY / CATEGORY': (r.category || 'ORIENTATION').toUpperCase(),
+        'PARTICULARS / ITEM DESCRIPTION': (r.particulars || r.documentTitle || '').toUpperCase(),
+        'AMOUNT (PHP)': parseFloat(r.amount) || 0,
+        'DATE OF EXPENSE': r.dateReceived ? formatDate(r.dateReceived) : 'N/A',
+        'REMARKS / PAYEE': (r.remarks || '').toUpperCase()
       }));
       const ws = XLSX.utils.json_to_sheet(dataFormatted);
-      XLSX.utils.book_append_sheet(wb, ws, 'DOCUMENTS RECEIVED');
-      XLSX.writeFile(wb, `GIP_Compiled_Documents_${dateStr}.xlsx`);
-      showToast('DOCUMENTS LIST EXCEL DOWNLOADED!', 'success');
+      XLSX.utils.book_append_sheet(wb, ws, 'WORK PROGRAM');
+      XLSX.writeFile(wb, `GIP_Work_Program_${dateStr}.xlsx`);
+      showToast('WORK PROGRAM EXCEL DOWNLOADED!', 'success');
     } else if (type === 'trash') {
       const dataFormatted = (appState.data.recycledRecords || []).map((r, idx) => ({
         'NO.': idx + 1,
