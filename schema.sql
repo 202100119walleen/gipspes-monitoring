@@ -109,6 +109,7 @@ ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS quincena TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS dtr_ar_date_received TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS transmittal_date TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS remarks TEXT;
+ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS is_printed BOOLEAN DEFAULT FALSE;
 
 ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS gip_name TEXT;
 ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS assignment TEXT;
