@@ -1127,37 +1127,46 @@
     </div>
   </div>
 
-  <!-- Remarks Reader & Viewer Modal -->
+  <!-- Remarks Reader & Editor Modal -->
   <div class="modal-backdrop" id="remarks-viewer-modal">
     <div class="modal-container" style="max-width: 480px;">
       <div class="modal-header">
         <h2 style="display: flex; align-items: center; gap: 8px;" id="remarks-viewer-title">
-          <i data-lucide="message-square" style="width: 18px; height: 18px; color: var(--brand-accent);"></i> Remarks Details
+          <i data-lucide="edit-3" style="width: 18px; height: 18px; color: var(--brand-accent);"></i> Edit &amp; View Remarks
         </h2>
         <button class="modal-close" id="remarks-viewer-close" onclick="closeRemarksViewerModal()">&times;</button>
       </div>
-      <div class="modal-body" style="padding: 20px;">
-        <div style="margin-bottom: 12px;">
-          <span style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;" id="remarks-viewer-subtitle">RECORD DETAILS</span>
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--primary-navy); margin-top: 2px;" id="remarks-viewer-name">-</h3>
-        </div>
-        <div class="particulars-memo-box" style="max-width: 100%; width: 100%; margin: 0; background: #f8fafc; border-left: 4px solid var(--brand-accent);">
-          <div class="particulars-memo-title" style="font-size: 0.8rem; color: var(--brand-accent);">
-            <i data-lucide="file-text" style="width: 14px; height: 14px;"></i> FULL REMARKS / NOTES
+      <form id="remarks-viewer-form" onsubmit="event.preventDefault(); saveRemarksFromViewer();">
+        <div class="modal-body" style="padding: 20px;">
+          <div style="margin-bottom: 14px;">
+            <span style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;" id="remarks-viewer-subtitle">GIP DTR &amp; AR REMARKS</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--primary-navy); margin-top: 2px;" id="remarks-viewer-name">-</h3>
           </div>
-          <div class="particulars-memo-body" id="remarks-viewer-content" style="font-size: 0.925rem; font-weight: 500; line-height: 1.6; color: var(--primary-navy);">
-            -
+          
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="remarks-viewer-textarea" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+              <span><i data-lucide="file-text" style="width: 14px; height: 14px; vertical-align: middle; color: var(--brand-accent); margin-right: 4px;"></i> Remarks / Notes Content:</span>
+              <span style="font-size: 0.725rem; font-weight: 500; color: var(--text-muted);">Auto-formatted to uppercase</span>
+            </label>
+            <textarea id="remarks-viewer-textarea" class="form-control" rows="5"
+              placeholder="Enter remarks, tracking number, transmittal date, or notes..."
+              style="font-size: 0.9rem; line-height: 1.5; resize: vertical;"></textarea>
           </div>
         </div>
-      </div>
-      <div class="modal-footer" style="justify-content: space-between;">
-        <button type="button" class="btn btn-secondary btn-icon" id="btn-copy-remarks" onclick="copyRemarksToClipboard()" title="Copy remarks text">
-          <i data-lucide="copy" style="width: 14px; height: 14px;"></i> Copy Text
-        </button>
-        <button type="button" class="btn btn-primary" onclick="closeRemarksViewerModal()">
-          Close
-        </button>
-      </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+          <button type="button" class="btn btn-secondary btn-icon" id="btn-copy-remarks" onclick="copyRemarksToClipboard()" title="Copy remarks text">
+            <i data-lucide="copy" style="width: 14px; height: 14px;"></i> Copy Text
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary" onclick="closeRemarksViewerModal()">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" id="btn-save-remarks" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
+              <i data-lucide="check"></i> Save Remarks
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 

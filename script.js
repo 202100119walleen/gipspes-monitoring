@@ -1806,11 +1806,15 @@ function renderTable() {
           </td>
           <td>
             ${(record.remarks && record.remarks.trim() && record.remarks.trim() !== '-') ? `
-              <div class="remarks-preview-card" onclick="openRemarksViewerModal('${escapeHtml(record.gipName || 'GIP Contact').replace(/'/g, "\\'")}', '${escapeHtml(record.remarks).replace(/'/g, "\\'")}', 'GIP CONTACT REMARKS')" title="Click to read full remarks">
+              <div class="remarks-preview-card" onclick="openRemarksViewerModal('${record.id}', '${escapeHtml(record.gipName || 'GIP Contact').replace(/'/g, "\\'")}', '${escapeHtml(record.remarks).replace(/'/g, "\\'")}', 'contacts')" title="Click to view & edit remarks">
                 <i data-lucide="file-text" class="remarks-card-icon"></i>
                 <span class="remarks-card-text">${escapeHtml(record.remarks)}</span>
               </div>
-            ` : '<span style="color: var(--text-light); font-weight: 500;">-</span>'}
+            ` : `
+              <button type="button" class="btn-add-remark-hint" onclick="openRemarksViewerModal('${record.id}', '${escapeHtml(record.gipName || 'GIP Contact').replace(/'/g, "\\'")}', '', 'contacts')" title="Click to add remarks">
+                <i data-lucide="plus" style="width: 11px; height: 11px;"></i> Add
+              </button>
+            `}
           </td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
@@ -2088,11 +2092,15 @@ function renderTable() {
           <td>${dateRecFormatted}</td>
           <td>
             ${(record.remarks && record.remarks.trim() && record.remarks.trim() !== '-') ? `
-              <div class="remarks-preview-card" onclick="openRemarksViewerModal('${escapeHtml(record.documentTitle || record.particulars || 'Compiled Document').replace(/'/g, "\\'")}', '${escapeHtml(record.remarks).replace(/'/g, "\\'")}', 'COMPILED DOCUMENT REMARKS')" title="Click to read full remarks">
+              <div class="remarks-preview-card" onclick="openRemarksViewerModal('${record.id}', '${escapeHtml(record.documentTitle || record.particulars || 'Compiled Document').replace(/'/g, "\\'")}', '${escapeHtml(record.remarks).replace(/'/g, "\\'")}', 'compiled')" title="Click to view & edit remarks">
                 <i data-lucide="file-text" class="remarks-card-icon"></i>
                 <span class="remarks-card-text">${remarksFormatted}</span>
               </div>
-            ` : '<span style="color: var(--text-light); font-weight: 500;">-</span>'}
+            ` : `
+              <button type="button" class="btn-add-remark-hint" onclick="openRemarksViewerModal('${record.id}', '${escapeHtml(record.documentTitle || record.particulars || 'Compiled Document').replace(/'/g, "\\'")}', '', 'compiled')" title="Click to add remarks">
+                <i data-lucide="plus" style="width: 11px; height: 11px;"></i> Add
+              </button>
+            `}
           </td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
@@ -2209,21 +2217,27 @@ function renderTable() {
         `;
       }
 
-      const rawTransmittalDate = (record.transmittalDate || record.remarks || '').trim();
-      let remarksCellHtml = '<span style="color: var(--text-light); font-weight: 500;">-</span>';
+      const rawTransmittalDate = (record.remarks || record.transmittalDate || '').trim();
+      const safeName = escapeHtml(record.gipName || 'GIP Record').replace(/'/g, "\\'");
+      const safeRemark = escapeHtml(rawTransmittalDate).replace(/'/g, "\\'");
+      let remarksCellHtml = '';
 
       if (rawTransmittalDate && rawTransmittalDate !== '-') {
         const isDate = /^\d{4}-\d{2}-\d{2}$/.test(rawTransmittalDate);
         const displayRemark = isDate ? formatDate(rawTransmittalDate) : rawTransmittalDate;
         const highlightedRemark = highlightTextInHtml(escapeHtml(displayRemark), searchQuery);
-        const safeName = escapeHtml(record.gipName || 'GIP Record').replace(/'/g, "\\'");
-        const safeRemark = escapeHtml(displayRemark).replace(/'/g, "\\'");
 
         remarksCellHtml = `
-          <div class="remarks-preview-card" onclick="openRemarksViewerModal('${safeName}', '${safeRemark}', 'GIP DTR & AR REMARKS')" title="Click to read full remarks">
+          <div class="remarks-preview-card" onclick="openRemarksViewerModal('${record.id}', '${safeName}', '${safeRemark}', 'dtr')" title="Click to view & edit remarks">
             <i data-lucide="${isDate ? 'calendar' : 'file-text'}" class="remarks-card-icon"></i>
             <span class="remarks-card-text">${highlightedRemark}</span>
           </div>
+        `;
+      } else {
+        remarksCellHtml = `
+          <button type="button" class="btn-add-remark-hint" onclick="openRemarksViewerModal('${record.id}', '${safeName}', '', 'dtr')" title="Click to add remarks">
+            <i data-lucide="plus" style="width: 11px; height: 11px;"></i> Add
+          </button>
         `;
       }
 
@@ -5310,36 +5324,140 @@ function closeImageLightbox() {
 }
 
 /**
- * Remarks & Notes Reader Modal Controller
+ * Remarks & Notes Reader & Editor Modal Controller
  */
+let currentRemarksRecordId = null;
+let currentRemarksModuleType = 'dtr';
 let currentViewerRemarksText = '';
 
-function openRemarksViewerModal(name, remarksText, moduleLabel = 'RECORD REMARKS') {
+function openRemarksViewerModal(recordId, name, remarksText, moduleType = 'dtr') {
   const modal = document.getElementById('remarks-viewer-modal');
   if (!modal) return;
 
+  currentRemarksRecordId = recordId;
+  currentRemarksModuleType = moduleType;
   currentViewerRemarksText = remarksText || '';
 
   const subElem = document.getElementById('remarks-viewer-subtitle');
   const nameElem = document.getElementById('remarks-viewer-name');
-  const contentElem = document.getElementById('remarks-viewer-content');
+  const textareaElem = document.getElementById('remarks-viewer-textarea');
 
-  if (subElem) subElem.textContent = moduleLabel.toUpperCase();
+  let moduleLabel = 'GIP DTR & AR REMARKS';
+  if (moduleType === 'contacts') moduleLabel = 'GIP CONTACT REMARKS';
+  else if (moduleType === 'compiled') moduleLabel = 'COMPILED DOCUMENT REMARKS';
+
+  if (subElem) subElem.textContent = moduleLabel;
   if (nameElem) nameElem.textContent = name || 'Record Details';
-  if (contentElem) contentElem.textContent = remarksText || 'No remarks provided.';
+  if (textareaElem) textareaElem.value = remarksText || '';
 
   modal.classList.add('active');
+  if (textareaElem) {
+    setTimeout(() => {
+      textareaElem.focus();
+      textareaElem.setSelectionRange(textareaElem.value.length, textareaElem.value.length);
+    }, 100);
+  }
   if (window.lucide) lucide.createIcons();
 }
 
 function closeRemarksViewerModal() {
   const modal = document.getElementById('remarks-viewer-modal');
   if (modal) modal.classList.remove('active');
+  currentRemarksRecordId = null;
+}
+
+async function saveRemarksFromViewer() {
+  if (!currentRemarksRecordId || !currentRemarksModuleType) {
+    closeRemarksViewerModal();
+    return;
+  }
+
+  const textarea = document.getElementById('remarks-viewer-textarea');
+  const newRemarks = textarea ? textarea.value.trim().toUpperCase() : '';
+  const nowISO = new Date().toISOString();
+
+  if (currentRemarksModuleType === 'dtr') {
+    const record = (appState.data.dtrRecords || []).find(r => r.id === currentRemarksRecordId);
+    if (record) {
+      record.remarks = newRemarks;
+      record.transmittalDate = newRemarks;
+      record.updatedAt = nowISO;
+      saveToLocalStorage();
+
+      if (isSupabaseConnected && supabaseClient) {
+        try {
+          await supabaseClient.from('gip_dtr_ar_records').upsert({
+            id: record.id,
+            gip_name: record.gipName,
+            month: record.month,
+            quincena: record.quincena,
+            dtr_ar_date_received: record.dtrArDateReceived || '',
+            transmittal_date: record.transmittalDate,
+            remarks: record.remarks,
+            is_printed: record.isPrinted || false,
+            updated_at: nowISO
+          });
+        } catch (err) {
+          console.warn('Supabase remarks update note:', err.message);
+        }
+      }
+    }
+  } else if (currentRemarksModuleType === 'contacts') {
+    const record = (appState.data.contactsRecords || []).find(r => r.id === currentRemarksRecordId);
+    if (record) {
+      record.remarks = newRemarks;
+      record.updatedAt = nowISO;
+      saveToLocalStorage();
+
+      if (isSupabaseConnected && supabaseClient) {
+        try {
+          await supabaseClient.from('gip_contacts').upsert({
+            id: record.id,
+            gip_name: record.gipName,
+            assignment: record.assignment || 'LDNPFO',
+            contact_number: record.contactNumber || '',
+            remarks: record.remarks,
+            updated_at: nowISO
+          });
+        } catch (err) {
+          console.warn('Supabase contacts remarks update note:', err.message);
+        }
+      }
+    }
+  } else if (currentRemarksModuleType === 'compiled') {
+    const record = (appState.data.compiledRecords || []).find(r => r.id === currentRemarksRecordId);
+    if (record) {
+      record.remarks = newRemarks;
+      record.updatedAt = nowISO;
+      saveToLocalStorage();
+
+      if (isSupabaseConnected && supabaseClient) {
+        try {
+          await supabaseClient.from('gip_compiled_documents').upsert({
+            id: record.id,
+            document_title: record.documentTitle || record.particulars || '',
+            received_from: record.receivedFrom || '',
+            date_received: record.dateReceived || '',
+            remarks: record.remarks,
+            updated_at: nowISO
+          });
+        } catch (err) {
+          console.warn('Supabase compiled remarks update note:', err.message);
+        }
+      }
+    }
+  }
+
+  showToast('REMARKS SAVED SUCCESSFULLY!', 'success');
+  closeRemarksViewerModal();
+  renderTable();
 }
 
 function copyRemarksToClipboard() {
-  if (!currentViewerRemarksText) return;
-  navigator.clipboard.writeText(currentViewerRemarksText)
+  const textarea = document.getElementById('remarks-viewer-textarea');
+  const text = textarea ? textarea.value : currentViewerRemarksText;
+  if (!text) return;
+  navigator.clipboard.writeText(text)
     .then(() => showToast('REMARKS COPIED TO CLIPBOARD!', 'info'))
     .catch(() => showToast('FAILED TO COPY', 'danger'));
 }
