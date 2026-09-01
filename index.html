@@ -429,12 +429,27 @@
                 </select>
               </div>
             </div>
-            <div class="form-group">
-              <label for="dtr-ar-date-received">DTR & AR Date Received by DOLE LDNPFO</label>
-              <input type="date" id="dtr-ar-date-received" class="form-control">
-              <button type="button" class="btn btn-secondary btn-today" data-target="dtr-ar-date-received">
-                <i data-lucide="calendar-check" style="width: 13px; height: 13px;"></i> Set Today
-              </button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="form-group">
+                <label for="dtr-ar-date-received">DTR & AR Date Received by DOLE LDNPFO</label>
+                <input type="date" id="dtr-ar-date-received" class="form-control">
+                <button type="button" class="btn btn-secondary btn-today" data-target="dtr-ar-date-received">
+                  <i data-lucide="calendar-check" style="width: 13px; height: 13px;"></i> Set Today
+                </button>
+              </div>
+              <div class="form-group">
+                <label for="dtr-transmittal-date">Transmittal Date</label>
+                <input type="date" id="dtr-transmittal-date" class="form-control">
+                <button type="button" class="btn btn-secondary btn-today" data-target="dtr-transmittal-date">
+                  <i data-lucide="calendar-check" style="width: 13px; height: 13px;"></i> Set Today
+                </button>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 8px; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: var(--radius-sm);">
+              <label for="dtr-is-printed" style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; font-weight: 600; color: var(--primary-navy);">
+                <input type="checkbox" id="dtr-is-printed" style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;">
+                <span><i data-lucide="printer" style="width: 15px; height: 15px; vertical-align: middle; color: var(--brand-accent); margin-right: 4px;"></i> Printed and ready for signing</span>
+              </label>
             </div>
           </div>
 

@@ -531,7 +531,9 @@ async function fetchRecordsFromSupabase() {
         month: r.month,
         quincena: (r.quincena || '').toUpperCase(),
         dtrArDateReceived: r.dtr_ar_date_received,
-        remarks: formatEtAl(r.remarks),
+        transmittalDate: r.transmittal_date || r.remarks || '',
+        remarks: formatEtAl(r.remarks || r.transmittal_date || ''),
+        isPrinted: r.is_printed === true || r.isPrinted === true || false,
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
@@ -663,7 +665,9 @@ async function pushLocalDataToSupabase() {
         month: r.month,
         quincena: r.quincena,
         dtr_ar_date_received: r.dtrArDateReceived || '',
-        remarks: r.remarks || '',
+        transmittal_date: r.transmittalDate || r.remarks || '',
+        remarks: r.transmittalDate || r.remarks || '',
+        is_printed: r.isPrinted || false,
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
@@ -1556,16 +1560,25 @@ function getFilteredAndSortedRecords() {
     records = records.filter(r => {
       if (isDtr) {
         const timeAdded = formatTime(r.createdAt || (r.id && /^dtr-(\d{13})$/.test(r.id) ? new Date(parseInt(r.id.replace('dtr-', ''), 10)).toISOString() : null));
+        const printedStatusStr = r.isPrinted ? 'printed ready for signing' : 'not printed pending';
         return (r.gipName || '').toLowerCase().includes(q) ||
           (r.quincena || '').toLowerCase().includes(q) ||
           (r.month || '').toLowerCase().includes(q) ||
           (r.dtrArDateReceived || '').toLowerCase().includes(q) ||
           (formatDate(r.dtrArDateReceived) || '').toLowerCase().includes(q) ||
+          (r.transmittalDate || '').toLowerCase().includes(q) ||
+          (formatDate(r.transmittalDate) || '').toLowerCase().includes(q) ||
           (timeAdded || '').toLowerCase().includes(q) ||
+          printedStatusStr.includes(q) ||
           (r.remarks || '').toLowerCase().includes(q);
       } else {
         return (r.particulars || '').toLowerCase().includes(q) ||
+          (r.program || '').toLowerCase().includes(q) ||
           (r.preparedBy || '').toLowerCase().includes(q) ||
+          (r.dateTransmitted || '').toLowerCase().includes(q) ||
+          (formatDate(r.dateTransmitted) || '').toLowerCase().includes(q) ||
+          (r.regionalDateReceived || '').toLowerCase().includes(q) ||
+          (formatDate(r.regionalDateReceived) || '').toLowerCase().includes(q) ||
           (r.remarks || '').toLowerCase().includes(q);
       }
     });
@@ -2083,13 +2096,16 @@ function renderTable() {
           <div class="th-content">GIP NAME ${getSortIcon('gipName')}</div>
         </th>
         <th onclick="handleSort('month')">
-          <div class="th-content">PAYROLL PERIOD / QUINCENA ${getSortIcon('month')}</div>
+          <div class="th-content">PERIOD COVERED (DTR & AR) ${getSortIcon('month')}</div>
         </th>
         <th onclick="handleSort('dtrArDateReceived')">
-          <div class="th-content">DTR & AR DATE RECEIVED BY DOLE LDNPFO ${getSortIcon('dtrArDateReceived')}</div>
+          <div class="th-content">DATE & TIME RECEIVED (DTR & AR) ${getSortIcon('dtrArDateReceived')}</div>
         </th>
-        <th>
-          <div class="th-content">REMARKS</div>
+        <th onclick="handleSort('transmittalDate')">
+          <div class="th-content">REMARKS ${getSortIcon('transmittalDate')}</div>
+        </th>
+        <th onclick="handleSort('isPrinted')" style="text-align: center;">
+          <div class="th-content" style="justify-content: center;">PRINTED &amp; READY FOR SIGNING ${getSortIcon('isPrinted')}</div>
         </th>
         <th style="text-align: right;">ACTIONS</th>
       </tr>
@@ -2108,9 +2124,6 @@ function renderTable() {
         </th>
         <th onclick="handleSort('regionalDateReceived')">
           <div class="th-content">DATE RECEIVED BY REGIONAL OFFICE ${getSortIcon('regionalDateReceived')}</div>
-        </th>
-        <th>
-          <div class="th-content">REMARKS</div>
         </th>
         <th style="text-align: right;">ACTIONS</th>
       </tr>
@@ -2171,7 +2184,9 @@ function renderTable() {
         `;
       }
 
-      const remarksFormatted = highlightTextInHtml(escapeHtml(formatEtAl(record.remarks || '-')), searchQuery);
+      const rawTransmittalDate = formatDate(record.transmittalDate || record.remarks);
+      const transmittalDateFormatted = rawTransmittalDate === '-' ? '<span style="color: var(--text-light);">-</span>' : highlightTextInHtml(escapeHtml(rawTransmittalDate), searchQuery);
+      const isPrinted = !!record.isPrinted;
 
       return `
         <tr>
@@ -2183,7 +2198,18 @@ function renderTable() {
             </span>
           </td>
           <td>${dateCellHtml}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${remarksFormatted}</td>
+          <td style="font-weight: 500; font-size: 0.9rem; color: var(--primary-navy); white-space: nowrap;">${transmittalDateFormatted}</td>
+          <td style="text-align: center;">
+            <div class="dtr-printed-cell">
+              <label class="dtr-checkbox-container" title="${isPrinted ? 'Mark as not printed' : 'Mark as printed & ready for signing'}" onclick="event.stopPropagation();">
+                <input type="checkbox" ${isPrinted ? 'checked' : ''} onchange="toggleDtrPrintedStatus('${record.id}', this.checked)">
+              </label>
+              <span class="printed-badge ${isPrinted ? 'printed-yes' : 'printed-no'}" onclick="toggleDtrPrintedStatus('${record.id}', ${!isPrinted})" style="cursor: pointer;" title="Click to toggle status">
+                <i data-lucide="${isPrinted ? 'check-circle-2' : 'printer'}" style="width: 12px; height: 12px;"></i>
+                ${isPrinted ? 'READY FOR SIGNING' : 'NOT PRINTED'}
+              </span>
+            </div>
+          </td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Record">
@@ -2215,19 +2241,16 @@ function renderTable() {
 
       const dateTrnStr = formatDate(record.dateTransmitted);
       const dateRegStr = formatDate(record.regionalDateReceived);
-      const remarksStr = escapeHtml(formatEtAl(record.remarks || '-'));
 
       const highlightedDateTrn = dateTrnStr === '-' ? '<span style="color: var(--text-light);">-</span>' : highlightTextInHtml(escapeHtml(dateTrnStr), searchQuery);
       const highlightedDateReg = dateRegStr === '-' ? '<span style="color: var(--text-light);">-</span>' : highlightTextInHtml(escapeHtml(dateRegStr), searchQuery);
-      const highlightedRemarks = highlightTextInHtml(remarksStr, searchQuery);
 
       return `
         <tr>
           <td>${memoFormatted}</td>
           <td>${programCellHtml}</td>
-          <td>${highlightedDateTrn}</td>
-          <td>${highlightedDateReg}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${highlightedRemarks}</td>
+          <td style="font-weight: 500; font-size: 0.9rem; color: var(--primary-navy); white-space: nowrap;">${highlightedDateTrn}</td>
+          <td style="font-weight: 500; font-size: 0.9rem; color: var(--primary-navy); white-space: nowrap;">${highlightedDateReg}</td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Record">
@@ -2776,6 +2799,9 @@ function openRecordModal(id = null) {
           }
         }
         document.getElementById('dtr-ar-date-received').value = record.dtrArDateReceived || '';
+        document.getElementById('dtr-transmittal-date').value = record.transmittalDate || record.remarks || '';
+        const chkPrinted = document.getElementById('dtr-is-printed');
+        if (chkPrinted) chkPrinted.checked = !!record.isPrinted;
       } else if (isContacts) {
         document.getElementById('contact-gip-name').value = (record.gipName || '').toUpperCase();
         document.getElementById('contact-assignment').value = (record.assignment || '').toUpperCase();
@@ -2837,6 +2863,10 @@ function openRecordModal(id = null) {
     else modalTitle.textContent = 'ADD NEW TRANSMITTAL RECORD';
 
     document.getElementById('form-record-id').value = '';
+    const dtrTrnDate = document.getElementById('dtr-transmittal-date');
+    if (dtrTrnDate) dtrTrnDate.value = '';
+    const chkPrinted = document.getElementById('dtr-is-printed');
+    if (chkPrinted) chkPrinted.checked = false;
     const progSelect = document.getElementById('transmittal-program-select');
     const customInput = document.getElementById('transmittal-custom-program');
     if (progSelect) progSelect.value = '';
@@ -2848,6 +2878,17 @@ function openRecordModal(id = null) {
     updateTransmittalModalImagePreview();
     currentCompiledAttachments = [];
     updateCompiledModalImagePreview();
+  }
+
+  const remarksField = document.getElementById('record-remarks');
+  const remarksGroup = remarksField ? remarksField.closest('.form-group') : null;
+  const isTransmittal = !isDtr && !isContacts && !isSalary && !isCompiled && !isGsis;
+  if (remarksGroup) {
+    if (isDtr || isTransmittal) {
+      remarksGroup.style.display = 'none';
+    } else {
+      remarksGroup.style.display = 'block';
+    }
   }
 
   document.getElementById('record-modal').classList.add('active');
@@ -3151,6 +3192,8 @@ async function handleFormSubmit(e) {
     const month = document.getElementById('record-month').value;
     const quincena = document.getElementById('record-quincena').value.toUpperCase();
     const dtrArDateReceived = document.getElementById('dtr-ar-date-received').value;
+    const transmittalDate = document.getElementById('dtr-transmittal-date')?.value || '';
+    const isPrinted = document.getElementById('dtr-is-printed')?.checked || false;
 
     if (!gipName) {
       showToast('GIP NAME IS REQUIRED', 'danger');
@@ -3162,7 +3205,9 @@ async function handleFormSubmit(e) {
       month,
       quincena,
       dtrArDateReceived,
-      remarks,
+      transmittalDate,
+      isPrinted,
+      remarks: transmittalDate || remarks,
       updatedAt: nowISO
     };
 
@@ -3179,7 +3224,9 @@ async function handleFormSubmit(e) {
           month,
           quincena,
           dtr_ar_date_received: dtrArDateReceived,
-          remarks,
+          transmittal_date: transmittalDate,
+          remarks: transmittalDate || remarks || '',
+          is_printed: isPrinted,
           updated_at: nowISO
         });
         if (sbErr) console.warn('Supabase update note:', sbErr.message);
@@ -3198,7 +3245,9 @@ async function handleFormSubmit(e) {
           month,
           quincena,
           dtr_ar_date_received: dtrArDateReceived,
-          remarks,
+          transmittal_date: transmittalDate,
+          remarks: transmittalDate || remarks || '',
+          is_printed: isPrinted,
           created_at: nowISO,
           updated_at: nowISO
         });
@@ -3685,6 +3734,42 @@ async function handleEmptyTrash() {
 
 
 /**
+ * Toggle Printed & Ready for Signing status for DTR record
+ */
+async function toggleDtrPrintedStatus(recordId, isChecked) {
+  if (!recordId) return;
+  const records = appState.data.dtrRecords || [];
+  const record = records.find(r => r.id === recordId);
+  if (!record) return;
+
+  record.isPrinted = isChecked;
+  record.updatedAt = new Date().toISOString();
+
+  saveToLocalStorage();
+
+  if (isSupabaseConnected && supabaseClient) {
+    try {
+      await supabaseClient.from('gip_dtr_ar_records').upsert({
+        id: record.id,
+        gip_name: record.gipName,
+        month: record.month,
+        quincena: record.quincena,
+        dtr_ar_date_received: record.dtrArDateReceived || '',
+        transmittal_date: record.transmittalDate || record.remarks || '',
+        remarks: record.transmittalDate || record.remarks || '',
+        is_printed: isChecked,
+        updated_at: record.updatedAt
+      });
+    } catch (err) {
+      console.warn('Supabase toggle sync note:', err.message);
+    }
+  }
+
+  showToast(isChecked ? 'MARKED AS PRINTED & READY FOR SIGNING!' : 'MARKED AS NOT YET PRINTED', isChecked ? 'success' : 'info');
+  renderTable();
+}
+
+/**
  * Real-time Payment Status Toggle (Pending/NA <-> Received/Paid)
  * Automatically recalculates Total Paid and Remaining Budget in real-time when paid option is selected.
  */
@@ -4021,7 +4106,8 @@ function handleExcelExportFormSubmit(e) {
           'QUINCENA (PAYROLL PERIOD)': (r.quincena || '1ST QUINCENA (1-15)').toUpperCase(),
           'DTR & AR DATE RECEIVED (LDNPFO)': r.dtrArDateReceived ? formatDate(r.dtrArDateReceived) : 'N/A',
           'TIME ADDED': timeStr || 'N/A',
-          'REMARKS': (r.remarks || '').toUpperCase()
+          'TRANSMITTAL DATE': r.transmittalDate ? formatDate(r.transmittalDate) : (r.remarks ? formatDate(r.remarks) : 'N/A'),
+          'PRINTED & READY FOR SIGNING': r.isPrinted ? 'READY FOR SIGNING' : 'NOT PRINTED'
         };
       });
       const wsDtr = XLSX.utils.json_to_sheet(dtrDataFormatted);
@@ -4038,10 +4124,9 @@ function handleExcelExportFormSubmit(e) {
 
       const trnDataFormatted = trnRecordsToExport.map(r => ({
         'PARTICULARS (TRANSMITTED DOCUMENTS)': (r.particulars || '').replace(/\r?\n/g, ' ').toUpperCase(),
-        'PREPARED BY': (r.preparedBy || 'N/A').toUpperCase(),
-        'DATE TRANSMITTED': r.dateTransmitted || 'N/A',
-        'DATE RECEIVED (REGIONAL OFFICE)': r.regionalDateReceived || 'N/A',
-        'REMARKS': (r.remarks || '').toUpperCase()
+        'PROGRAM / CATEGORY': (r.program || 'GIP').toUpperCase(),
+        'DATE TRANSMITTED': r.dateTransmitted ? formatDate(r.dateTransmitted) : 'N/A',
+        'DATE RECEIVED (REGIONAL OFFICE)': r.regionalDateReceived ? formatDate(r.regionalDateReceived) : 'PENDING'
       }));
       const wsTrn = XLSX.utils.json_to_sheet(trnDataFormatted);
       XLSX.utils.book_append_sheet(wb, wsTrn, 'TRANSMITTALS');
@@ -4231,7 +4316,8 @@ function exportSingleModule(e, type) {
           'QUINCENA': (r.quincena || '').toUpperCase(),
           'DATE RECEIVED BY DOLE': r.dtrArDateReceived ? formatDate(r.dtrArDateReceived) : 'N/A',
           'TIME ADDED': timeStr || 'N/A',
-          'REMARKS': (r.remarks || '').toUpperCase()
+          'TRANSMITTAL DATE': r.transmittalDate ? formatDate(r.transmittalDate) : (r.remarks ? formatDate(r.remarks) : 'N/A'),
+          'PRINTED & READY FOR SIGNING': r.isPrinted ? 'READY FOR SIGNING' : 'NOT PRINTED'
         };
       });
       const ws = XLSX.utils.json_to_sheet(dataFormatted);
@@ -4244,8 +4330,7 @@ function exportSingleModule(e, type) {
         'PROGRAM': (r.program || 'GIP').toUpperCase(),
         'PARTICULARS': (r.particulars || '').toUpperCase(),
         'DATE TRANSMITTED': r.dateTransmitted ? formatDate(r.dateTransmitted) : 'N/A',
-        'REGIONAL DATE RECEIVED': r.regionalDateReceived ? formatDate(r.regionalDateReceived) : 'PENDING',
-        'REMARKS': (r.remarks || '').toUpperCase()
+        'REGIONAL DATE RECEIVED': r.regionalDateReceived ? formatDate(r.regionalDateReceived) : 'PENDING'
       }));
       const ws = XLSX.utils.json_to_sheet(dataFormatted);
       XLSX.utils.book_append_sheet(wb, ws, 'TRANSMITTALS');
@@ -4366,15 +4451,15 @@ function exportFallbackCSV() {
       csvContent += `${idx + 1},"${(r.gipName || '').toUpperCase()}","${(r.assignment || 'LDNPFO').toUpperCase()}","${r.contactNumber || ''}","${(r.remarks || '').toUpperCase()}"\n`;
     });
   } else if (isDtr) {
-    csvContent += 'NO.,GIP NAME,MONTH,QUINCENA,DTR & AR DATE RECEIVED (LDNPFO),REMARKS\n';
+    csvContent += 'NO.,GIP NAME,MONTH,QUINCENA,DTR & AR DATE RECEIVED (LDNPFO),TRANSMITTAL DATE,PRINTED & READY FOR SIGNING\n';
     appState.data.dtrRecords.forEach((r, idx) => {
-      csvContent += `${idx + 1},"${(r.gipName || '').toUpperCase()}","${r.month}","${(r.quincena || '').toUpperCase()}","${r.dtrArDateReceived}","${(r.remarks || '').toUpperCase()}"\n`;
+      csvContent += `${idx + 1},"${(r.gipName || '').toUpperCase()}","${r.month}","${(r.quincena || '').toUpperCase()}","${r.dtrArDateReceived}","${r.transmittalDate || r.remarks || ''}","${r.isPrinted ? 'YES' : 'NO'}"\n`;
     });
   } else {
-    csvContent += 'NO.,PARTICULARS,PREPARED BY,DATE TRANSMITTED,DATE RECEIVED (REGIONAL OFFICE),REMARKS\n';
+    csvContent += 'NO.,PARTICULARS,PROGRAM,DATE TRANSMITTED,DATE RECEIVED (REGIONAL OFFICE)\n';
     appState.data.transmittalRecords.forEach((r, idx) => {
       const cleanParticulars = (r.particulars || '').replace(/\r?\n/g, ' ').toUpperCase();
-      csvContent += `${idx + 1},"${cleanParticulars}","${(r.preparedBy || '').toUpperCase()}","${r.dateTransmitted}","${r.regionalDateReceived}","${(r.remarks || '').toUpperCase()}"\n`;
+      csvContent += `${idx + 1},"${cleanParticulars}","${(r.program || 'GIP').toUpperCase()}","${r.dateTransmitted}","${r.regionalDateReceived}"\n`;
     });
   }
 
@@ -5683,6 +5768,10 @@ function getRecordYear(record, moduleType) {
       const parts = String(record.dtrArDateReceived).split('-');
       if (parts[0] && parts[0].length === 4) return parts[0];
     }
+    if (record.transmittalDate) {
+      const parts = String(record.transmittalDate).split('-');
+      if (parts[0] && parts[0].length === 4) return parts[0];
+    }
     const matchQ = extractYear(record.quincena);
     if (matchQ) return matchQ;
     if (record.createdAt) {
@@ -5765,6 +5854,7 @@ function filterRecordsByYear(records, moduleType, year) {
     if (moduleType === 'dtr') {
       return (r.month && String(r.month).includes(year)) ||
         (r.dtrArDateReceived && String(r.dtrArDateReceived).includes(year)) ||
+        (r.transmittalDate && String(r.transmittalDate).includes(year)) ||
         (r.quincena && String(r.quincena).includes(year)) ||
         (r.createdAt && String(r.createdAt).includes(year));
     } else if (moduleType === 'transmittal') {
@@ -5814,6 +5904,7 @@ function getAvailableYears() {
   (appState.data.dtrRecords || []).forEach(r => {
     extractYears(r.month);
     extractYears(r.dtrArDateReceived);
+    extractYears(r.transmittalDate);
     extractYears(r.quincena);
     extractYears(r.createdAt);
   });

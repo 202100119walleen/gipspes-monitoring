@@ -11,7 +11,9 @@ CREATE TABLE IF NOT EXISTS gip_dtr_ar_records (
   month TEXT,
   quincena TEXT,
   dtr_ar_date_received TEXT,
+  transmittal_date TEXT,
   remarks TEXT,
+  is_printed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -105,6 +107,7 @@ ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS month TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS quincena TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS dtr_ar_date_received TEXT;
+ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS transmittal_date TEXT;
 ALTER TABLE gip_dtr_ar_records ADD COLUMN IF NOT EXISTS remarks TEXT;
 
 ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS gip_name TEXT;

@@ -2074,3 +2074,63 @@ body.dark-mode mark.search-highlight, body.dark-mode .search-highlight {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* DTR Printed & Ready for Signing Checkbox & Status Badges */
+.dtr-printed-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.dtr-checkbox-container {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0;
+  position: relative;
+}
+
+.dtr-checkbox-container input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #10b981;
+}
+
+.printed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.printed-badge.printed-yes {
+  background-color: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.1);
+}
+
+.printed-badge.printed-yes:hover {
+  background-color: #d1fae5;
+  border-color: #6ee7b7;
+}
+
+.printed-badge.printed-no {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+
+.printed-badge.printed-no:hover {
+  background-color: #e2e8f0;
+  color: #475569;
+}
