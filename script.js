@@ -2092,22 +2092,22 @@ function renderTable() {
   if (isDtr) {
     tableHead.innerHTML = `
       <tr>
-        <th onclick="handleSort('gipName')">
+        <th onclick="handleSort('gipName')" style="min-width: 170px;">
           <div class="th-content">GIP NAME ${getSortIcon('gipName')}</div>
         </th>
-        <th onclick="handleSort('month')">
+        <th onclick="handleSort('month')" style="min-width: 175px;">
           <div class="th-content">PERIOD COVERED (DTR & AR) ${getSortIcon('month')}</div>
         </th>
-        <th onclick="handleSort('dtrArDateReceived')">
-          <div class="th-content">DATE & TIME RECEIVED (DTR & AR) ${getSortIcon('dtrArDateReceived')}</div>
+        <th onclick="handleSort('dtrArDateReceived')" style="min-width: 165px;">
+          <div class="th-content">DATE & TIME RECEIVED ${getSortIcon('dtrArDateReceived')}</div>
         </th>
-        <th onclick="handleSort('transmittalDate')">
+        <th onclick="handleSort('transmittalDate')" style="min-width: 110px;">
           <div class="th-content">REMARKS ${getSortIcon('transmittalDate')}</div>
         </th>
-        <th onclick="handleSort('isPrinted')" style="text-align: center;">
-          <div class="th-content" style="justify-content: center;">PRINTED &amp; READY FOR SIGNING ${getSortIcon('isPrinted')}</div>
+        <th onclick="handleSort('isPrinted')" style="text-align: center; min-width: 175px;">
+          <div class="th-content" style="justify-content: center; gap: 4px;">PRINTED &amp; READY FOR SIGNING ${getSortIcon('isPrinted')}</div>
         </th>
-        <th style="text-align: right;">ACTIONS</th>
+        <th style="text-align: right; min-width: 85px;">ACTIONS</th>
       </tr>
     `;
   } else {
