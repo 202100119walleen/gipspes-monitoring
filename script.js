@@ -1029,6 +1029,17 @@ function bindEvents() {
     });
   }
 
+  // Remarks Viewer Modal Listeners
+  const remarksCloseBtn = document.getElementById('remarks-viewer-close');
+  if (remarksCloseBtn) remarksCloseBtn.addEventListener('click', closeRemarksViewerModal);
+
+  const remarksModal = document.getElementById('remarks-viewer-modal');
+  if (remarksModal) {
+    remarksModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeRemarksViewerModal();
+    });
+  }
+
   initDragAndDropHandler();
 
   const chkTrn = document.getElementById('export-chk-trn');
@@ -1793,7 +1804,14 @@ function renderTable() {
               </button>
             </div>
           </td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 240px;">${escapeHtml(record.remarks || '-')}</td>
+          <td>
+            ${(record.remarks && record.remarks.trim() && record.remarks.trim() !== '-') ? `
+              <div class="remarks-preview-card" onclick="openRemarksViewerModal('${escapeHtml(record.gipName || 'GIP Contact').replace(/'/g, "\\'")}', '${escapeHtml(record.remarks).replace(/'/g, "\\'")}', 'GIP CONTACT REMARKS')" title="Click to read full remarks">
+                <i data-lucide="file-text" class="remarks-card-icon"></i>
+                <span class="remarks-card-text">${escapeHtml(record.remarks)}</span>
+              </div>
+            ` : '<span style="color: var(--text-light); font-weight: 500;">-</span>'}
+          </td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Contact">
@@ -2068,7 +2086,14 @@ function renderTable() {
             </span>
           </td>
           <td>${dateRecFormatted}</td>
-          <td style="color: var(--text-muted); font-size: 0.85rem; max-width: 280px;">${remarksFormatted}</td>
+          <td>
+            ${(record.remarks && record.remarks.trim() && record.remarks.trim() !== '-') ? `
+              <div class="remarks-preview-card" onclick="openRemarksViewerModal('${escapeHtml(record.documentTitle || record.particulars || 'Compiled Document').replace(/'/g, "\\'")}', '${escapeHtml(record.remarks).replace(/'/g, "\\'")}', 'COMPILED DOCUMENT REMARKS')" title="Click to read full remarks">
+                <i data-lucide="file-text" class="remarks-card-icon"></i>
+                <span class="remarks-card-text">${remarksFormatted}</span>
+              </div>
+            ` : '<span style="color: var(--text-light); font-weight: 500;">-</span>'}
+          </td>
           <td style="text-align: right;">
             <div class="action-buttons" style="justify-content: flex-end;">
               <button class="btn-action edit" onclick="openRecordModal('${record.id}')" title="Edit Document Record">
@@ -2092,19 +2117,19 @@ function renderTable() {
   if (isDtr) {
     tableHead.innerHTML = `
       <tr>
-        <th onclick="handleSort('gipName')" style="width: 22%;">
+        <th onclick="handleSort('gipName')" style="width: 21%;">
           <div class="th-content">GIP NAME ${getSortIcon('gipName')}</div>
         </th>
         <th onclick="handleSort('month')" style="width: 21%;">
           <div class="th-content">PERIOD COVERED (DTR & AR) ${getSortIcon('month')}</div>
         </th>
-        <th onclick="handleSort('dtrArDateReceived')" style="width: 20%;">
+        <th onclick="handleSort('dtrArDateReceived')" style="width: 19%;">
           <div class="th-content">DATE & TIME RECEIVED ${getSortIcon('dtrArDateReceived')}</div>
         </th>
-        <th onclick="handleSort('transmittalDate')" style="width: 10%;">
+        <th onclick="handleSort('transmittalDate')" style="width: 13%;">
           <div class="th-content">REMARKS ${getSortIcon('transmittalDate')}</div>
         </th>
-        <th onclick="handleSort('isPrinted')" style="width: 18%; text-align: center;">
+        <th onclick="handleSort('isPrinted')" style="width: 17%; text-align: center;">
           <div class="th-content" style="justify-content: center; gap: 4px;">PRINTED &amp; READY FOR SIGNING ${getSortIcon('isPrinted')}</div>
         </th>
         <th style="width: 9%; text-align: right;">ACTIONS</th>
@@ -2184,8 +2209,24 @@ function renderTable() {
         `;
       }
 
-      const rawTransmittalDate = formatDate(record.transmittalDate || record.remarks);
-      const transmittalDateFormatted = rawTransmittalDate === '-' ? '<span style="color: var(--text-light);">-</span>' : highlightTextInHtml(escapeHtml(rawTransmittalDate), searchQuery);
+      const rawTransmittalDate = (record.transmittalDate || record.remarks || '').trim();
+      let remarksCellHtml = '<span style="color: var(--text-light); font-weight: 500;">-</span>';
+
+      if (rawTransmittalDate && rawTransmittalDate !== '-') {
+        const isDate = /^\d{4}-\d{2}-\d{2}$/.test(rawTransmittalDate);
+        const displayRemark = isDate ? formatDate(rawTransmittalDate) : rawTransmittalDate;
+        const highlightedRemark = highlightTextInHtml(escapeHtml(displayRemark), searchQuery);
+        const safeName = escapeHtml(record.gipName || 'GIP Record').replace(/'/g, "\\'");
+        const safeRemark = escapeHtml(displayRemark).replace(/'/g, "\\'");
+
+        remarksCellHtml = `
+          <div class="remarks-preview-card" onclick="openRemarksViewerModal('${safeName}', '${safeRemark}', 'GIP DTR & AR REMARKS')" title="Click to read full remarks">
+            <i data-lucide="${isDate ? 'calendar' : 'file-text'}" class="remarks-card-icon"></i>
+            <span class="remarks-card-text">${highlightedRemark}</span>
+          </div>
+        `;
+      }
+
       const isPrinted = !!record.isPrinted;
 
       return `
@@ -2198,7 +2239,7 @@ function renderTable() {
             </span>
           </td>
           <td>${dateCellHtml}</td>
-          <td style="font-weight: 500; font-size: 0.9rem; color: var(--primary-navy); white-space: nowrap;">${transmittalDateFormatted}</td>
+          <td>${remarksCellHtml}</td>
           <td style="text-align: center;">
             <div class="dtr-printed-cell">
               <label class="dtr-checkbox-container" title="${isPrinted ? 'Mark as not printed' : 'Mark as printed & ready for signing'}" onclick="event.stopPropagation();">
@@ -5266,6 +5307,41 @@ function openImageLightbox(imageUrl, titleText = 'TRANSMITTAL DOCUMENT ATTACHMEN
 function closeImageLightbox() {
   const modal = document.getElementById('image-lightbox-modal');
   if (modal) modal.classList.remove('active');
+}
+
+/**
+ * Remarks & Notes Reader Modal Controller
+ */
+let currentViewerRemarksText = '';
+
+function openRemarksViewerModal(name, remarksText, moduleLabel = 'RECORD REMARKS') {
+  const modal = document.getElementById('remarks-viewer-modal');
+  if (!modal) return;
+
+  currentViewerRemarksText = remarksText || '';
+
+  const subElem = document.getElementById('remarks-viewer-subtitle');
+  const nameElem = document.getElementById('remarks-viewer-name');
+  const contentElem = document.getElementById('remarks-viewer-content');
+
+  if (subElem) subElem.textContent = moduleLabel.toUpperCase();
+  if (nameElem) nameElem.textContent = name || 'Record Details';
+  if (contentElem) contentElem.textContent = remarksText || 'No remarks provided.';
+
+  modal.classList.add('active');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeRemarksViewerModal() {
+  const modal = document.getElementById('remarks-viewer-modal');
+  if (modal) modal.classList.remove('active');
+}
+
+function copyRemarksToClipboard() {
+  if (!currentViewerRemarksText) return;
+  navigator.clipboard.writeText(currentViewerRemarksText)
+    .then(() => showToast('REMARKS COPIED TO CLIPBOARD!', 'info'))
+    .catch(() => showToast('FAILED TO COPY', 'danger'));
 }
 
 /**

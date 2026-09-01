@@ -1127,6 +1127,40 @@
     </div>
   </div>
 
+  <!-- Remarks Reader & Viewer Modal -->
+  <div class="modal-backdrop" id="remarks-viewer-modal">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;" id="remarks-viewer-title">
+          <i data-lucide="message-square" style="width: 18px; height: 18px; color: var(--brand-accent);"></i> Remarks Details
+        </h2>
+        <button class="modal-close" id="remarks-viewer-close" onclick="closeRemarksViewerModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <div style="margin-bottom: 12px;">
+          <span style="font-size: 0.725rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em;" id="remarks-viewer-subtitle">RECORD DETAILS</span>
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--primary-navy); margin-top: 2px;" id="remarks-viewer-name">-</h3>
+        </div>
+        <div class="particulars-memo-box" style="max-width: 100%; width: 100%; margin: 0; background: #f8fafc; border-left: 4px solid var(--brand-accent);">
+          <div class="particulars-memo-title" style="font-size: 0.8rem; color: var(--brand-accent);">
+            <i data-lucide="file-text" style="width: 14px; height: 14px;"></i> FULL REMARKS / NOTES
+          </div>
+          <div class="particulars-memo-body" id="remarks-viewer-content" style="font-size: 0.925rem; font-weight: 500; line-height: 1.6; color: var(--primary-navy);">
+            -
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-secondary btn-icon" id="btn-copy-remarks" onclick="copyRemarksToClipboard()" title="Copy remarks text">
+          <i data-lucide="copy" style="width: 14px; height: 14px;"></i> Copy Text
+        </button>
+        <button type="button" class="btn btn-primary" onclick="closeRemarksViewerModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Total Salary Budget Modal -->
   <div class="modal-backdrop" id="edit-total-budget-modal">
     <div class="modal-container" style="max-width: 460px;">
