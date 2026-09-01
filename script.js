@@ -426,8 +426,27 @@ function loadLocalStorageData() {
       } else {
         parsed.totalBudget = 1500000;
       }
+      if (parsed.workProgramBudgets && typeof parsed.workProgramBudgets === 'object') {
+        parsed.workProgramBudgets = {
+          orientation: parseFloat(parsed.workProgramBudgets.orientation) || 100000,
+          culmination: parseFloat(parsed.workProgramBudgets.culmination) || 150000,
+          supplies: parseFloat(parsed.workProgramBudgets.supplies) || 50000
+        };
+        parsed.workProgramBudget = parsed.workProgramBudgets.orientation + parsed.workProgramBudgets.culmination + parsed.workProgramBudgets.supplies;
+      } else if (parsed.workProgramBudget !== undefined && !isNaN(parseFloat(parsed.workProgramBudget))) {
+        const total = parseFloat(parsed.workProgramBudget) || 300000;
+        parsed.workProgramBudgets = {
+          orientation: Math.round(total * 0.333),
+          culmination: Math.round(total * 0.5),
+          supplies: Math.round(total * 0.167)
+        };
+        parsed.workProgramBudget = total;
+      } else {
+        parsed.workProgramBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
+        parsed.workProgramBudget = 300000;
+      }
       if (parsed.compiledRecords) {
-        parsed.compiledRecords = parsed.compiledRecords.filter(r => r.id !== 'doc-101');
+        parsed.compiledRecords = parsed.compiledRecords.filter(r => r.id !== 'doc-101' && r.id !== 'wp-budget-config');
       } else {
         parsed.compiledRecords = [];
       }
@@ -446,6 +465,8 @@ function loadLocalStorageData() {
       appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
       appState.data.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED));
       appState.data.compiledRecords = [];
+      appState.data.workProgramBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
+      appState.data.workProgramBudget = 300000;
       saveToLocalStorage();
     }
   } catch (err) {
@@ -455,6 +476,9 @@ function loadLocalStorageData() {
     appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
     appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
     appState.data.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED));
+    appState.data.compiledRecords = [];
+    appState.data.workProgramBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
+    appState.data.workProgramBudget = 300000;
   }
 }
 
@@ -611,9 +635,25 @@ async function fetchRecordsFromSupabase() {
       await supabaseClient.from('gip_compiled_documents').delete().eq('id', 'doc-101');
     }
 
-    // 6. Process Compiled Documents Records
+    // 6. Process Work Program Records & Cloud Budget Configuration
     if (docData) {
-      const filteredDocData = docData.filter(r => r.id !== 'doc-101');
+      const configRow = docData.find(r => r.id === 'wp-budget-config');
+      if (configRow) {
+        try {
+          if (configRow.remarks && configRow.remarks.startsWith('{')) {
+            const parsedCfg = JSON.parse(configRow.remarks);
+            appState.data.workProgramBudgets = {
+              orientation: parseFloat(parsedCfg.orientation) || 100000,
+              culmination: parseFloat(parsedCfg.culmination) || 150000,
+              supplies: parseFloat(parsedCfg.supplies) || 50000
+            };
+            appState.data.workProgramBudget = parseFloat(configRow.amount) || (appState.data.workProgramBudgets.orientation + appState.data.workProgramBudgets.culmination + appState.data.workProgramBudgets.supplies);
+          }
+        } catch (e) {
+          console.warn('Error parsing wp-budget-config:', e);
+        }
+      }
+      const filteredDocData = docData.filter(r => r.id !== 'doc-101' && r.id !== 'wp-budget-config');
       const formattedCloudDoc = filteredDocData.map(r => ({
         id: r.id,
         category: (r.category || 'ORIENTATION').toUpperCase(),
@@ -629,7 +669,7 @@ async function fetchRecordsFromSupabase() {
         updatedAt: r.updated_at
       }));
       appState.data.compiledRecords = mergeData(formattedCloudDoc, appState.data.compiledRecords || []);
-      appState.data.compiledRecords = appState.data.compiledRecords.filter(r => r.id !== 'doc-101');
+      appState.data.compiledRecords = appState.data.compiledRecords.filter(r => r.id !== 'doc-101' && r.id !== 'wp-budget-config');
     }
 
     // 7. Process GSIS Insurance Records
@@ -1259,6 +1299,7 @@ function renderApp() {
   updateYearSelectDropdown();
   updateCountsAndStats();
   renderTable();
+  updateFinancialOverview();
   if (window.lucide) {
     lucide.createIcons();
   }
@@ -1554,15 +1595,16 @@ function getFilteredAndSortedRecords() {
   }
 
   if (appState.activeTab === 'compiled') {
-    let rawRecords = appState.data.compiledRecords ? [...appState.data.compiledRecords] : [];
+    let rawRecords = appState.data.compiledRecords ? [...appState.data.compiledRecords].filter(r => r.id !== 'wp-budget-config' && r.id !== 'doc-101') : [];
     let records = filterRecordsByYear(rawRecords, 'compiled', selYear);
     if (appState.searchQuery) {
-      const q = appState.searchQuery;
+      const q = appState.searchQuery.toLowerCase();
       records = records.filter(r =>
-        (r.documentTitle || '').toLowerCase().includes(q) ||
-        (r.receivedFrom || '').toLowerCase().includes(q) ||
-        (r.dateReceived || '').toLowerCase().includes(q) ||
-        (r.remarks || '').toLowerCase().includes(q)
+        (r.particulars || r.documentTitle || '').toLowerCase().includes(q) ||
+        (r.category || '').toLowerCase().includes(q) ||
+        (r.dateReceived || r.dateExpense || '').toLowerCase().includes(q) ||
+        (r.remarks || '').toLowerCase().includes(q) ||
+        String(r.amount || '').toLowerCase().includes(q)
       );
     }
 
@@ -4081,7 +4123,7 @@ function updateWpModalLiveCalculation() {
   }
 }
 
-function handleWorkProgramBudgetSubmit(e) {
+async function handleWorkProgramBudgetSubmit(e) {
   if (e) e.preventDefault();
   const orientInput = document.getElementById('wp-budget-orientation');
   const culmInput = document.getElementById('wp-budget-culmination');
@@ -4090,15 +4132,32 @@ function handleWorkProgramBudgetSubmit(e) {
   const orientation = parseFloat(orientInput?.value) || 0;
   const culmination = parseFloat(culmInput?.value) || 0;
   const supplies = parseFloat(supInput?.value) || 0;
+  const total = orientation + culmination + supplies;
 
   appState.data.workProgramBudgets = { orientation, culmination, supplies };
-  appState.data.workProgramBudget = orientation + culmination + supplies;
+  appState.data.workProgramBudget = total;
   saveToLocalStorage();
+
+  if (isSupabaseConnected && supabaseClient) {
+    try {
+      await supabaseClient.from('gip_compiled_documents').upsert({
+        id: 'wp-budget-config',
+        category: 'CONFIG',
+        particulars: '__WORK_PROGRAM_BUDGET_CONFIG__',
+        document_title: '__WORK_PROGRAM_BUDGET_CONFIG__',
+        amount: total,
+        remarks: JSON.stringify({ orientation, culmination, supplies }),
+        updated_at: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn('Failed to sync Work Program budget to Supabase:', err);
+    }
+  }
 
   showToast('WORK PROGRAM BUDGET ALLOCATIONS SAVED SUCCESSFULLY!', 'success');
   closeWorkProgramBudgetModal();
   updateFinancialOverview();
-  renderTable();
+  renderApp();
 }
 
 async function saveTotalBudget(newBudget) {
