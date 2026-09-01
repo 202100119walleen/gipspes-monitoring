@@ -637,6 +637,7 @@ textarea {
 
 .data-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   text-align: left;
   font-size: 0.85rem;
