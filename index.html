@@ -435,6 +435,10 @@
             title="Add New Quincena Column">
             <i data-lucide="plus-circle"></i> + Add Quincena Column
           </button>
+          <button class="btn btn-secondary btn-icon" id="btn-toggle-all-quincenas" onclick="toggleFullYearQuincenas()" style="display: none;"
+            title="Toggle showing Full Year (24 Quincenas) or Active Periods Only">
+            <i data-lucide="calendar-days"></i> <span id="btn-toggle-all-quincenas-label">Show Full Year (24 Quincenas)</span>
+          </button>
         </div>
       </section>
 
@@ -1146,17 +1150,23 @@
             <label for="new-quincena-name">Quincena Period Name <span class="required">*</span></label>
             <input type="text" id="new-quincena-name" class="form-control"
               placeholder="e.g. AUG 1-15 or AUG 16-31 or SEP 1-15" required autocomplete="off">
-            <small style="color: var(--text-muted); font-size: 0.775rem; margin-top: 6px; display: block;">
+            <small style="color: var(--text-muted); font-size: 0.775rem; margin-top: 6px; display: block; line-height: 1.6;">
               Quick Presets:
-              <a href="#" onclick="setQuincenaPreset('AUG 1-15'); return false;"
-                style="color: var(--brand-accent); font-weight: 600;">AUG 1-15</a> |
-              <a href="#" onclick="setQuincenaPreset('AUG 16-31'); return false;"
-                style="color: var(--brand-accent); font-weight: 600;">AUG 16-31</a> |
-              <a href="#" onclick="setQuincenaPreset('SEP 1-15'); return false;"
-                style="color: var(--brand-accent); font-weight: 600;">SEP 1-15</a> |
-              <a href="#" onclick="setQuincenaPreset('SEP 16-30'); return false;"
-                style="color: var(--brand-accent); font-weight: 600;">SEP 16-30</a>
+              <a href="#" onclick="setQuincenaPreset('AUG 1-15'); return false;" style="color: var(--brand-accent); font-weight: 600;">AUG 1-15</a> |
+              <a href="#" onclick="setQuincenaPreset('AUG 16-31'); return false;" style="color: var(--brand-accent); font-weight: 600;">AUG 16-31</a> |
+              <a href="#" onclick="setQuincenaPreset('SEPT 1-15'); return false;" style="color: var(--brand-accent); font-weight: 600;">SEPT 1-15</a> |
+              <a href="#" onclick="setQuincenaPreset('SEPT 16-30'); return false;" style="color: var(--brand-accent); font-weight: 600;">SEPT 16-30</a> |
+              <a href="#" onclick="setQuincenaPreset('OCT 1-15'); return false;" style="color: var(--brand-accent); font-weight: 600;">OCT 1-15</a> |
+              <a href="#" onclick="setQuincenaPreset('OCT 16-31'); return false;" style="color: var(--brand-accent); font-weight: 600;">OCT 16-31</a> |
+              <a href="#" onclick="setQuincenaPreset('NOV 1-15'); return false;" style="color: var(--brand-accent); font-weight: 600;">NOV 1-15</a> |
+              <a href="#" onclick="setQuincenaPreset('DEC 1-15'); return false;" style="color: var(--brand-accent); font-weight: 600;">DEC 1-15</a>
             </small>
+            <div style="margin-top: 12px; padding: 10px 12px; background: rgba(99, 102, 241, 0.08); border-radius: 6px; border: 1px dashed rgba(99, 102, 241, 0.3); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <span style="font-size: 0.775rem; color: var(--text-main); font-weight: 600;">Need all 24 quincenas of the year?</span>
+              <button type="button" class="btn btn-secondary" onclick="addAllFullYearQuincenas()" style="font-size: 0.725rem; padding: 4px 10px; color: #4f46e5; border-color: #c7d2fe; white-space: nowrap;">
+                <i data-lucide="calendar-range" style="width: 12px; height: 12px;"></i> Add All 24 Quincenas
+              </button>
+            </div>
           </div>
 
           <div class="form-group">

@@ -217,8 +217,100 @@ const DEFAULT_GSIS_SEED = [
 ];
 
 const DEFAULT_QUINCENA_PERIODS = [
-  "APR 16-30", "MAY 1-15", "MAY 16-31", "JUNE 1-15", "JUNE 16-30", "JULY 1-15", "JULY 16-31"
+  "APR 16-30", "MAY 1-15", "MAY 16-31", "JUNE 1-15", "JUNE 16-30", "JULY 1-15", "JULY 16-31", "AUG 1-15", "AUG 16-31"
 ];
+
+const FULL_YEAR_QUINCENA_PERIODS = [
+  "JAN 1-15", "JAN 16-31",
+  "FEB 1-15", "FEB 16-28",
+  "MAR 1-15", "MAR 16-31",
+  "APR 1-15", "APR 16-30",
+  "MAY 1-15", "MAY 16-31",
+  "JUNE 1-15", "JUNE 16-30",
+  "JULY 1-15", "JULY 16-31",
+  "AUG 1-15", "AUG 16-31",
+  "SEPT 1-15", "SEPT 16-30",
+  "OCT 1-15", "OCT 16-31",
+  "NOV 1-15", "NOV 16-30",
+  "DEC 1-15", "DEC 16-31"
+];
+
+/**
+ * Chronological Sorting for Quincena Period Strings
+ */
+function sortQuincenaPeriods(periods) {
+  if (!Array.isArray(periods)) return [];
+
+  const monthOrder = {
+    'JAN': 1, 'JANUARY': 1,
+    'FEB': 2, 'FEBRUARY': 2,
+    'MAR': 3, 'MARCH': 3,
+    'APR': 4, 'APRIL': 4,
+    'MAY': 5,
+    'JUN': 6, 'JUNE': 6,
+    'JUL': 7, 'JULY': 7,
+    'AUG': 8, 'AUGUST': 8,
+    'SEP': 9, 'SEPT': 9, 'SEPTEMBER': 9,
+    'OCT': 10, 'OCTOBER': 10,
+    'NOV': 11, 'NOVEMBER': 11,
+    'DEC': 12, 'DECEMBER': 12
+  };
+
+  return [...new Set(periods)].sort((a, b) => {
+    const parsePeriod = (str) => {
+      const s = String(str).toUpperCase().trim();
+      let monthVal = 99;
+      for (const [mName, mNum] of Object.entries(monthOrder)) {
+        if (s.includes(mName)) {
+          monthVal = mNum;
+          break;
+        }
+      }
+      let dayOrder = 1;
+      if (s.includes('16-') || s.includes('16 -') || s.includes('2ND') || s.includes('SECOND')) {
+        dayOrder = 2;
+      }
+      const yearMatch = s.match(/\b(20\d{2})\b/);
+      const year = yearMatch ? parseInt(yearMatch[1], 10) : 2026;
+      return year * 1000 + monthVal * 10 + dayOrder;
+    };
+
+    return parsePeriod(a) - parsePeriod(b);
+  });
+}
+
+/**
+ * Automatically Harvest and Sync All Active Quincena Periods from Database & Configuration
+ */
+function syncActiveQuincenaPeriods() {
+  const periodSet = new Set(appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS);
+
+  // Always include default active periods
+  DEFAULT_QUINCENA_PERIODS.forEach(p => periodSet.add(p));
+
+  // If user requested full calendar year, include all 24 quincenas
+  if (appState.showFullYearQuincenas) {
+    FULL_YEAR_QUINCENA_PERIODS.forEach(p => periodSet.add(p));
+  }
+
+  // Dynamically harvest every unique period key from actual salary records
+  if (appState.data && Array.isArray(appState.data.salaryRecords)) {
+    appState.data.salaryRecords.forEach(record => {
+      if (!record || record.id === 'salary-budget-config' || !record.periods) return;
+      Object.keys(record.periods).forEach(key => {
+        const trimmed = (key || '').trim();
+        if (trimmed && trimmed !== 'totalBudget' && trimmed !== 'quincenaPeriods' && trimmed !== 'workProgram') {
+          periodSet.add(trimmed.toUpperCase());
+        }
+      });
+    });
+  }
+
+  appState.quincenaPeriods = sortQuincenaPeriods(Array.from(periodSet));
+  if (appState.data) {
+    appState.data.quincenaPeriods = appState.quincenaPeriods;
+  }
+}
 
 // Application State Object
 let appState = {
@@ -233,6 +325,7 @@ let appState = {
   isLoading: false,
   loadingSubtext: 'Loading live database records...',
   quincenaPeriods: [...DEFAULT_QUINCENA_PERIODS],
+  showFullYearQuincenas: false,
   salarySortOption: 'name-asc',
   salaryStatusFilter: 'ALL',
   salaryQuincenaFilter: 'ALL',
@@ -455,7 +548,11 @@ function loadLocalStorageData() {
       } else {
         appState.quincenaPeriods = [...DEFAULT_QUINCENA_PERIODS];
       }
+      if (parsed.showFullYearQuincenas !== undefined) {
+        appState.showFullYearQuincenas = !!parsed.showFullYearQuincenas;
+      }
       appState.data = parsed;
+      syncActiveQuincenaPeriods();
       purgeExpiredRecycledRecords();
       saveToLocalStorage();
     } else {
@@ -467,6 +564,7 @@ function loadLocalStorageData() {
       appState.data.compiledRecords = [];
       appState.data.workProgramBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
       appState.data.workProgramBudget = 300000;
+      syncActiveQuincenaPeriods();
       saveToLocalStorage();
     }
   } catch (err) {
@@ -479,12 +577,17 @@ function loadLocalStorageData() {
     appState.data.compiledRecords = [];
     appState.data.workProgramBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
     appState.data.workProgramBudget = 300000;
+    syncActiveQuincenaPeriods();
   }
 }
 
 function saveToLocalStorage() {
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState.data));
+    if (appState.data) {
+      appState.data.quincenaPeriods = appState.quincenaPeriods;
+      appState.data.showFullYearQuincenas = !!appState.showFullYearQuincenas;
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(appState.data));
+    }
   } catch (err) {
     console.error('Failed to save to local storage:', err);
   }
@@ -615,8 +718,13 @@ async function fetchRecordsFromSupabase() {
     // 5. Process Salary Records
     if (salData) {
       const configRow = salData.find(r => r.id === 'salary-budget-config');
-      if (configRow && configRow.periods && configRow.periods.totalBudget !== undefined) {
-        appState.data.totalBudget = parseFloat(configRow.periods.totalBudget) || 0;
+      if (configRow && configRow.periods) {
+        if (configRow.periods.totalBudget !== undefined) {
+          appState.data.totalBudget = parseFloat(configRow.periods.totalBudget) || 0;
+        }
+        if (Array.isArray(configRow.periods.quincenaPeriods) && configRow.periods.quincenaPeriods.length > 0) {
+          appState.quincenaPeriods = configRow.periods.quincenaPeriods;
+        }
       }
       const actualSalData = salData.filter(r => r.id !== 'salary-budget-config');
       const formattedCloudSal = actualSalData.map(r => ({
@@ -628,6 +736,7 @@ async function fetchRecordsFromSupabase() {
       }));
       appState.data.salaryRecords = mergeData(formattedCloudSal, appState.data.salaryRecords);
       appState.data.salaryRecords = appState.data.salaryRecords.filter(r => r.id !== 'salary-budget-config');
+      syncActiveQuincenaPeriods();
     }
 
     // Delete sample seed record doc-101 if it exists in Supabase
@@ -1216,6 +1325,12 @@ function switchTab(tabName) {
 
   if (btnAddQuincena) {
     btnAddQuincena.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
+  }
+  const btnToggleAllQuincenas = document.getElementById('btn-toggle-all-quincenas');
+  if (btnToggleAllQuincenas) {
+    btnToggleAllQuincenas.style.display = (tabName === 'salary') ? 'inline-flex' : 'none';
+    const lbl = document.getElementById('btn-toggle-all-quincenas-label');
+    if (lbl) lbl.textContent = appState.showFullYearQuincenas ? 'Show Active Quincenas Only' : 'Show Full Year (24 Quincenas)';
   }
   const indicatorsPanel = document.getElementById('salary-financial-indicators');
   if (indicatorsPanel) {
@@ -2080,19 +2195,32 @@ function renderTable() {
     }
 
     emptyState.style.display = 'none';
+    syncActiveQuincenaPeriods();
     const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
+    const activeQuincenaFilter = appState.salaryQuincenaFilter || 'ALL';
 
     salaryCardsGrid.innerHTML = records.map(record => {
       let rowTotal = 0;
       const periods = record.periods || {};
 
+      // Compute total paid across all received periods
+      Object.values(periods).forEach(it => {
+        if (it && it.status === 'received') {
+          let amt = typeof it.amount === 'number' ? it.amount : (parseFloat(String(it.amount).replace(/[^0-9.]/g, '')) || 0);
+          if (!isNaN(amt)) rowTotal += amt;
+        }
+      });
+
       const periodBoxes = periodsList.map(periodKey => {
         const item = periods[periodKey];
+        const isTargetQuincena = (activeQuincenaFilter !== 'ALL' && activeQuincenaFilter === periodKey);
+        const activeHighlightStyle = isTargetQuincena ? 'border: 2px solid var(--brand-accent); background: #eff6ff; box-shadow: 0 0 0 2px rgba(37,99,235,0.2);' : '';
+
         if (!item || item.amount <= 0 || item.status === 'na') {
           return `
-            <div class="salary-card-period-box" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" style="cursor: pointer;" title="Click to set status">
+            <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${periodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click to enter stipend amount / edit record">
               <div class="salary-card-period-header">
-                <span class="salary-card-period-label">${escapeHtml(periodKey)}</span>
+                <span class="salary-card-period-label" style="${isTargetQuincena ? 'color: var(--brand-accent); font-weight: 800;' : ''}">${escapeHtml(periodKey)}</span>
                 <span class="card-status-badge na">N/A</span>
               </div>
               <div class="salary-card-period-amt" style="color: #94a3b8;">-</div>
@@ -2109,21 +2237,19 @@ function renderTable() {
         if (isNaN(amt)) amt = 0;
 
         const isReceived = item.status === 'received';
-        if (isReceived) rowTotal += amt;
-
         const badgeClass = isReceived ? 'received' : 'pending';
         const iconName = isReceived ? 'check-circle' : 'clock';
         const labelText = isReceived ? 'Paid' : 'Pending';
 
         return `
-          <div class="salary-card-period-box" onclick="toggleSalaryStatus('${record.id}', '${periodKey}')" style="cursor: pointer;" title="Click to toggle status (Received <-> Pending)">
+          <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${periodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click to toggle status (Received <-> Pending)">
             <div class="salary-card-period-header">
-              <span class="salary-card-period-label">${escapeHtml(periodKey)}</span>
+              <span class="salary-card-period-label" style="${isTargetQuincena ? 'color: var(--brand-accent); font-weight: 800;' : ''}">${escapeHtml(periodKey)}</span>
               <span class="card-status-badge ${badgeClass}">
                 <i data-lucide="${iconName}" style="width: 10px; height: 10px;"></i> ${labelText}
               </span>
             </div>
-            <div class="salary-card-period-amt">
+            <div class="salary-card-period-amt" style="${isTargetQuincena ? 'color: var(--brand-accent); font-weight: 800;' : ''}">
               ₱${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
@@ -2735,10 +2861,22 @@ function renderSalaryModalInputs(record = null) {
   const container = document.getElementById('salary-quincena-inputs-container');
   if (!container) return;
 
+  syncActiveQuincenaPeriods();
   const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
   const existingPeriods = (record && record.periods) ? record.periods : {};
 
-  container.innerHTML = periodsList.map((periodKey, idx) => {
+  // Also include any period that exists on this specific record
+  const allModalPeriods = new Set(periodsList);
+  Object.keys(existingPeriods).forEach(k => {
+    const trimmed = (k || '').trim();
+    if (trimmed && trimmed !== 'totalBudget' && trimmed !== 'quincenaPeriods' && trimmed !== 'workProgram') {
+      allModalPeriods.add(trimmed.toUpperCase());
+    }
+  });
+
+  const sortedModalPeriods = sortQuincenaPeriods(Array.from(allModalPeriods));
+
+  container.innerHTML = sortedModalPeriods.map((periodKey, idx) => {
     const pData = existingPeriods[periodKey] || { amount: 0, status: 'na' };
     const amtVal = pData.amount > 0 ? pData.amount : '';
     const stVal = pData.status || 'na';
@@ -2788,9 +2926,10 @@ function handleLiveSalaryModalInputChange() {
     });
   });
 
-  periodsList.forEach((_, idx) => {
-    const amtEl = document.getElementById(`sal-amt-${idx}`);
-    const stEl = document.getElementById(`sal-st-${idx}`);
+  const amtInputs = document.querySelectorAll('.sal-input-amt');
+  amtInputs.forEach(amtEl => {
+    const pKey = amtEl.getAttribute('data-period');
+    const stEl = document.querySelector(`.sal-input-st[data-period="${pKey}"]`);
     if (amtEl && stEl) {
       const amtVal = parseFloat(amtEl.value) || 0;
       const stVal = stEl.value;
@@ -3199,13 +3338,15 @@ async function handleFormSubmit(e) {
       return;
     }
 
-    const periods = {};
+    const existingRec = recordId ? appState.data.salaryRecords.find(r => r.id === recordId) : null;
+    const periods = existingRec && existingRec.periods ? { ...existingRec.periods } : {};
+
     const amtInputs = document.querySelectorAll('.sal-input-amt');
     amtInputs.forEach(input => {
       const pKey = input.getAttribute('data-period');
       const amtVal = parseFloat(input.value) || 0;
       const stSelect = document.querySelector(`.sal-input-st[data-period="${pKey}"]`);
-      const stVal = stSelect ? stSelect.value : 'na';
+      const stVal = stSelect ? stSelect.value : (amtVal > 0 ? 'pending' : 'na');
       periods[pKey] = { amount: amtVal, status: stVal };
     });
 
@@ -3251,6 +3392,7 @@ async function handleFormSubmit(e) {
       showToast('NEW SALARY RECORD ADDED SUCCESSFULLY!', 'success');
     }
 
+    syncActiveQuincenaPeriods();
     closeRecordModal();
     saveToLocalStorage();
     renderApp();
@@ -4188,9 +4330,10 @@ function renderSalaryFilterOptions() {
   const quincenaSelect = document.getElementById('salary-quincena-filter');
   if (!quincenaSelect) return;
 
+  syncActiveQuincenaPeriods();
   const currentVal = appState.salaryQuincenaFilter || 'ALL';
   const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
-  let html = `<option value="ALL">Period: All Quincenas</option>`;
+  let html = `<option value="ALL" ${currentVal === 'ALL' ? 'selected' : ''}>Period: All Quincenas</option>`;
   periodsList.forEach(pKey => {
     const isSel = currentVal === pKey ? 'selected' : '';
     html += `<option value="${escapeHtml(pKey)}" ${isSel}>Period: ${escapeHtml(pKey)}</option>`;
@@ -5822,6 +5965,86 @@ async function toggleSalaryStatus(recordId, periodKey) {
 }
 
 /**
+ * Handle Salary Period Box Click (Toggle if paid/pending, or open modal if N/A or empty)
+ */
+function handleSalaryBoxClick(recordId, periodKey) {
+  const record = (appState.data.salaryRecords || []).find(r => r.id === recordId);
+  if (!record) return;
+  const pData = (record.periods || {})[periodKey];
+  if (!pData || pData.status === 'na' || !pData.amount || pData.amount <= 0) {
+    openRecordModal(recordId);
+  } else {
+    toggleSalaryStatus(recordId, periodKey);
+  }
+}
+
+/**
+ * Toggle between showing only Active Quincenas vs Full Year (24 Quincenas)
+ */
+function toggleFullYearQuincenas() {
+  appState.showFullYearQuincenas = !appState.showFullYearQuincenas;
+  syncActiveQuincenaPeriods();
+  saveToLocalStorage();
+  renderApp();
+
+  const lbl = document.getElementById('btn-toggle-all-quincenas-label');
+  if (lbl) {
+    lbl.textContent = appState.showFullYearQuincenas ? 'Show Active Quincenas Only' : 'Show Full Year (24 Quincenas)';
+  }
+
+  showToast(
+    appState.showFullYearQuincenas ? 'SHOWING ALL 24 CALENDAR QUINCENAS (FULL YEAR)' : 'SHOWING ACTIVE QUINCENAS ONLY',
+    'info'
+  );
+}
+
+/**
+ * Add all 24 calendar quincenas of the year at once to active monitoring
+ */
+async function addAllFullYearQuincenas() {
+  appState.showFullYearQuincenas = true;
+  FULL_YEAR_QUINCENA_PERIODS.forEach(p => {
+    if (!appState.quincenaPeriods.includes(p)) {
+      appState.quincenaPeriods.push(p);
+    }
+  });
+  appState.quincenaPeriods = sortQuincenaPeriods(appState.quincenaPeriods);
+
+  if (appState.data.salaryRecords) {
+    appState.data.salaryRecords.forEach(r => {
+      if (r.id === 'salary-budget-config') return;
+      if (!r.periods) r.periods = {};
+      FULL_YEAR_QUINCENA_PERIODS.forEach(p => {
+        if (!r.periods[p]) r.periods[p] = { amount: 0, status: 'na' };
+      });
+    });
+  }
+
+  saveToLocalStorage();
+  closeAddQuincenaModal();
+  renderApp();
+
+  if (isSupabaseConnected && supabaseClient) {
+    try {
+      await supabaseClient.from('gip_salary_records').upsert({
+        id: 'salary-budget-config',
+        gip_name: '__TOTAL_BUDGET_CONFIG__',
+        periods: {
+          totalBudget: parseFloat(appState.data.totalBudget) || 0,
+          quincenaPeriods: appState.quincenaPeriods
+        },
+        updated_at: new Date().toISOString()
+      });
+      await pushLocalDataToSupabase();
+    } catch (err) {
+      console.warn('Supabase sync notice for all quincenas:', err.message);
+    }
+  }
+
+  showToast('ALL 24 CALENDAR QUINCENAS LOADED SUCCESSFULLY!', 'success');
+}
+
+/**
  * Copy Phone Number to Clipboard Helper
  */
 function copyContactNumber(number) {
@@ -5895,12 +6118,17 @@ async function handleAddQuincenaFormSubmit(e) {
     return;
   }
 
-  // Append new period to active quincenas
+  // Append new period to active quincenas & sort chronologically
   appState.quincenaPeriods.push(newPeriod);
+  appState.quincenaPeriods = sortQuincenaPeriods(appState.quincenaPeriods);
+  if (appState.data) {
+    appState.data.quincenaPeriods = appState.quincenaPeriods;
+  }
 
   // Initialize new quincena period for all existing salary records
   if (appState.data.salaryRecords) {
     appState.data.salaryRecords.forEach(record => {
+      if (record.id === 'salary-budget-config') return;
       if (!record.periods) record.periods = {};
       if (!record.periods[newPeriod]) {
         record.periods[newPeriod] = { amount: 0, status: defaultStatus };
@@ -5912,7 +6140,23 @@ async function handleAddQuincenaFormSubmit(e) {
   closeAddQuincenaModal();
   renderApp();
 
-  await pushLocalSalaryToSupabase();
+  if (isSupabaseConnected && supabaseClient) {
+    try {
+      await supabaseClient.from('gip_salary_records').upsert({
+        id: 'salary-budget-config',
+        gip_name: '__TOTAL_BUDGET_CONFIG__',
+        periods: {
+          totalBudget: parseFloat(appState.data.totalBudget) || 0,
+          quincenaPeriods: appState.quincenaPeriods
+        },
+        updated_at: new Date().toISOString()
+      });
+      await pushLocalDataToSupabase();
+    } catch (err) {
+      console.warn('Supabase sync notice:', err.message);
+    }
+  }
+
   showToast(`NEW QUINCENA COLUMN "${newPeriod}" ADDED SUCCESSFULLY!`, 'success');
 }
 
@@ -6152,6 +6396,7 @@ function getRecordYear(record, moduleType) {
       const d = new Date(record.createdAt);
       if (!isNaN(d.getTime())) return String(d.getFullYear());
     }
+    return '2026';
   } else if (moduleType === 'compiled') {
     if (record.dateReceived) {
       const parts = String(record.dateReceived).split('-');
@@ -6219,7 +6464,8 @@ function filterRecordsByYear(records, moduleType, year) {
         (r.originalRecord && JSON.stringify(r.originalRecord).includes(year));
     } else if (moduleType === 'salary') {
       return (r.createdAt && String(r.createdAt).includes(year)) ||
-        (r.periods && JSON.stringify(r.periods).includes(year));
+        (r.periods && JSON.stringify(r.periods).includes(year)) ||
+        (!recYear) || (year === '2026');
     } else if (moduleType === 'contacts') {
       return (r.createdAt && String(r.createdAt).includes(year)) ||
         (r.remarks && String(r.remarks).includes(year)) ||
