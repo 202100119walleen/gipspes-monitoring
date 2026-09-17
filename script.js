@@ -1421,6 +1421,33 @@ function renderApp() {
 }
 
 /**
+ * Names excluded from deduction when calculating the Total Remaining Balance in Salary Tracking
+ */
+const EXCLUDED_REMAINING_BALANCE_NAMES = [
+  'PADILLA',
+  'ABUTON, DAVIE C. et al.',
+  'SUPAT, WILMARI JANE I.',
+  'ALFORQUE, JULIANA B. et al.',
+  'CONCILIADO, CONSTANTINO LUIS C. et al.',
+  'LEBUMFACIL, JOMARIE B.'
+];
+
+const EXCLUDED_REMAINING_BALANCE_KEYWORDS = [
+  'PADILLA',
+  'ABUTON',
+  'SUPAT',
+  'ALFORQUE',
+  'CONCILIADO',
+  'LEBUMFACIL'
+];
+
+function isExcludedFromRemainingBalance(gipName) {
+  if (!gipName || typeof gipName !== 'string') return false;
+  const upper = gipName.toUpperCase().trim();
+  return EXCLUDED_REMAINING_BALANCE_KEYWORDS.some(kw => upper.includes(kw));
+}
+
+/**
  * Update Header Counters & Dashboard Stat Cards
  */
 function updateCountsAndStats() {
@@ -1475,7 +1502,10 @@ function updateCountsAndStats() {
   // Calculate Grand Total Paid & Grand Total Pending Disbursed across selected year GIP Salary Records
   let grandTotalPaid = 0;
   let grandTotalPending = 0;
+  let totalPaidForRemaining = 0;
+
   salaryFiltered.forEach(record => {
+    const isExcluded = isExcludedFromRemainingBalance(record.gipName);
     const p = record.periods || {};
     Object.values(p).forEach(item => {
       if (item && item.amount) {
@@ -1483,6 +1513,9 @@ function updateCountsAndStats() {
         if (!isNaN(numAmt) && numAmt > 0) {
           if (item.status === 'received') {
             grandTotalPaid += numAmt;
+            if (!isExcluded) {
+              totalPaidForRemaining += numAmt;
+            }
           } else if (item.status === 'pending') {
             grandTotalPending += numAmt;
           }
@@ -1492,19 +1525,22 @@ function updateCountsAndStats() {
   });
 
   const totalBudget = parseFloat(appState.data.totalBudget) || 0;
-  const remainingBalance = totalBudget - grandTotalPaid;
+  // 1. All-included Remaining Balance (Total Budget minus all Total Paid)
+  const remainingBalanceAll = totalBudget - grandTotalPaid;
+  // 2. Remaining Balance without deducting amounts of excluded names
+  const remainingBalanceExcl = totalBudget - totalPaidForRemaining;
 
   const formattedTotalPaid = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const formattedTotalPending = `₱${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const formattedTotalBudget = `₱${totalBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  let formattedRemaining = '';
-  if (remainingBalance >= 0) {
-    formattedRemaining = `₱${remainingBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  } else {
-    const absRemaining = Math.abs(remainingBalance);
-    formattedRemaining = `-₱${absRemaining.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }
+  const formatBalance = (bal) => {
+    if (bal >= 0) return `₱${bal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `-₱${Math.abs(bal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formattedRemainingAll = formatBalance(remainingBalanceAll);
+  const formattedRemainingExcl = formatBalance(remainingBalanceExcl);
 
   // Update DOM Elements
   const grandTotalValElem = document.getElementById('salary-grand-total-val');
@@ -1516,19 +1552,20 @@ function updateCountsAndStats() {
   const budgetValElem = document.getElementById('salary-total-budget-val');
   if (budgetValElem) budgetValElem.textContent = formattedTotalBudget;
 
+  // 1. All-Included Remaining Balance Badge
   const remainingValElem = document.getElementById('salary-remaining-balance-val');
   const remainingBadgeElem = document.getElementById('salary-remaining-balance-badge');
   const remainingIconBoxElem = document.getElementById('remaining-balance-icon-box');
   const remainingIconElem = document.getElementById('remaining-balance-icon');
 
   if (remainingValElem) {
-    remainingValElem.textContent = formattedRemaining;
-    if (remainingBalance < 0) {
+    remainingValElem.textContent = formattedRemainingAll;
+    if (remainingBalanceAll < 0) {
       remainingValElem.style.color = '#dc2626';
       if (remainingBadgeElem) {
         remainingBadgeElem.style.background = 'rgba(239, 68, 68, 0.1)';
         remainingBadgeElem.style.borderColor = 'rgba(239, 68, 68, 0.35)';
-        remainingBadgeElem.title = `OVER BUDGET / DEFICIT! Exceeded by ₱${Math.abs(remainingBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        remainingBadgeElem.title = `OVER BUDGET / DEFICIT! Exceeded by ₱${Math.abs(remainingBalanceAll).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       }
       if (remainingIconBoxElem) {
         remainingIconBoxElem.style.background = 'rgba(239, 68, 68, 0.2)';
@@ -1540,13 +1577,47 @@ function updateCountsAndStats() {
       if (remainingBadgeElem) {
         remainingBadgeElem.style.background = 'rgba(16, 185, 129, 0.08)';
         remainingBadgeElem.style.borderColor = 'rgba(16, 185, 129, 0.25)';
-        remainingBadgeElem.title = 'Remaining Balance = Total Budget minus Total Paid';
+        remainingBadgeElem.title = 'All Included Remaining Balance = Total Budget minus Total Paid';
       }
       if (remainingIconBoxElem) {
         remainingIconBoxElem.style.background = 'rgba(16, 185, 129, 0.15)';
         remainingIconBoxElem.style.color = '#10b981';
       }
       if (remainingIconElem) remainingIconElem.setAttribute('data-lucide', 'pie-chart');
+    }
+  }
+
+  // 2. Remaining Balance Without Excluded Names Indicator Badge
+  const remExclValElem = document.getElementById('salary-remaining-excl-val');
+  const remExclBadgeElem = document.getElementById('salary-remaining-excl-badge');
+  const remExclIconBoxElem = document.getElementById('remaining-excl-icon-box');
+  const remExclIconElem = document.getElementById('remaining-excl-icon');
+
+  if (remExclValElem) {
+    remExclValElem.textContent = formattedRemainingExcl;
+    if (remainingBalanceExcl < 0) {
+      remExclValElem.style.color = '#dc2626';
+      if (remExclBadgeElem) {
+        remExclBadgeElem.style.background = 'rgba(239, 68, 68, 0.1)';
+        remExclBadgeElem.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+      }
+      if (remExclIconBoxElem) {
+        remExclIconBoxElem.style.background = 'rgba(239, 68, 68, 0.2)';
+        remExclIconBoxElem.style.color = '#dc2626';
+      }
+      if (remExclIconElem) remExclIconElem.setAttribute('data-lucide', 'alert-triangle');
+    } else {
+      remExclValElem.style.color = '#0d9488';
+      if (remExclBadgeElem) {
+        remExclBadgeElem.style.background = 'rgba(13, 148, 136, 0.08)';
+        remExclBadgeElem.style.borderColor = 'rgba(13, 148, 136, 0.3)';
+        remExclBadgeElem.title = 'Remaining Balance without PADILLA, ABUTON, SUPAT, ALFORQUE, CONCILIADO, LEBUMFACIL';
+      }
+      if (remExclIconBoxElem) {
+        remExclIconBoxElem.style.background = 'rgba(13, 148, 136, 0.15)';
+        remExclIconBoxElem.style.color = '#0d9488';
+      }
+      if (remExclIconElem) remExclIconElem.setAttribute('data-lucide', 'sparkles');
     }
   }
 }
@@ -2907,6 +2978,7 @@ function renderSalaryModalInputs(record = null) {
 function handleLiveSalaryModalInputChange() {
   let tempPaid = 0;
   let tempPending = 0;
+  let tempPaidForRemaining = 0;
 
   const editingId = appState.editingRecordId;
   const periodsList = appState.quincenaPeriods || DEFAULT_QUINCENA_PERIODS;
@@ -2915,16 +2987,27 @@ function handleLiveSalaryModalInputChange() {
     if (r.id === 'salary-budget-config') return;
     if (r.id === editingId) return;
 
+    const isExcluded = isExcludedFromRemainingBalance(r.gipName);
+
     Object.values(r.periods || {}).forEach(item => {
       if (item && item.amount) {
         let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
         if (!isNaN(numAmt) && numAmt > 0) {
-          if (item.status === 'received') tempPaid += numAmt;
-          else if (item.status === 'pending') tempPending += numAmt;
+          if (item.status === 'received') {
+            tempPaid += numAmt;
+            if (!isExcluded) tempPaidForRemaining += numAmt;
+          } else if (item.status === 'pending') {
+            tempPending += numAmt;
+          }
         }
       }
     });
   });
+
+  const editingRecord = (appState.data.salaryRecords || []).find(r => r.id === editingId);
+  const editingNameInput = document.getElementById('sal-gip-name');
+  const currentEditingName = (editingNameInput ? editingNameInput.value : '') || (editingRecord ? editingRecord.gipName : '');
+  const isCurrentExcluded = isExcludedFromRemainingBalance(currentEditingName);
 
   const amtInputs = document.querySelectorAll('.sal-input-amt');
   amtInputs.forEach(amtEl => {
@@ -2934,14 +3017,19 @@ function handleLiveSalaryModalInputChange() {
       const amtVal = parseFloat(amtEl.value) || 0;
       const stVal = stEl.value;
       if (amtVal > 0) {
-        if (stVal === 'received') tempPaid += amtVal;
-        else if (stVal === 'pending') tempPending += amtVal;
+        if (stVal === 'received') {
+          tempPaid += amtVal;
+          if (!isCurrentExcluded) tempPaidForRemaining += amtVal;
+        } else if (stVal === 'pending') {
+          tempPending += amtVal;
+        }
       }
     }
   });
 
   const totalBudget = parseFloat(appState.data.totalBudget) || 0;
-  const remainingBalance = totalBudget - tempPaid;
+  const remainingBalanceAll = totalBudget - tempPaid;
+  const remainingBalanceExcl = totalBudget - tempPaidForRemaining;
 
   const grandTotalValElem = document.getElementById('salary-grand-total-val');
   if (grandTotalValElem) grandTotalValElem.textContent = `₱${tempPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -2951,8 +3039,14 @@ function handleLiveSalaryModalInputChange() {
 
   const remainingValElem = document.getElementById('salary-remaining-balance-val');
   if (remainingValElem) {
-    remainingValElem.textContent = `${remainingBalance < 0 ? '-' : ''}₱${Math.abs(remainingBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    remainingValElem.style.color = remainingBalance < 0 ? '#dc2626' : '#059669';
+    remainingValElem.textContent = `${remainingBalanceAll < 0 ? '-' : ''}₱${Math.abs(remainingBalanceAll).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    remainingValElem.style.color = remainingBalanceAll < 0 ? '#dc2626' : '#059669';
+  }
+
+  const remExclValElem = document.getElementById('salary-remaining-excl-val');
+  if (remExclValElem) {
+    remExclValElem.textContent = `${remainingBalanceExcl < 0 ? '-' : ''}₱${Math.abs(remainingBalanceExcl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    remExclValElem.style.color = remainingBalanceExcl < 0 ? '#dc2626' : '#0d9488';
   }
 }
 
@@ -4114,8 +4208,10 @@ function openTotalBudgetModal() {
   // Calculate current total paid & pending
   let grandTotalPaid = 0;
   let grandTotalPending = 0;
+  let totalPaidForRemaining = 0;
   (appState.data.salaryRecords || []).forEach(record => {
     if (record.id === 'salary-budget-config') return;
+    const isExcluded = isExcludedFromRemainingBalance(record.gipName);
     const p = record.periods || {};
     Object.values(p).forEach(item => {
       if (item && item.amount) {
@@ -4123,6 +4219,7 @@ function openTotalBudgetModal() {
         if (!isNaN(numAmt) && numAmt > 0) {
           if (item.status === 'received') {
             grandTotalPaid += numAmt;
+            if (!isExcluded) totalPaidForRemaining += numAmt;
           } else if (item.status === 'pending') {
             grandTotalPending += numAmt;
           }
@@ -4136,7 +4233,10 @@ function openTotalBudgetModal() {
 
   if (modalPaid) modalPaid.textContent = `₱${grandTotalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (modalPending) modalPending.textContent = `₱${grandTotalPending.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (modalRem) modalRem.textContent = `${currRem < 0 ? '-' : ''}₱${Math.abs(currRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (modalRem) {
+    modalRem.textContent = `${currRem < 0 ? '-' : ''}₱${Math.abs(currRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    modalRem.title = `All Included: ₱${currRem.toLocaleString('en-US', { minimumFractionDigits: 2 })} | W/O 6 Names: ₱${(currBudget - totalPaidForRemaining).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  }
   if (input) input.value = currBudget > 0 ? currBudget : '';
 
   updateBudgetModalPreview();
@@ -4151,6 +4251,40 @@ function closeTotalBudgetModal() {
   const modal = document.getElementById('edit-total-budget-modal');
   if (modal) {
     modal.classList.remove('active');
+  }
+}
+
+function updateBudgetModalPreview() {
+  const input = document.getElementById('input-total-budget');
+  const previewVal = document.getElementById('modal-preview-remaining-val');
+  if (!previewVal) return;
+  const enteredBudget = parseFloat(input?.value) || 0;
+
+  let totalPaidForRemaining = 0;
+  (appState.data.salaryRecords || []).forEach(record => {
+    if (record.id === 'salary-budget-config') return;
+    if (isExcludedFromRemainingBalance(record.gipName)) return;
+    const p = record.periods || {};
+    Object.values(p).forEach(item => {
+      if (item && item.amount && item.status === 'received') {
+        let numAmt = typeof item.amount === 'number' ? item.amount : (parseFloat(String(item.amount).replace(/[^0-9.]/g, '')) || 0);
+        if (!isNaN(numAmt) && numAmt > 0) {
+          totalPaidForRemaining += numAmt;
+        }
+      }
+    });
+  });
+
+  const projRem = enteredBudget - totalPaidForRemaining;
+  previewVal.textContent = `${projRem < 0 ? '-' : ''}₱${Math.abs(projRem).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  previewVal.style.color = projRem < 0 ? '#dc2626' : '#059669';
+}
+
+function setBudgetPreset(amt) {
+  const input = document.getElementById('input-total-budget');
+  if (input) {
+    input.value = amt;
+    updateBudgetModalPreview();
   }
 }
 
@@ -4516,6 +4650,7 @@ function handleExcelExportFormSubmit(e) {
       const buildSalarySheet = (records, label) => {
         let grandTotalDisbursed = 0;
         let grandTotalPending = 0;
+        let grandTotalDisbursedForRemaining = 0;
 
         const rows = records.map((r, idx) => {
           const row = {
@@ -4524,6 +4659,7 @@ function handleExcelExportFormSubmit(e) {
           };
           let totalRowPaid = 0;
           let totalRowPending = 0;
+          const isExcluded = isExcludedFromRemainingBalance(r.gipName);
 
           periodsList.forEach(pKey => {
             const item = (r.periods || {})[pKey];
@@ -4535,7 +4671,11 @@ function handleExcelExportFormSubmit(e) {
               const isReceived = item.status === 'received';
               const statusTag = isReceived ? 'PAID' : 'PENDING';
               row[pKey] = `\u20b1${amt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${statusTag})`;
-              if (isReceived) { totalRowPaid += amt; grandTotalDisbursed += amt; }
+              if (isReceived) {
+                totalRowPaid += amt;
+                grandTotalDisbursed += amt;
+                if (!isExcluded) grandTotalDisbursedForRemaining += amt;
+              }
               else { totalRowPending += amt; grandTotalPending += amt; }
             }
           });
@@ -4555,7 +4695,9 @@ function handleExcelExportFormSubmit(e) {
         rows.push(summaryRow);
 
         const totalBudgetVal = parseFloat(appState.data.totalBudget) || 0;
-        const remVal = totalBudgetVal - grandTotalDisbursed;
+        const remValAll = totalBudgetVal - grandTotalDisbursed;
+        const remValExcl = totalBudgetVal - grandTotalDisbursedForRemaining;
+
         const budgetRow = { 'NO.': '', 'GIP NAME / BENEFICIARY GROUP': '=== TOTAL ALLOCATED BUDGET ===' };
         periodsList.forEach(pKey => { budgetRow[pKey] = ''; });
         budgetRow['TOTAL PAID AMOUNT'] = `\u20b1${totalBudgetVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -4563,12 +4705,19 @@ function handleExcelExportFormSubmit(e) {
         budgetRow['REMARKS'] = 'MANUALLY SET TOTAL BUDGET';
         rows.push(budgetRow);
 
-        const remainingRow = { 'NO.': '', 'GIP NAME / BENEFICIARY GROUP': '=== REMAINING BUDGET ===' };
-        periodsList.forEach(pKey => { remainingRow[pKey] = ''; });
-        remainingRow['TOTAL PAID AMOUNT'] = `${remVal < 0 ? '-' : ''}\u20b1${Math.abs(remVal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        remainingRow['TOTAL PENDING AMOUNT'] = '';
-        remainingRow['REMARKS'] = remVal < 0 ? 'OVER BUDGET / DEFICIT' : 'TOTAL BUDGET MINUS TOTAL PAID';
-        rows.push(remainingRow);
+        const remainingRowAll = { 'NO.': '', 'GIP NAME / BENEFICIARY GROUP': '=== REMAINING BUDGET (ALL INCLUDED) ===' };
+        periodsList.forEach(pKey => { remainingRowAll[pKey] = ''; });
+        remainingRowAll['TOTAL PAID AMOUNT'] = `${remValAll < 0 ? '-' : ''}\u20b1${Math.abs(remValAll).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        remainingRowAll['TOTAL PENDING AMOUNT'] = '';
+        remainingRowAll['REMARKS'] = remValAll < 0 ? 'OVER BUDGET / DEFICIT' : 'TOTAL BUDGET MINUS ALL TOTAL PAID';
+        rows.push(remainingRowAll);
+
+        const remainingRowExcl = { 'NO.': '', 'GIP NAME / BENEFICIARY GROUP': '=== REMAINING BUDGET (W/O 6 NAMES) ===' };
+        periodsList.forEach(pKey => { remainingRowExcl[pKey] = ''; });
+        remainingRowExcl['TOTAL PAID AMOUNT'] = `${remValExcl < 0 ? '-' : ''}\u20b1${Math.abs(remValExcl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        remainingRowExcl['TOTAL PENDING AMOUNT'] = '';
+        remainingRowExcl['REMARKS'] = 'EXCLUDING PADILLA, ABUTON, SUPAT, ALFORQUE, CONCILIADO, LEBUMFACIL';
+        rows.push(remainingRowExcl);
         return rows;
       };
 

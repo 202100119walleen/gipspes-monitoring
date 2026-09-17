@@ -1399,6 +1399,11 @@ textarea.form-control {
   background: rgba(16, 185, 129, 0.04);
 }
 
+.salary-budget-badge.budget-remaining-excl {
+  border-color: rgba(13, 148, 136, 0.35);
+  background: rgba(13, 148, 136, 0.05);
+}
+
 .badge-icon-box {
   width: 28px;
   height: 28px;
