@@ -1196,6 +1196,51 @@ textarea {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
+  transition: all 0.2s ease;
+}
+
+/* Active Highlight when directed directly to this specific period */
+.salary-input-item.active-target-period {
+  background: #f0f7ff !important;
+  border: 2px solid var(--brand-accent) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22), 0 6px 16px rgba(37, 99, 235, 0.12) !important;
+  position: relative;
+  z-index: 2;
+  animation: targetPeriodPulse 2.2s infinite ease-in-out;
+}
+
+@keyframes targetPeriodPulse {
+  0% {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2), 0 4px 12px rgba(37, 99, 235, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.35), 0 6px 18px rgba(37, 99, 235, 0.18);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2), 0 4px 12px rgba(37, 99, 235, 0.08);
+  }
+}
+
+.target-period-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: var(--brand-accent);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.3);
+}
+
+.sal-input-amt.highlighted-input,
+.sal-input-st.highlighted-select {
+  border-color: var(--brand-accent) !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
 }
 
 /* Salary Table Pill Badges */
@@ -1318,12 +1363,20 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: var(--transition);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .salary-card-period-box:hover {
   background: #ffffff;
   border-color: var(--brand-accent);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.14);
+  transform: translateY(-2px);
+}
+
+.salary-card-period-box:active {
+  transform: translateY(0);
 }
 
 .salary-card-period-header {

@@ -2324,10 +2324,11 @@ function renderTable() {
         const item = periods[periodKey];
         const isTargetQuincena = (activeQuincenaFilter !== 'ALL' && activeQuincenaFilter === periodKey);
         const activeHighlightStyle = isTargetQuincena ? 'border: 2px solid var(--brand-accent); background: #eff6ff; box-shadow: 0 0 0 2px rgba(37,99,235,0.2);' : '';
+        const cleanPeriodKey = escapeHtml(periodKey).replace(/'/g, "\\'");
 
         if (!item || item.amount <= 0 || item.status === 'na') {
           return `
-            <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${periodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click to enter stipend amount / edit record">
+            <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${cleanPeriodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click to edit amount & status for ${escapeHtml(periodKey)}">
               <div class="salary-card-period-header">
                 <span class="salary-card-period-label" style="${isTargetQuincena ? 'color: var(--brand-accent); font-weight: 800;' : ''}">${escapeHtml(periodKey)}</span>
                 <span class="card-status-badge na">N/A</span>
@@ -2351,7 +2352,7 @@ function renderTable() {
         const labelText = isReceived ? 'Paid' : 'Pending';
 
         return `
-          <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${periodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click to toggle status (Received <-> Pending)">
+          <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${cleanPeriodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click to edit amount & status for ${escapeHtml(periodKey)}">
             <div class="salary-card-period-header">
               <span class="salary-card-period-label" style="${isTargetQuincena ? 'color: var(--brand-accent); font-weight: 800;' : ''}">${escapeHtml(periodKey)}</span>
               <span class="card-status-badge ${badgeClass}">
@@ -3238,7 +3239,7 @@ function getSortIcon(colName) {
 /**
  * Render Dynamic Salary Modal Inputs for active quincena periods
  */
-function renderSalaryModalInputs(record = null) {
+function renderSalaryModalInputs(record = null, targetPeriodKey = null) {
   const container = document.getElementById('salary-quincena-inputs-container');
   if (!container) return;
 
@@ -3255,7 +3256,12 @@ function renderSalaryModalInputs(record = null) {
     }
   });
 
+  if (targetPeriodKey && targetPeriodKey.trim()) {
+    allModalPeriods.add(targetPeriodKey.trim().toUpperCase());
+  }
+
   const sortedModalPeriods = sortQuincenaPeriods(Array.from(allModalPeriods));
+  const normalizedTargetKey = (targetPeriodKey || '').trim().toUpperCase();
 
   container.innerHTML = sortedModalPeriods.map((periodKey, idx) => {
     const pData = existingPeriods[periodKey] || { amount: 0, status: 'na' };
@@ -3263,15 +3269,20 @@ function renderSalaryModalInputs(record = null) {
     const stVal = pData.status || 'na';
     const fieldIdAmt = `sal-amt-${idx}`;
     const fieldIdSt = `sal-st-${idx}`;
+    const isTarget = !!normalizedTargetKey && (periodKey.trim().toUpperCase() === normalizedTargetKey);
 
     return `
-      <div class="salary-input-item">
-        <label for="${fieldIdAmt}" style="font-size: 0.775rem; font-weight: 700; color: var(--primary-navy); display: block; margin-bottom: 4px;">
-          ${escapeHtml(periodKey)} Amount (₱)
-        </label>
+      <div class="salary-input-item ${isTarget ? 'active-target-period' : ''}" data-period="${escapeHtml(periodKey)}">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <label for="${fieldIdAmt}" style="font-size: 0.775rem; font-weight: 700; color: ${isTarget ? 'var(--brand-accent)' : 'var(--primary-navy)'}; display: flex; align-items: center; gap: 5px; margin-bottom: 0;">
+            ${isTarget ? '<i data-lucide="edit-3" style="width: 12px; height: 12px; color: var(--brand-accent);"></i>' : ''}
+            <span>${escapeHtml(periodKey)} Amount (₱)</span>
+          </label>
+          ${isTarget ? '<span class="target-period-badge"><i data-lucide="check" style="width: 10px; height: 10px;"></i> Selected Date</span>' : ''}
+        </div>
         <div style="display: flex; gap: 6px; align-items: center;">
-          <input type="number" step="0.01" id="${fieldIdAmt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-amt" placeholder="0.00" value="${amtVal}" style="font-size: 0.825rem; flex: 1; min-width: 0;" oninput="handleLiveSalaryModalInputChange()">
-          <select id="${fieldIdSt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-st" style="font-size: 0.8rem; width: 105px; min-width: 105px;" onchange="handleLiveSalaryModalInputChange()">
+          <input type="number" step="0.01" id="${fieldIdAmt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-amt ${isTarget ? 'highlighted-input' : ''}" placeholder="0.00" value="${amtVal}" style="font-size: 0.825rem; flex: 1; min-width: 0;" oninput="handleLiveSalaryModalInputChange(this)">
+          <select id="${fieldIdSt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-st ${isTarget ? 'highlighted-select' : ''}" style="font-size: 0.8rem; width: 105px; min-width: 105px;" onchange="handleLiveSalaryModalInputChange(this)">
             <option value="received" ${stVal === 'received' ? 'selected' : ''}>Received</option>
             <option value="pending" ${stVal === 'pending' ? 'selected' : ''}>Pending</option>
             <option value="na" ${stVal === 'na' ? 'selected' : ''}>N/A</option>
@@ -3280,12 +3291,25 @@ function renderSalaryModalInputs(record = null) {
       </div>
     `;
   }).join('');
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
 }
 
 /**
  * Instant Real-time Calculation Handler when editing salary inputs in modal
  */
-function handleLiveSalaryModalInputChange() {
+function handleLiveSalaryModalInputChange(changedElement = null) {
+  if (changedElement && changedElement.classList && changedElement.classList.contains('sal-input-amt')) {
+    const pKey = changedElement.getAttribute('data-period');
+    const stEl = document.querySelector(`.sal-input-st[data-period="${pKey}"]`);
+    const amtVal = parseFloat(changedElement.value) || 0;
+    if (amtVal > 0 && stEl && stEl.value === 'na') {
+      stEl.value = 'received';
+    }
+  }
+
   let tempPaid = 0;
   let tempPending = 0;
   let tempPaidForRemaining = 0;
@@ -3363,7 +3387,7 @@ function handleLiveSalaryModalInputChange() {
 /**
  * Form & Modal Handling (Add / Edit)
  */
-function openRecordModal(id = null) {
+function openRecordModal(id = null, targetPeriodKey = null) {
   const isDtr = appState.activeTab === 'dtr';
   const isContacts = appState.activeTab === 'contacts';
   const isSalary = appState.activeTab === 'salary';
@@ -3414,7 +3438,7 @@ function openRecordModal(id = null) {
     if (salFields) salFields.style.display = 'block';
     if (compiledFields) compiledFields.style.display = 'none';
     if (gsisFields) gsisFields.style.display = 'none';
-    renderSalaryModalInputs(id ? appState.data.salaryRecords.find(r => r.id === id) : null);
+    renderSalaryModalInputs(id ? appState.data.salaryRecords.find(r => r.id === id) : null, targetPeriodKey);
   } else if (isCompiled) {
     dtrFields.style.display = 'none';
     trnFields.style.display = 'none';
@@ -3485,7 +3509,7 @@ function openRecordModal(id = null) {
         document.getElementById('contact-number').value = record.contactNumber || '';
       } else if (isSalary) {
         document.getElementById('salary-gip-name').value = (record.gipName || '').toUpperCase();
-        renderSalaryModalInputs(record);
+        renderSalaryModalInputs(record, targetPeriodKey);
       } else if (isCompiled) {
         document.getElementById('compiled-category').value = (record.category || 'ORIENTATION').toUpperCase();
         document.getElementById('compiled-amount').value = record.amount !== undefined ? record.amount : '';
@@ -3566,6 +3590,31 @@ function openRecordModal(id = null) {
   }
 
   document.getElementById('record-modal').classList.add('active');
+
+  if (isSalary && targetPeriodKey) {
+    setTimeout(() => {
+      const normalizedKey = (targetPeriodKey || '').trim().toUpperCase();
+      const amtInput = Array.from(document.querySelectorAll('.sal-input-amt')).find(input => 
+        (input.getAttribute('data-period') || '').trim().toUpperCase() === normalizedKey
+      );
+      if (amtInput) {
+        const inputItem = amtInput.closest('.salary-input-item');
+        if (inputItem) {
+          inputItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          inputItem.classList.add('active-target-period');
+        }
+        amtInput.focus();
+        amtInput.select();
+      }
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }, 150);
+  } else if (isSalary) {
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  }
 }
 
 function closeRecordModal() {
@@ -6431,17 +6480,14 @@ async function toggleSalaryStatus(recordId, periodKey) {
 }
 
 /**
- * Handle Salary Period Box Click (Toggle if paid/pending, or open modal if N/A or empty)
+ * Handle Salary Period Box Click (Auto-direct to edit amount and status of that specific date)
  */
 function handleSalaryBoxClick(recordId, periodKey) {
-  const record = (appState.data.salaryRecords || []).find(r => r.id === recordId);
-  if (!record) return;
-  const pData = (record.periods || {})[periodKey];
-  if (!pData || pData.status === 'na' || !pData.amount || pData.amount <= 0) {
-    openRecordModal(recordId);
-  } else {
-    toggleSalaryStatus(recordId, periodKey);
+  if (appState.activeTab !== 'salary') {
+    appState.activeTab = 'salary';
+    updateActiveTabUI();
   }
+  openRecordModal(recordId, periodKey);
 }
 
 /**
