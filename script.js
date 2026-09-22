@@ -1078,9 +1078,47 @@ function bindEvents() {
     showToast('ALL FILTERS RESET & DATA UPDATED LIVE!', 'success');
   });
 
-  // Particulars Live Form Preview Listener
+  // Particulars Live Form Preview & Rich Formatting Listeners
   const particularsTextarea = document.getElementById('particulars');
-  particularsTextarea.addEventListener('input', handleParticularsLivePreview);
+  if (particularsTextarea) {
+    particularsTextarea.addEventListener('input', handleParticularsLivePreview);
+    particularsTextarea.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
+        e.preventDefault();
+        toggleBoldParticularsSelection();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U')) {
+        e.preventDefault();
+        toggleBulletParticularsSelection();
+      } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+        const val = particularsTextarea.value;
+        const cursor = particularsTextarea.selectionStart;
+        const lineStart = val.lastIndexOf('\n', cursor - 1) + 1;
+        const currentLine = val.substring(lineStart, cursor);
+        const bulletMatch = currentLine.match(/^(\s*)(•|-|\*)\s*/);
+
+        if (bulletMatch) {
+          // If the line is only the bullet symbol, clear it and end bullet list
+          if (currentLine.trim() === '•' || currentLine.trim() === '-' || currentLine.trim() === '*') {
+            e.preventDefault();
+            const before = val.substring(0, lineStart);
+            const after = val.substring(cursor);
+            particularsTextarea.value = before + after;
+            particularsTextarea.selectionStart = particularsTextarea.selectionEnd = lineStart;
+            handleParticularsLivePreview();
+          } else {
+            // Auto-continue bullet on the next line
+            e.preventDefault();
+            const nextBullet = '\n' + bulletMatch[1] + '• ';
+            const before = val.substring(0, cursor);
+            const after = val.substring(cursor);
+            particularsTextarea.value = before + nextBullet + after;
+            particularsTextarea.selectionStart = particularsTextarea.selectionEnd = cursor + nextBullet.length;
+            handleParticularsLivePreview();
+          }
+        }
+      }
+    });
+  }
 
   // Set Today Date Quick Buttons
   document.querySelectorAll('.btn-today').forEach(btn => {
@@ -2698,6 +2736,18 @@ function highlightTextInHtml(htmlText, query) {
 }
 
 /**
+ * Converts markdown **bold** and HTML <b> tags into <strong> elements
+ */
+function renderMarkdownBold(htmlText) {
+  if (!htmlText) return '';
+  return htmlText
+    .replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^_]+)__/g, '<strong>$1</strong>')
+    .replace(/&lt;b&gt;(.*?)&lt;\/b&gt;/gi, '<strong>$1</strong>')
+    .replace(/&lt;strong&gt;(.*?)&lt;\/strong&gt;/gi, '<strong>$1</strong>');
+}
+
+/**
  * Formats Transmittal Particulars into an Executive Document Card with Collapsible Dropdown
  */
 function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, imageUrl = null, highlightQuery = '') {
@@ -2731,24 +2781,49 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
     titleHeader = null;
   }
 
-  let formattedBody = bodyLines.join('\n');
+  let htmlBodyLines = bodyLines.map(line => {
+    let cleanLine = line.trim();
+    if (!cleanLine) return '';
 
-  let htmlBody = escapeHtml(formattedBody)
-    .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b|\bAMOUNTING TO:\s*[\d,\.]+\b)/gi,
-      '<span class="inline-tag">$1</span>');
+    // Check if line starts with bullet indicator: •, -, or * (excluding markdown bold **)
+    const bulletMatch = cleanLine.match(/^([•\-]|\*(?!\*))\s*(.*)$/);
+    if (bulletMatch) {
+      const content = bulletMatch[2];
+      let formattedContent = escapeHtml(content)
+        .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b|\bAMOUNTING TO:\s*[\d,\.]+\b)/gi,
+          '<span class="inline-tag">$1</span>');
+      formattedContent = renderMarkdownBold(formattedContent);
+      if (highlightQuery) {
+        formattedContent = highlightTextInHtml(formattedContent, highlightQuery);
+      }
+      return `<div class="memo-bullet-item"><span class="memo-bullet-dot">&bull;</span><span class="memo-bullet-text">${formattedContent}</span></div>`;
+    } else {
+      let formattedContent = escapeHtml(cleanLine)
+        .replace(/(\b\d+\s+SETS?\b|\b1ST QUINCENA\b|\b2ND QUINCENA\b|\bBATCH\s+\d+\b|\bDTRS?\s*&\s*ARS?\b|\bAMOUNTING TO:\s*[\d,\.]+\b)/gi,
+          '<span class="inline-tag">$1</span>');
+      formattedContent = renderMarkdownBold(formattedContent);
+      if (highlightQuery) {
+        formattedContent = highlightTextInHtml(formattedContent, highlightQuery);
+      }
+      return `<div class="memo-line">${formattedContent}</div>`;
+    }
+  });
 
-  if (highlightQuery) {
-    htmlBody = highlightTextInHtml(htmlBody, highlightQuery);
-  }
+  let htmlBody = htmlBodyLines.join('');
 
   const totalLines = bodyLines.length + (titleHeader ? 1 : 0);
   const isCollapsible = !isPreview && totalLines > 3;
   const boxId = cardId || ('memo-card-' + Math.random().toString(36).substr(2, 9));
 
-  let html = `<div class="particulars-memo-box ${isCollapsible ? 'collapsible collapsed' : ''}" id="${boxId}">`;
+  const clickAttr = isCollapsible 
+    ? ` onclick="handleParticularsCardClick(event, '${boxId}', ${totalLines})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();handleParticularsCardClick(event,'${boxId}',${totalLines});}" title="Click to expand (auto-minimizes in 10s)"` 
+    : '';
+
+  let html = `<div class="particulars-memo-box ${isCollapsible ? 'collapsible collapsed' : ''}" id="${boxId}"${clickAttr}>`;
 
   if (titleHeader) {
     let titleHtml = escapeHtml(titleHeader);
+    titleHtml = renderMarkdownBold(titleHtml);
     if (highlightQuery) {
       titleHtml = highlightTextInHtml(titleHtml, highlightQuery);
     }
@@ -2766,7 +2841,7 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
   if (imageUrl) {
     html += `
       <div style="margin-top: 10px;">
-        <button type="button" class="btn-show-attached-img" onclick="openImageLightbox('${escapeHtml(imageUrl)}', 'TRANSMITTAL ATTACHED DOCUMENT PHOTO')" title="Click to view attached document photo in full size">
+        <button type="button" class="btn-show-attached-img" onclick="event.stopPropagation(); openImageLightbox('${escapeHtml(imageUrl)}', 'TRANSMITTAL ATTACHED DOCUMENT PHOTO')" title="Click to view attached document photo in full size">
           <i data-lucide="image" style="width: 13px; height: 13px;"></i>
           <span>Show Uploaded Image</span>
         </button>
@@ -2776,10 +2851,22 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
 
   if (isCollapsible) {
     html += `
-      <button type="button" class="btn-memo-toggle" onclick="toggleParticularsMemoCard('${boxId}', ${totalLines})" title="Click to expand/collapse full particulars">
-        <i data-lucide="chevron-down" style="width: 13px; height: 13px;"></i>
-        <span class="toggle-text">Show All (${totalLines} lines)</span>
-      </button>
+      <div class="memo-expand-hint">
+        <i data-lucide="chevrons-down" style="width: 13px; height: 13px;"></i>
+        <span class="toggle-text">Click to expand</span>
+      </div>
+      <div class="memo-auto-timer">
+        <div class="timer-badge">
+          <span style="display: flex; align-items: center; gap: 4px;">
+            <i data-lucide="clock" style="width: 12px; height: 12px; color: #059669;"></i>
+            Auto-minimizes in <b class="timer-countdown">10s</b>
+          </span>
+          <span style="color: var(--text-muted); font-size: 0.7rem;">(Click to close)</span>
+        </div>
+        <div class="timer-progress-track">
+          <div class="timer-progress-bar"></div>
+        </div>
+      </div>
     `;
   }
 
@@ -2788,29 +2875,108 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
   return html;
 }
 
+// Map to track active auto-minimize timers for memo cards
+const particularsCardTimers = new Map();
+
 /**
- * Toggle Expand/Collapse for Long Particulars Cards
+ * Handle clicking on the Particulars Memo Card container
+ * Expands to show full details, auto-minimizes after 10 seconds.
  */
-function toggleParticularsMemoCard(cardId, totalLines) {
-  const card = document.getElementById(cardId);
+function handleParticularsCardClick(event, boxId, totalLines) {
+  // Prevent toggle if clicking on interactive elements or buttons
+  if (event && event.target && (event.target.closest('.btn-show-attached-img') || event.target.closest('button') || event.target.closest('a'))) {
+    return;
+  }
+
+  // Prevent toggle if user is highlighting / selecting text
+  const selection = window.getSelection();
+  if (selection && selection.toString().trim().length > 0) {
+    return;
+  }
+
+  const card = document.getElementById(boxId);
   if (!card) return;
 
   const isCollapsed = card.classList.contains('collapsed');
-  const btn = card.querySelector('.btn-memo-toggle');
+
+  // Clear existing timers for this card
+  clearParticularsCardTimer(boxId);
 
   if (isCollapsed) {
+    // Expand card
     card.classList.remove('collapsed');
-    if (btn) {
-      btn.innerHTML = `<i data-lucide="chevron-up" style="width: 13px; height: 13px;"></i> <span class="toggle-text">Show Less</span>`;
+
+    // Reset and start 10s countdown
+    let remainingSeconds = 10;
+    const countdownEl = card.querySelector('.timer-countdown');
+    if (countdownEl) {
+      countdownEl.textContent = `${remainingSeconds}s`;
     }
+
+    // Restart the progress bar animation
+    const progressBar = card.querySelector('.timer-progress-bar');
+    if (progressBar) {
+      progressBar.style.animation = 'none';
+      void progressBar.offsetWidth; // Trigger reflow
+      progressBar.style.animation = 'memoProgressShrink 10s linear forwards';
+    }
+
+    const intervalId = setInterval(() => {
+      remainingSeconds--;
+      const curCountdownEl = card.querySelector('.timer-countdown');
+      if (curCountdownEl) {
+        curCountdownEl.textContent = `${Math.max(0, remainingSeconds)}s`;
+      }
+    }, 1000);
+
+    const timeoutId = setTimeout(() => {
+      minimizeParticularsCard(boxId);
+    }, 10000);
+
+    particularsCardTimers.set(boxId, { timeoutId, intervalId });
   } else {
-    card.classList.add('collapsed');
-    if (btn) {
-      btn.innerHTML = `<i data-lucide="chevron-down" style="width: 13px; height: 13px;"></i> <span class="toggle-text">Show All (${totalLines} lines)</span>`;
-    }
+    // Already expanded, user clicked to close immediately
+    minimizeParticularsCard(boxId);
   }
 
   if (window.lucide) lucide.createIcons();
+}
+
+/**
+ * Minimizes a Particulars Memo Card back to collapsed state
+ */
+function minimizeParticularsCard(boxId) {
+  clearParticularsCardTimer(boxId);
+  const card = document.getElementById(boxId);
+  if (!card) return;
+
+  card.classList.add('collapsed');
+
+  const countdownEl = card.querySelector('.timer-countdown');
+  if (countdownEl) {
+    countdownEl.textContent = '10s';
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+/**
+ * Clears running timeout and interval for a Particulars Memo Card
+ */
+function clearParticularsCardTimer(boxId) {
+  if (particularsCardTimers.has(boxId)) {
+    const { timeoutId, intervalId } = particularsCardTimers.get(boxId);
+    if (timeoutId) clearTimeout(timeoutId);
+    if (intervalId) clearInterval(intervalId);
+    particularsCardTimers.delete(boxId);
+  }
+}
+
+/**
+ * Legacy toggle adapter for compatibility
+ */
+function toggleParticularsMemoCard(cardId, totalLines) {
+  handleParticularsCardClick(null, cardId, totalLines);
 }
 
 /**
@@ -2887,22 +3053,166 @@ function handleGsisDobInput() {
 }
 
 /**
+ * Toggles bold formatting (**text**) on the selected text in the Particulars textarea
+ */
+function toggleBoldParticularsSelection() {
+  const textarea = document.getElementById('particulars');
+  if (!textarea) return;
+
+  textarea.focus();
+  const start = textarea.selectionStart !== null ? textarea.selectionStart : textarea.value.length;
+  const end = textarea.selectionEnd !== null ? textarea.selectionEnd : textarea.value.length;
+  const val = textarea.value;
+
+  if (start === end) {
+    // No text selected: insert **** and position cursor in middle
+    const before = val.substring(0, start);
+    const after = val.substring(end);
+    textarea.value = before + '****' + after;
+    textarea.selectionStart = textarea.selectionEnd = start + 2;
+  } else {
+    // Text is selected
+    const rawSelected = val.substring(start, end);
+    const leadSpace = rawSelected.match(/^\s*/)[0];
+    const trailSpace = rawSelected.match(/\s*$/)[0];
+    const core = rawSelected.trim();
+
+    // If selected text is already wrapped in **
+    if (core.startsWith('**') && core.endsWith('**') && core.length >= 4) {
+      const unwrapped = core.slice(2, -2);
+      const replacement = leadSpace + unwrapped + trailSpace;
+      textarea.setRangeText(replacement, start, end, 'select');
+      textarea.selectionStart = start + leadSpace.length;
+      textarea.selectionEnd = start + leadSpace.length + unwrapped.length;
+    }
+    // If characters immediately outside the selection are **
+    else if (start >= 2 && val.substring(start - 2, start) === '**' && end <= val.length - 2 && val.substring(end, end + 2) === '**') {
+      const before = val.substring(0, start - 2);
+      const after = val.substring(end + 2);
+      textarea.value = before + rawSelected + after;
+      textarea.selectionStart = start - 2;
+      textarea.selectionEnd = end - 2;
+    } else {
+      // Wrap in **
+      const wrapped = leadSpace + '**' + core + '**' + trailSpace;
+      textarea.setRangeText(wrapped, start, end, 'select');
+      textarea.selectionStart = start + leadSpace.length;
+      textarea.selectionEnd = start + leadSpace.length + core.length + 4;
+    }
+    try {
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (e) { }
+  }
+
+  // Ensure preview is shown & refreshed
+  const previewWrapper = document.getElementById('particulars-preview-wrapper');
+  if (previewWrapper) {
+    delete previewWrapper.dataset.userClosed;
+  }
+  handleParticularsLivePreview();
+}
+
+/**
+ * Toggles bullet points (•) on the selected lines or current line in the Particulars textarea
+ */
+function toggleBulletParticularsSelection() {
+  const textarea = document.getElementById('particulars');
+  if (!textarea) return;
+
+  textarea.focus();
+  const val = textarea.value;
+  const selStart = textarea.selectionStart !== null ? textarea.selectionStart : val.length;
+  const selEnd = textarea.selectionEnd !== null ? textarea.selectionEnd : val.length;
+
+  // Find start of first selected line
+  const lineStart = val.lastIndexOf('\n', selStart - 1) + 1;
+  // Find end of last selected line
+  let lineEnd = val.indexOf('\n', selEnd);
+  if (lineEnd === -1) lineEnd = val.length;
+
+  const selectedLinesText = val.substring(lineStart, lineEnd);
+  const lines = selectedLinesText.split('\n');
+
+  // Check if all non-empty lines already have a bullet
+  const allBulleted = lines.every(line => !line.trim() || /^(\s*•\s*|\s*-\s*|\s*\*\s*)/.test(line));
+
+  let modifiedLines;
+  if (allBulleted) {
+    // Remove bullets
+    modifiedLines = lines.map(line => line.replace(/^(\s*)(•\s*|-\s*|\*\s*)/, '$1'));
+  } else {
+    // Add bullets to non-empty lines
+    modifiedLines = lines.map(line => {
+      if (!line.trim()) return line;
+      if (/^(\s*•\s*|\s*-\s*|\s*\*\s*)/.test(line)) return line;
+      return '• ' + line.trimStart();
+    });
+  }
+
+  const replacement = modifiedLines.join('\n');
+  textarea.setRangeText(replacement, lineStart, lineEnd, 'select');
+
+  // Ensure preview is shown & refreshed
+  const previewWrapper = document.getElementById('particulars-preview-wrapper');
+  if (previewWrapper) {
+    delete previewWrapper.dataset.userClosed;
+  }
+  handleParticularsLivePreview();
+}
+
+/**
+ * Toggle visibility of Live Particulars Card Preview
+ */
+function toggleParticularsPreview() {
+  const previewWrapper = document.getElementById('particulars-preview-wrapper');
+  const toggleBtn = document.getElementById('btn-toggle-particulars-preview');
+  if (!previewWrapper) return;
+
+  const isCurrentlyVisible = previewWrapper.style.display !== 'none';
+  if (isCurrentlyVisible) {
+    previewWrapper.style.display = 'none';
+    previewWrapper.dataset.userClosed = 'true';
+    if (toggleBtn) toggleBtn.classList.remove('active');
+  } else {
+    delete previewWrapper.dataset.userClosed;
+    previewWrapper.style.display = 'block';
+    if (toggleBtn) toggleBtn.classList.add('active');
+    handleParticularsLivePreview();
+  }
+}
+
+/**
  * Live Form Preview Handler for Particulars Textarea
  */
 function handleParticularsLivePreview() {
   const textarea = document.getElementById('particulars');
   const previewWrapper = document.getElementById('particulars-preview-wrapper');
   const previewContainer = document.getElementById('particulars-live-preview');
+  const toggleBtn = document.getElementById('btn-toggle-particulars-preview');
 
-  const text = textarea.value.trim().toUpperCase();
-  if (!text) {
+  if (!textarea || !previewWrapper || !previewContainer) return;
+
+  if (previewWrapper.dataset.userClosed === 'true') {
     previewWrapper.style.display = 'none';
-    previewContainer.innerHTML = '';
-  } else {
-    previewWrapper.style.display = 'block';
-    previewContainer.innerHTML = formatParticularsMemoCard(text, true);
-    if (window.lucide) lucide.createIcons();
+    if (toggleBtn) toggleBtn.classList.remove('active');
+    return;
   }
+
+  const text = textarea.value.trim();
+  previewWrapper.style.display = 'block';
+  if (toggleBtn) toggleBtn.classList.add('active');
+
+  if (!text) {
+    previewContainer.innerHTML = `
+      <div style="padding: 12px 14px; text-align: center; color: var(--text-light); font-size: 0.8rem; font-style: italic; background: #ffffff; border-radius: 4px; border: 1px dashed var(--border-light);">
+        Type or paste particulars above. Highlight any text and click <b>BOLD</b> (or Ctrl+B) to see the live formatted card here.
+      </div>
+    `;
+  } else {
+    previewContainer.innerHTML = formatParticularsMemoCard(text.toUpperCase(), true);
+  }
+
+  if (window.lucide) lucide.createIcons();
 }
 
 /**
@@ -3059,6 +3369,7 @@ function openRecordModal(id = null) {
   const isSalary = appState.activeTab === 'salary';
   const isCompiled = appState.activeTab === 'compiled';
   const isGsis = appState.activeTab === 'gsis';
+  const isTransmittal = !isDtr && !isContacts && !isSalary && !isCompiled && !isGsis;
   appState.editingRecordId = id;
 
   const modalTitle = document.getElementById('modal-title');
@@ -3077,7 +3388,10 @@ function openRecordModal(id = null) {
   document.getElementById('record-month').value = currentMonthStr;
   document.getElementById('record-quincena').value = '1st Quincena (1-15)';
 
-  document.getElementById('particulars-preview-wrapper').style.display = 'none';
+  const previewWrapper = document.getElementById('particulars-preview-wrapper');
+  if (previewWrapper && !isTransmittal) {
+    previewWrapper.style.display = 'none';
+  }
 
   if (isDtr) {
     dtrFields.style.display = 'block';
@@ -3239,13 +3553,16 @@ function openRecordModal(id = null) {
 
   const remarksField = document.getElementById('record-remarks');
   const remarksGroup = remarksField ? remarksField.closest('.form-group') : null;
-  const isTransmittal = !isDtr && !isContacts && !isSalary && !isCompiled && !isGsis;
   if (remarksGroup) {
     if (isDtr || isTransmittal) {
       remarksGroup.style.display = 'none';
     } else {
       remarksGroup.style.display = 'block';
     }
+  }
+
+  if (isTransmittal) {
+    handleParticularsLivePreview();
   }
 
   document.getElementById('record-modal').classList.add('active');
@@ -5096,13 +5413,13 @@ function formatEtAl(str) {
 }
 
 /**
- * Strips all special characters EXCEPT allowed: (,) (:) (-) (.) letters, numbers, and spaces
+ * Strips all special characters EXCEPT allowed: (,) (:) (-) (.) (*) (•) letters, numbers, and spaces
  */
 function sanitizeSpecialCharacters(text) {
   if (!text) return '';
   return String(text)
-    // Strip out all characters except A-Z, a-z, 0-9, Ñ, ñ, comma (,), colon (:), hyphen (-), period (.), and whitespace
-    .replace(/[^a-zA-Z0-9Ññ,\.:\-\s\r\n]/g, '')
+    // Strip out all characters except A-Z, a-z, 0-9, Ñ, ñ, comma (,), colon (:), hyphen (-), period (.), asterisk (*), bullet (•), and whitespace
+    .replace(/[^a-zA-Z0-9Ññ,\.:\-\*•\s\r\n]/g, '')
     // Collapse multiple colons to 1
     .replace(/::+/g, ':')
     // Collapse multiple spaces
@@ -5126,7 +5443,7 @@ function cleanOcrNameAndWordText(text) {
   str = str.replace(/\bAMOUNTING\s*TO\s*[:\.\s]+/gi, 'AMOUNTING TO: ');
 
   // 3. Fix lead OCR bullet/symbol artifacts before names (e.g. "OE MAMANGCONI" -> "MAMANGCONI", "EO AGBONA" -> "AGBONA")
-  str = str.replace(/^[~"'\*=\-+•>§«»#\$\&¢€£©®0-9\s]+/, '');
+  str = str.replace(/^(?!\*\*)[~"'\*=\-+•>§«»#\$\&¢€£©®0-9\s]+/, '');
   str = str.replace(/\b(EO|OE|E0|0E|EC|CE|E¢|EQ|QE|E\.|O\.)\s+(?=[A-Z]{3,})/gi, '');
   str = str.replace(/^(EO|OE|E0|0E|EC|CE|E¢|EQ|QE|E|O|0|¢|©|®)\b\s*/gi, '');
   str = str.replace(/\b(EO|OE|E0|0E|EC|CE|E¢|EQ|QE)\b\s+(?=[A-Z]{3,})/gi, '');
