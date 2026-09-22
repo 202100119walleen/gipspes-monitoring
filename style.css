@@ -1417,12 +1417,37 @@ textarea {
   background-color: #e0f2fe;
   color: #0369a1;
   border: 1px solid #7dd3fc;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease-in-out;
+}
+
+.card-status-badge.received:hover {
+  background-color: #bae6fd;
+  border-color: #38bdf8;
+  transform: scale(1.06);
+  box-shadow: 0 2px 6px rgba(3, 105, 161, 0.2);
 }
 
 .card-status-badge.pending {
   background-color: #fef2f2;
   color: #b91c1c;
   border: 1px solid #fca5a5;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease-in-out;
+}
+
+.card-status-badge.pending:hover {
+  background-color: #fee2e2;
+  border-color: #f87171;
+  transform: scale(1.06);
+  box-shadow: 0 2px 6px rgba(185, 28, 28, 0.2);
+}
+
+.card-status-badge.received:active,
+.card-status-badge.pending:active {
+  transform: scale(0.96);
 }
 
 .card-status-badge.na {

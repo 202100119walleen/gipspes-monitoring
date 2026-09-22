@@ -2328,10 +2328,10 @@ function renderTable() {
 
         if (!item || item.amount <= 0 || item.status === 'na') {
           return `
-            <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${cleanPeriodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click to edit amount & status for ${escapeHtml(periodKey)}">
+            <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${cleanPeriodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click card to edit amount & status for ${escapeHtml(periodKey)}">
               <div class="salary-card-period-header">
                 <span class="salary-card-period-label" style="${isTargetQuincena ? 'color: var(--brand-accent); font-weight: 800;' : ''}">${escapeHtml(periodKey)}</span>
-                <span class="card-status-badge na">N/A</span>
+                <span class="card-status-badge na" onclick="event.stopPropagation(); handleSalaryBoxClick('${record.id}', '${cleanPeriodKey}')" title="Click to enter amount & status for ${escapeHtml(periodKey)}">N/A</span>
               </div>
               <div class="salary-card-period-amt" style="color: #94a3b8;">-</div>
             </div>
@@ -2352,10 +2352,10 @@ function renderTable() {
         const labelText = isReceived ? 'Paid' : 'Pending';
 
         return `
-          <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${cleanPeriodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click to edit amount & status for ${escapeHtml(periodKey)}">
+          <div class="salary-card-period-box" onclick="handleSalaryBoxClick('${record.id}', '${cleanPeriodKey}')" style="cursor: pointer; ${activeHighlightStyle}" title="Click card to edit amount & status for ${escapeHtml(periodKey)}">
             <div class="salary-card-period-header">
               <span class="salary-card-period-label" style="${isTargetQuincena ? 'color: var(--brand-accent); font-weight: 800;' : ''}">${escapeHtml(periodKey)}</span>
-              <span class="card-status-badge ${badgeClass}">
+              <span class="card-status-badge ${badgeClass}" onclick="event.stopPropagation(); toggleSalaryStatus('${record.id}', '${cleanPeriodKey}')" style="cursor: pointer;" title="Click to toggle status (${isReceived ? 'Paid -> Pending' : 'Pending -> Paid'})">
                 <i data-lucide="${iconName}" style="width: 10px; height: 10px;"></i> ${labelText}
               </span>
             </div>
@@ -6448,36 +6448,6 @@ function autoFixParticularsField() {
   showToast('PARTICULARS TEXT AUTO-FIXED & CLEANED SUCCESSFULLY!', 'success');
 }
 
-/**
- * 1-Click Toggle Salary Status (Received <-> Pending)
- */
-async function toggleSalaryStatus(recordId, periodKey) {
-  if (!appState.data.salaryRecords) return;
-
-  const record = appState.data.salaryRecords.find(r => r.id === recordId);
-  if (!record || !record.periods || !record.periods[periodKey]) return;
-
-  const currentStatus = record.periods[periodKey].status;
-  if (currentStatus === 'na') return;
-
-  const newStatus = currentStatus === 'received' ? 'pending' : 'received';
-  record.periods[periodKey].status = newStatus;
-  record.updatedAt = new Date().toISOString();
-
-  saveToLocalStorage();
-  renderApp();
-
-  if (isSupabaseConnected && supabaseClient) {
-    await supabaseClient.from('gip_salary_records').upsert({
-      id: record.id,
-      gip_name: record.gipName,
-      periods: record.periods,
-      updated_at: new Date().toISOString()
-    });
-  }
-
-  showToast(`UPDATED SALARY STATUS FOR ${record.gipName} (${periodKey}): ${newStatus.toUpperCase()}`, 'info');
-}
 
 /**
  * Handle Salary Period Box Click (Auto-direct to edit amount and status of that specific date)
