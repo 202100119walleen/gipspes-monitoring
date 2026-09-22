@@ -3281,7 +3281,7 @@ function renderSalaryModalInputs(record = null, targetPeriodKey = null) {
           ${isTarget ? '<span class="target-period-badge"><i data-lucide="check" style="width: 10px; height: 10px;"></i> Selected Date</span>' : ''}
         </div>
         <div style="display: flex; gap: 6px; align-items: center;">
-          <input type="number" step="0.01" id="${fieldIdAmt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-amt ${isTarget ? 'highlighted-input' : ''}" placeholder="0.00" value="${amtVal}" style="font-size: 0.825rem; flex: 1; min-width: 0;" oninput="handleLiveSalaryModalInputChange(this)">
+          <input type="number" step="0.01" id="${fieldIdAmt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-amt ${isTarget ? 'highlighted-input' : ''}" placeholder="0.00" value="${amtVal}" style="font-size: 0.825rem; flex: 1; min-width: 0;" oninput="handleLiveSalaryModalInputChange(this)" onpaste="handleSalaryAmountPaste(event, this)">
           <select id="${fieldIdSt}" data-period="${escapeHtml(periodKey)}" class="form-control sal-input-st ${isTarget ? 'highlighted-select' : ''}" style="font-size: 0.8rem; width: 105px; min-width: 105px;" onchange="handleLiveSalaryModalInputChange(this)">
             <option value="received" ${stVal === 'received' ? 'selected' : ''}>Received</option>
             <option value="pending" ${stVal === 'pending' ? 'selected' : ''}>Pending</option>
@@ -3294,6 +3294,31 @@ function renderSalaryModalInputs(record = null, targetPeriodKey = null) {
 
   if (window.lucide) {
     lucide.createIcons();
+  }
+}
+
+/**
+ * Handle Paste for Salary Amount Inputs (Strips ₱, PHP, commas, spaces, currency symbols)
+ */
+function handleSalaryAmountPaste(e, inputEl) {
+  e.preventDefault();
+  e.stopPropagation();
+  const clipboardData = e.clipboardData || window.clipboardData;
+  if (!clipboardData) return;
+  const rawText = clipboardData.getData('text') || '';
+
+  // Clean currency symbols (₱, PHP, $, etc.), commas, spaces
+  let clean = rawText.replace(/[^\d.]/g, '');
+  const parts = clean.split('.');
+  if (parts.length > 2) {
+    clean = parts[0] + '.' + parts.slice(1).join('');
+  }
+
+  if (clean !== '') {
+    inputEl.value = clean;
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+    handleLiveSalaryModalInputChange(inputEl);
   }
 }
 
@@ -5814,6 +5839,29 @@ function initPasteSanitizer() {
     const target = e.target;
     if (!target || !(target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
     if (['date', 'month', 'file', 'password', 'hidden'].includes(target.type)) return;
+
+    // Special handling for number & currency amount fields (strips ₱, PHP, commas, spaces)
+    if (target.type === 'number' || target.classList.contains('sal-input-amt') || target.hasAttribute('step')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const rawPaste = (e.clipboardData || window.clipboardData).getData('text') || '';
+      let clean = rawPaste.replace(/[^\d.]/g, '');
+      const parts = clean.split('.');
+      if (parts.length > 2) {
+        clean = parts[0] + '.' + parts.slice(1).join('');
+      }
+
+      if (clean !== '') {
+        target.value = clean;
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+        target.dispatchEvent(new Event('change', { bubbles: true }));
+        if (target.classList.contains('sal-input-amt')) {
+          handleLiveSalaryModalInputChange(target);
+        }
+      }
+      return;
+    }
 
     e.preventDefault();
     e.stopImmediatePropagation();
