@@ -2816,22 +2816,37 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
   const isCollapsible = !isPreview && totalLines > 3;
   const boxId = cardId || ('memo-card-' + Math.random().toString(36).substr(2, 9));
 
-  const clickAttr = isCollapsible 
-    ? ` onclick="handleParticularsCardClick(event, '${boxId}', ${totalLines})" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();handleParticularsCardClick(event,'${boxId}',${totalLines});}" title="Click to expand (auto-minimizes in 10s)"` 
-    : '';
+  let html = `<div class="particulars-memo-box ${isCollapsible ? 'collapsible collapsed' : ''}" id="${boxId}">`;
 
-  let html = `<div class="particulars-memo-box ${isCollapsible ? 'collapsible collapsed' : ''}" id="${boxId}"${clickAttr}>`;
-
-  if (titleHeader) {
-    let titleHtml = escapeHtml(titleHeader);
-    titleHtml = renderMarkdownBold(titleHtml);
-    if (highlightQuery) {
-      titleHtml = highlightTextInHtml(titleHtml, highlightQuery);
+  if (titleHeader || isCollapsible) {
+    let titleContentHtml = '';
+    if (titleHeader) {
+      let titleHtml = escapeHtml(titleHeader);
+      titleHtml = renderMarkdownBold(titleHtml);
+      if (highlightQuery) {
+        titleHtml = highlightTextInHtml(titleHtml, highlightQuery);
+      }
+      titleContentHtml = `
+        <div class="particulars-memo-title">
+          <i data-lucide="file-text" style="width: 14px; height: 14px; color: var(--primary-blue); flex-shrink: 0;"></i>
+          <span>${titleHtml}</span>
+        </div>
+      `;
+    } else {
+      titleContentHtml = `<div></div>`;
     }
+
+    const eyeButtonHtml = isCollapsible ? `
+      <button type="button" class="btn-memo-eye" onclick="handleParticularsCardClick(event, '${boxId}', ${totalLines})" title="Show full particulars">
+        <i data-lucide="eye" style="width: 13px; height: 13px;"></i>
+        <span class="eye-label">Show</span>
+      </button>
+    ` : '';
+
     html += `
-      <div class="particulars-memo-title">
-        <i data-lucide="file-text" style="width: 14px; height: 14px; color: var(--primary-blue); flex-shrink: 0;"></i>
-        <span>${titleHtml}</span>
+      <div class="particulars-memo-header">
+        ${titleContentHtml}
+        ${eyeButtonHtml}
       </div>
     `;
   }
@@ -2852,17 +2867,16 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
 
   if (isCollapsible) {
     html += `
-      <div class="memo-expand-hint">
-        <i data-lucide="chevrons-down" style="width: 13px; height: 13px;"></i>
-        <span class="toggle-text">Click to expand</span>
-      </div>
       <div class="memo-auto-timer">
         <div class="timer-badge">
           <span style="display: flex; align-items: center; gap: 4px;">
             <i data-lucide="clock" style="width: 12px; height: 12px; color: #059669;"></i>
-            Auto-minimizes in <b class="timer-countdown">10s</b>
+            Auto-minimizes in <b class="timer-countdown">1h</b>
           </span>
-          <span style="color: var(--text-muted); font-size: 0.7rem;">(Click to close)</span>
+          <button type="button" class="btn-timer-hide" onclick="handleParticularsCardClick(event, '${boxId}', ${totalLines})" title="Hide details">
+            <i data-lucide="eye-off" style="width: 12px; height: 12px;"></i>
+            <span>Hide</span>
+          </button>
         </div>
         <div class="timer-progress-track">
           <div class="timer-progress-bar"></div>
@@ -2878,21 +2892,34 @@ function formatParticularsMemoCard(rawText, isPreview = false, cardId = null, im
 
 // Map to track active auto-minimize timers for memo cards
 const particularsCardTimers = new Map();
+const PARTICULARS_AUTO_MINIMIZE_SECONDS = 3600; // 1 hour
 
 /**
- * Handle clicking on the Particulars Memo Card container
- * Expands to show full details, auto-minimizes after 10 seconds.
+ * Format remaining seconds for Particulars Memo Card auto-minimize countdown (1 hour = 3600s)
+ */
+function formatParticularsTimer(seconds) {
+  if (seconds <= 0) return '0s';
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hrs > 0) {
+    if (mins === 0 && secs === 0) return '1h';
+    return `${hrs}h ${mins}m ${String(secs).padStart(2, '0')}s`;
+  }
+  if (mins > 0) {
+    return `${mins}m ${String(secs).padStart(2, '0')}s`;
+  }
+  return `${secs}s`;
+}
+
+/**
+ * Handle clicking on the Particulars Memo Card eye button / toggle
+ * Expands to show full details, auto-minimizes after 1 hour.
  */
 function handleParticularsCardClick(event, boxId, totalLines) {
-  // Prevent toggle if clicking on interactive elements or buttons
-  if (event && event.target && (event.target.closest('.btn-show-attached-img') || event.target.closest('button') || event.target.closest('a'))) {
-    return;
-  }
-
-  // Prevent toggle if user is highlighting / selecting text
-  const selection = window.getSelection();
-  if (selection && selection.toString().trim().length > 0) {
-    return;
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
   }
 
   const card = document.getElementById(boxId);
@@ -2907,11 +2934,18 @@ function handleParticularsCardClick(event, boxId, totalLines) {
     // Expand card
     card.classList.remove('collapsed');
 
-    // Reset and start 10s countdown
-    let remainingSeconds = 10;
+    // Update eye buttons on this card to "Hide"
+    const eyeBtns = card.querySelectorAll('.btn-memo-eye');
+    eyeBtns.forEach(btn => {
+      btn.innerHTML = `<i data-lucide="eye-off" style="width: 13px; height: 13px;"></i> <span class="eye-label">Hide</span>`;
+      btn.title = 'Hide details';
+    });
+
+    // Reset and start 1-hour (3600s) countdown
+    let remainingSeconds = PARTICULARS_AUTO_MINIMIZE_SECONDS;
     const countdownEl = card.querySelector('.timer-countdown');
     if (countdownEl) {
-      countdownEl.textContent = `${remainingSeconds}s`;
+      countdownEl.textContent = formatParticularsTimer(remainingSeconds);
     }
 
     // Restart the progress bar animation
@@ -2919,20 +2953,20 @@ function handleParticularsCardClick(event, boxId, totalLines) {
     if (progressBar) {
       progressBar.style.animation = 'none';
       void progressBar.offsetWidth; // Trigger reflow
-      progressBar.style.animation = 'memoProgressShrink 10s linear forwards';
+      progressBar.style.animation = `memoProgressShrink ${PARTICULARS_AUTO_MINIMIZE_SECONDS}s linear forwards`;
     }
 
     const intervalId = setInterval(() => {
       remainingSeconds--;
       const curCountdownEl = card.querySelector('.timer-countdown');
       if (curCountdownEl) {
-        curCountdownEl.textContent = `${Math.max(0, remainingSeconds)}s`;
+        curCountdownEl.textContent = formatParticularsTimer(Math.max(0, remainingSeconds));
       }
     }, 1000);
 
     const timeoutId = setTimeout(() => {
       minimizeParticularsCard(boxId);
-    }, 10000);
+    }, PARTICULARS_AUTO_MINIMIZE_SECONDS * 1000);
 
     particularsCardTimers.set(boxId, { timeoutId, intervalId });
   } else {
@@ -2953,9 +2987,16 @@ function minimizeParticularsCard(boxId) {
 
   card.classList.add('collapsed');
 
+  // Update eye buttons on this card back to "Show"
+  const eyeBtns = card.querySelectorAll('.btn-memo-eye');
+  eyeBtns.forEach(btn => {
+    btn.innerHTML = `<i data-lucide="eye" style="width: 13px; height: 13px;"></i> <span class="eye-label">Show</span>`;
+    btn.title = 'Show full particulars';
+  });
+
   const countdownEl = card.querySelector('.timer-countdown');
   if (countdownEl) {
-    countdownEl.textContent = '10s';
+    countdownEl.textContent = '1h';
   }
 
   if (window.lucide) lucide.createIcons();

@@ -773,14 +773,9 @@ textarea {
 /* Collapsible Dropdown for Transmittal Particulars */
 .particulars-memo-box.collapsible {
   position: relative;
-  cursor: pointer;
+  cursor: default;
   transition: all 0.2s ease;
   outline: none;
-}
-
-.particulars-memo-box.collapsible:hover {
-  border-color: var(--brand-accent);
-  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.12);
 }
 
 .particulars-memo-box.collapsible:not(.collapsed) {
@@ -806,35 +801,73 @@ textarea {
   pointer-events: none;
 }
 
-/* Subtle Expand Hint for Collapsed Container */
-.memo-expand-hint {
+/* Particulars Memo Box Header & Eye Toggle Button */
+.particulars-memo-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.btn-memo-eye {
+  display: inline-flex;
+  align-items: center;
   gap: 5px;
-  margin-top: 6px;
-  padding: 4px 8px;
+  padding: 3px 8px;
   background: var(--brand-subtle, #eff6ff);
   color: var(--brand-accent, #0284c7);
-  border: 1px dashed rgba(2, 132, 199, 0.3);
+  border: 1px solid rgba(2, 132, 199, 0.25);
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.725rem;
   font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
+  flex-shrink: 0;
 }
 
-.particulars-memo-box.collapsible:hover .memo-expand-hint {
+.btn-memo-eye:hover {
   background: var(--brand-accent, #0284c7);
   color: #ffffff;
-  border-style: solid;
+  border-color: var(--brand-accent, #0284c7);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2);
 }
 
-.particulars-memo-box.collapsible:not(.collapsed) .memo-expand-hint {
-  display: none !important;
+.particulars-memo-box.collapsible:not(.collapsed) .btn-memo-eye {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #cbd5e1;
 }
 
-/* 10-Second Auto-Minimize Timer & Progress Track */
+.particulars-memo-box.collapsible:not(.collapsed) .btn-memo-eye:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.btn-timer-hide {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-timer-hide:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+/* 1-Hour Auto-Minimize Timer & Progress Track */
 .memo-auto-timer {
   display: none;
   margin-top: 10px;
@@ -875,7 +908,7 @@ textarea {
   width: 100%;
   background: linear-gradient(90deg, #059669, #10b981);
   border-radius: 999px;
-  animation: memoProgressShrink 10s linear forwards;
+  animation: memoProgressShrink 3600s linear forwards;
 }
 
 @keyframes memoProgressShrink {
