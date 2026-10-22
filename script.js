@@ -1,28 +1,21 @@
 /**
  * DOLE LDNPFO - GIP Document Monitoring System
- * Master JavaScript Logic Sheet (Firebase Cloud Firestore Live Realtime Database)
+ * Master JavaScript Logic Sheet (v11 - Pre-configured Supabase Project URL & Anon Key)
  */
 
 const LOCAL_STORAGE_KEY = 'dole_gip_monitoring_db_v9';
-const FIREBASE_CONFIG_KEY = 'dole_gip_firebase_config';
+const SUPABASE_CONFIG_KEY = 'dole_gip_supabase_config';
 
-// Pre-configured Firebase Project Credentials
-const DEFAULT_FIREBASE_CONFIG = (window.ENV && window.ENV.FIREBASE_CONFIG) || {
-  apiKey: "AIzaSyD3QZlKktxpdF9E_uny21uXaMyabt3Mgmo",
-  authDomain: "gipspesmonitoring.firebaseapp.com",
-  projectId: "gipspesmonitoring",
-  storageBucket: "gipspesmonitoring.firebasestorage.app",
-  messagingSenderId: "1067063590386",
-  appId: "1:1067063590386:web:17d502c6c6bc50e610bf6b"
+// Pre-configured Supabase Project Credentials from window.ENV or fallback
+const DEFAULT_SUPABASE_CONFIG = {
+  url: (window.ENV && window.ENV.SUPABASE_URL) || 'https://gprkzegwymkufrbmzakd.supabase.co',
+  key: (window.ENV && window.ENV.SUPABASE_ANON_KEY) || 'sb_publishable_LqDDREJQqzUD3BEVNWtuzA_Z3wIy_wU'
 };
 
-// Global Firebase Client Instances
-let firebaseApp = null;
-let firestoreDb = null;
-let isFirebaseConnected = false;
-let isSupabaseConnected = false; // Kept as alias to satisfy internal checks
-let supabaseClient = null;       // Adapter instance providing .from().upsert/delete/select
-let realtimeUnsubscribers = [];
+// Supabase Global Client Instance
+let supabaseClient = null;
+let isSupabaseConnected = false;
+let realtimeSubscription = null;
 
 // Initial Sample Seed Data (Empty for Live Realtime Production Mode)
 const DEFAULT_SEED_DATA = {
@@ -384,181 +377,41 @@ function hidePageLoading(delayMs = 300) {
 }
 
 /**
- * Create Firebase Cloud Firestore Adapter
- * Provides a drop-in database interface (.from().upsert/delete/select) compatible with all system modules
- */
-function createFirebaseAdapter(db) {
-  return {
-    from(collectionName) {
-      const colRef = db.collection(collectionName);
-      return {
-        async upsert(payload) {
-          try {
-            if (Array.isArray(payload)) {
-              if (payload.length === 0) return { error: null };
-              const batchSize = 400;
-              for (let i = 0; i < payload.length; i += batchSize) {
-                const chunk = payload.slice(i, i + batchSize);
-                const batch = db.batch();
-                for (const item of chunk) {
-                  const docId = String(item.id || item.gip_name || ('doc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7)));
-                  batch.set(colRef.doc(docId), item, { merge: true });
-                }
-                await batch.commit();
-              }
-              return { error: null };
-            } else if (payload && typeof payload === 'object') {
-              const docId = String(payload.id || payload.gip_name || ('doc_' + Date.now()));
-              await colRef.doc(docId).set(payload, { merge: true });
-              return { error: null };
-            }
-            return { error: null };
-          } catch (err) {
-            console.error(`Firestore upsert error (${collectionName}):`, err);
-            return { error: err };
-          }
-        },
-        delete() {
-          return {
-            async eq(field, val) {
-              try {
-                if (field === 'id') {
-                  await colRef.doc(String(val)).delete();
-                } else {
-                  const snapshot = await colRef.where(field, '==', val).get();
-                  if (!snapshot.empty) {
-                    const batch = db.batch();
-                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
-                    await batch.commit();
-                  }
-                }
-                return { error: null };
-              } catch (err) {
-                console.error(`Firestore delete error (${collectionName}):`, err);
-                return { error: err };
-              }
-            }
-          };
-        },
-        select(fields = '*') {
-          let sortField = null;
-          let isAscending = true;
-          let limitCount = null;
-
-          const builder = {
-            order(field, opts = {}) {
-              sortField = field;
-              isAscending = opts.ascending !== false;
-              return builder;
-            },
-            limit(count) {
-              limitCount = count;
-              return builder;
-            },
-            async then(resolve, reject) {
-              try {
-                const snapshot = await colRef.get();
-                let data = snapshot.docs.map(doc => {
-                  const item = doc.data();
-                  if (!item.id) item.id = doc.id;
-                  return item;
-                });
-
-                if (sortField) {
-                  data.sort((a, b) => {
-                    const valA = a[sortField] !== undefined && a[sortField] !== null ? a[sortField] : '';
-                    const valB = b[sortField] !== undefined && b[sortField] !== null ? b[sortField] : '';
-                    if (typeof valA === 'number' && typeof valB === 'number') {
-                      return isAscending ? valA - valB : valB - valA;
-                    }
-                    const strA = String(valA).toLowerCase();
-                    const strB = String(valB).toLowerCase();
-                    return isAscending ? strA.localeCompare(strB) : strB.localeCompare(strA);
-                  });
-                }
-
-                if (limitCount && limitCount > 0) {
-                  data = data.slice(0, limitCount);
-                }
-
-                const result = { data, error: null };
-                return resolve ? resolve(result) : result;
-              } catch (err) {
-                console.error(`Firestore select error (${collectionName}):`, err);
-                const result = { data: [], error: err };
-                return resolve ? resolve(result) : result;
-              }
-            }
-          };
-
-          return builder;
-        }
-      };
-    }
-  };
-}
-
-/**
- * Initialize Firebase SDK Client with pre-configured Credentials
+ * Initialize Supabase SDK Client with pre-configured URL & Key
  */
 async function initSupabaseClient() {
   updateConnectionBadge('connecting', 'CONNECTING...');
   try {
-    const config = (window.ENV && window.ENV.FIREBASE_CONFIG) || DEFAULT_FIREBASE_CONFIG;
+    const url = (window.ENV && window.ENV.SUPABASE_URL) || DEFAULT_SUPABASE_CONFIG.url;
+    const key = (window.ENV && window.ENV.SUPABASE_ANON_KEY) || DEFAULT_SUPABASE_CONFIG.key;
 
-    if (!window.firebase) {
-      console.warn('Firebase SDK not loaded. Working in local mode.');
-      setLocalMode('FIREBASE SDK NOT LOADED');
+    if (!url || !key || !window.supabase) {
+      setLocalMode();
       return;
     }
 
-    if (!firebase.apps.length) {
-      firebaseApp = firebase.initializeApp(config);
-    } else {
-      firebaseApp = firebase.app();
+    supabaseClient = window.supabase.createClient(url, key);
+
+    const { data: testData, error: testErr } = await supabaseClient.from('gip_dtr_ar_records').select('id').limit(1);
+    if (testErr) {
+      console.warn('Supabase connection test failed:', testErr.message);
+      setLocalMode('INVALID API KEY / CONNECTION ERROR');
+      return;
     }
 
-    firestoreDb = firebase.firestore();
-
-    // Enable offline persistence for instantaneous local-first responsiveness
-    try {
-      await firestoreDb.enablePersistence({ synchronizeTabs: true });
-    } catch (persistErr) {
-      if (persistErr.code !== 'failed-precondition' && persistErr.code !== 'unimplemented') {
-        console.warn('Firestore persistence notice:', persistErr.message);
-      }
-    }
-
-    // Attach unified database adapter
-    supabaseClient = createFirebaseAdapter(firestoreDb);
-
-    // Test connection with a quick read
-    await firestoreDb.collection('gip_dtr_ar_records').limit(1).get();
-
-    isFirebaseConnected = true;
     isSupabaseConnected = true;
-    updateConnectionBadge('connected', 'FIREBASE CONNECTED');
+    updateConnectionBadge('connected', 'SUPABASE CONNECTED');
 
     await fetchRecordsFromSupabase();
-
-    // If new Firebase database is completely empty but local records exist, automatically push local data
-    const totalLocalRecords = (appState.data.dtrRecords?.length || 0) + 
-                              (appState.data.transmittalRecords?.length || 0) + 
-                              (appState.data.contactsRecords?.length || 0);
-    if (totalLocalRecords > 0) {
-      pushLocalDataToSupabase();
-    }
-
     subscribeSupabaseRealtime();
 
   } catch (err) {
-    console.error('Failed to initialize Firebase client:', err);
-    setLocalMode('FIREBASE OFFLINE / CHECK RULES');
+    console.error('Failed to initialize Supabase client:', err);
+    setLocalMode();
   }
 }
 
 function setLocalMode(customText = 'LOCAL STORAGE MODE') {
-  isFirebaseConnected = false;
   isSupabaseConnected = false;
   supabaseClient = null;
   updateConnectionBadge('offline', customText);
@@ -951,8 +804,8 @@ async function fetchRecordsFromSupabase() {
     saveToLocalStorage();
     renderApp();
   } catch (err) {
-    console.error('Firebase database sync notice:', err.message);
-    showToast('WORKING IN LOCAL BACKUP MODE (FIREBASE SYNC NOTE)', 'info');
+    console.error('Cloud database sync notice:', err.message);
+    showToast('WORKING IN LOCAL BACKUP MODE (SUPABASE SYNC NOTE)', 'info');
   }
 }
 
@@ -1060,47 +913,21 @@ async function pushLocalDataToSupabase() {
 }
 
 /**
- * Realtime Subscriptions for Multi-User Live Firebase Sync
+ * Realtime Subscriptions for Multi-User Sync
  */
 function subscribeSupabaseRealtime() {
-  if (!isFirebaseConnected || !firestoreDb) return;
+  if (!isSupabaseConnected || !supabaseClient) return;
 
-  if (realtimeUnsubscribers && realtimeUnsubscribers.length > 0) {
-    realtimeUnsubscribers.forEach(unsub => {
-      try { unsub(); } catch (e) {}
-    });
-    realtimeUnsubscribers = [];
+  if (realtimeSubscription) {
+    supabaseClient.removeChannel(realtimeSubscription);
   }
 
-  const collections = [
-    'gip_dtr_ar_records',
-    'transmittal_records',
-    'recycled_records',
-    'gip_contacts',
-    'gip_salary_records',
-    'gip_compiled_documents',
-    'gip_gsis_records'
-  ];
-
-  let realtimeTimer = null;
-  collections.forEach(colName => {
-    try {
-      const unsub = firestoreDb.collection(colName).onSnapshot(snapshot => {
-        // Skip updates generated by our own local pending writes to avoid unnecessary UI jitter
-        if (!snapshot.metadata.hasPendingWrites) {
-          clearTimeout(realtimeTimer);
-          realtimeTimer = setTimeout(() => {
-            fetchRecordsFromSupabase();
-          }, 600);
-        }
-      }, err => {
-        console.warn(`Firestore realtime notice for ${colName}:`, err.message);
-      });
-      realtimeUnsubscribers.push(unsub);
-    } catch (err) {
-      console.warn(`Failed to attach Firestore listener on ${colName}:`, err);
-    }
-  });
+  realtimeSubscription = supabaseClient
+    .channel('public-db-changes')
+    .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+      fetchRecordsFromSupabase();
+    })
+    .subscribe();
 }
 
 /**
