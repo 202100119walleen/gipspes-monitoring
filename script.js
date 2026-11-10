@@ -754,6 +754,7 @@ function loadLocalStorageData() {
         appState.showFullYearQuincenas = !!parsed.showFullYearQuincenas;
       }
       appState.data = parsed;
+      alignDirectoriesStatusConsistency();
       syncActiveQuincenaPeriods();
       purgeExpiredRecycledRecords();
       saveToLocalStorage();
@@ -767,6 +768,7 @@ function loadLocalStorageData() {
       appState.data.historyRecords = JSON.parse(JSON.stringify(DEFAULT_HISTORY_SEED));
       appState.data.workProgramBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
       appState.data.workProgramBudget = 300000;
+      alignDirectoriesStatusConsistency();
       syncActiveQuincenaPeriods();
       saveToLocalStorage();
     }
@@ -1033,6 +1035,7 @@ async function fetchRecordsFromSupabase() {
       appState.data.historyRecords = mergeData(formattedCloudHist, appState.data.historyRecords || []);
     }
 
+    alignDirectoriesStatusConsistency();
     purgeExpiredRecycledRecords();
     saveToLocalStorage();
     renderApp();
@@ -4114,6 +4117,8 @@ function openRecordModal(id = null, targetPeriodKey = null) {
         document.getElementById('contact-gip-name').value = (record.gipName || '').toUpperCase();
         document.getElementById('contact-assignment').value = (record.assignment || '').toUpperCase();
         document.getElementById('contact-number').value = record.contactNumber || '';
+        const cntSt = document.getElementById('contact-status');
+        if (cntSt) cntSt.value = (record.status || 'active').toLowerCase();
       } else if (isSalary) {
         document.getElementById('salary-gip-name').value = (record.gipName || '').toUpperCase();
         renderSalaryModalInputs(record, targetPeriodKey);
@@ -4133,6 +4138,8 @@ function openRecordModal(id = null, targetPeriodKey = null) {
         document.getElementById('gsis-beneficiary').value = (record.beneficiary || '').toUpperCase();
         document.getElementById('gsis-relationship').value = (record.relationship || '').toUpperCase();
         document.getElementById('gsis-period').value = (record.period || '').toUpperCase();
+        const gsisSt = document.getElementById('gsis-status');
+        if (gsisSt) gsisSt.value = (record.status || 'active').toLowerCase();
       } else {
         document.getElementById('particulars').value = (record.particulars || '').toUpperCase();
         const recProg = (record.program || '').toUpperCase();
@@ -4256,6 +4263,8 @@ async function handleFormSubmit(e) {
     const beneficiary = formatEtAl(document.getElementById('gsis-beneficiary').value.trim().toUpperCase());
     const relationship = document.getElementById('gsis-relationship').value.trim().toUpperCase();
     const period = document.getElementById('gsis-period').value.trim().toUpperCase();
+    const gsisStElem = document.getElementById('gsis-status');
+    const status = (gsisStElem ? gsisStElem.value : 'active').toLowerCase();
 
     if (!name) {
       showToast('NAME OF ASSURED IS REQUIRED', 'danger');
@@ -4270,6 +4279,7 @@ async function handleFormSubmit(e) {
       beneficiary,
       relationship,
       period,
+      status,
       remarks,
       updatedAt: nowISO
     };
@@ -4277,6 +4287,7 @@ async function handleFormSubmit(e) {
     if (!appState.data.gsisRecords) appState.data.gsisRecords = [];
 
     if (recordId) {
+      const oldRec = (appState.data.gsisRecords || []).find(r => r.id === recordId) || {};
       const index = appState.data.gsisRecords.findIndex(r => r.id === recordId);
       if (index !== -1) {
         appState.data.gsisRecords[index] = { ...appState.data.gsisRecords[index], ...payload };
@@ -4292,17 +4303,24 @@ async function handleFormSubmit(e) {
           beneficiary,
           relationship,
           period,
+          status,
+          remarks,
           updated_at: nowISO
         });
       }
-      showToast('GIP INFORMATION RECORD UPDATED SUCCESSFULLY!', 'success');
+
+      // Cross-directory synchronization: Sync ONLY status to matching Contacts records
+      const syncedCount = await syncGipStatusAcrossDirectories('gsis', name, status, recordId);
+      const syncNote = syncedCount > 0 ? ' (STATUS SYNCED TO CONTACTS DIRECTORY)' : '';
+
+      showToast(`GIP INFORMATION RECORD UPDATED SUCCESSFULLY!${syncNote}`, 'success');
       logSystemHistory({
         module: 'gsis',
         action: 'UPDATE',
         actionLabel: 'Updated Record',
         recordId,
         recordName: name,
-        summary: `Updated GIP Information & GSIS profile for ${name}`,
+        summary: `Updated GIP Information & GSIS profile for ${name}${syncNote}`,
         changes: computeFieldDiff(oldRec, payload),
         previousData: oldRec,
         newData: { id: recordId, ...payload }
@@ -4322,18 +4340,25 @@ async function handleFormSubmit(e) {
           beneficiary,
           relationship,
           period,
+          status,
+          remarks,
           created_at: nowISO,
           updated_at: nowISO
         });
       }
-      showToast('NEW GIP INFORMATION RECORD ADDED SUCCESSFULLY!', 'success');
+
+      // Cross-directory synchronization: Sync ONLY status to matching Contacts records
+      const syncedCount = await syncGipStatusAcrossDirectories('gsis', name, status);
+      const syncNote = syncedCount > 0 ? ' (STATUS SYNCED TO CONTACTS DIRECTORY)' : '';
+
+      showToast(`NEW GIP INFORMATION RECORD ADDED SUCCESSFULLY!${syncNote}`, 'success');
       logSystemHistory({
         module: 'gsis',
         action: 'CREATE',
         actionLabel: 'Created Record',
         recordId: newId,
         recordName: name,
-        summary: `Added new GIP Information record for ${name}`,
+        summary: `Added new GIP Information record for ${name}${syncNote}`,
         changes: null,
         previousData: null,
         newData: newRecord
@@ -4496,6 +4521,8 @@ async function handleFormSubmit(e) {
     const gipName = formatEtAl(document.getElementById('contact-gip-name').value.trim().toUpperCase());
     const assignment = document.getElementById('contact-assignment').value.trim().toUpperCase();
     const contactNumber = document.getElementById('contact-number').value.trim();
+    const cntStElem = document.getElementById('contact-status');
+    const status = (cntStElem ? cntStElem.value : 'active').toLowerCase();
 
     if (!gipName) {
       showToast('GIP NAME IS REQUIRED', 'danger');
@@ -4506,6 +4533,7 @@ async function handleFormSubmit(e) {
       gipName,
       assignment,
       contactNumber,
+      status,
       remarks,
       updatedAt: nowISO
     };
@@ -4513,6 +4541,7 @@ async function handleFormSubmit(e) {
     if (!appState.data.contactsRecords) appState.data.contactsRecords = [];
 
     if (recordId) {
+      const oldRec = (appState.data.contactsRecords || []).find(r => r.id === recordId) || {};
       const index = appState.data.contactsRecords.findIndex(r => r.id === recordId);
       if (index !== -1) {
         appState.data.contactsRecords[index] = { ...appState.data.contactsRecords[index], ...payload };
@@ -4526,6 +4555,7 @@ async function handleFormSubmit(e) {
             gip_name: gipName,
             assignment,
             contact_number: contactNumber,
+            status,
             remarks,
             updated_at: nowISO
           });
@@ -4534,14 +4564,18 @@ async function handleFormSubmit(e) {
         }
       }
 
-      showToast('GIP CONTACT UPDATED SUCCESSFULLY!', 'success');
+      // Cross-directory synchronization: Sync ONLY status to matching GIP Information records
+      const syncedCount = await syncGipStatusAcrossDirectories('contacts', gipName, status, recordId);
+      const syncNote = syncedCount > 0 ? ' (STATUS SYNCED TO GIP INFORMATION)' : '';
+
+      showToast(`GIP CONTACT UPDATED SUCCESSFULLY!${syncNote}`, 'success');
       logSystemHistory({
         module: 'contacts',
         action: 'UPDATE',
         actionLabel: 'Updated Record',
         recordId,
         recordName: gipName,
-        summary: `Updated contact details for ${gipName}`,
+        summary: `Updated contact details for ${gipName}${syncNote}`,
         changes: computeFieldDiff(oldRec, payload),
         previousData: oldRec,
         newData: { id: recordId, ...payload }
@@ -4559,6 +4593,7 @@ async function handleFormSubmit(e) {
             gip_name: gipName,
             assignment,
             contact_number: contactNumber,
+            status,
             remarks,
             created_at: nowISO,
             updated_at: nowISO
@@ -4568,14 +4603,18 @@ async function handleFormSubmit(e) {
         }
       }
 
-      showToast('NEW GIP CONTACT ADDED SUCCESSFULLY!', 'success');
+      // Cross-directory synchronization: Sync ONLY status to matching GIP Information records
+      const syncedCount = await syncGipStatusAcrossDirectories('contacts', gipName, status);
+      const syncNote = syncedCount > 0 ? ' (STATUS SYNCED TO GIP INFORMATION)' : '';
+
+      showToast(`NEW GIP CONTACT ADDED SUCCESSFULLY!${syncNote}`, 'success');
       logSystemHistory({
         module: 'contacts',
         action: 'CREATE',
         actionLabel: 'Created Record',
         recordId: newId,
         recordName: gipName,
-        summary: `Added new GIP Contact ${gipName} assigned to ${assignment}`,
+        summary: `Added new GIP Contact ${gipName} assigned to ${assignment}${syncNote}`,
         changes: null,
         previousData: null,
         newData: newRecord
@@ -7909,9 +7948,171 @@ function renderInlineDiffPreview(changes) {
 }
 
 /**
- * Toggle Active / Inactive status of a GIP record across Contacts & Information directories
+ * Accurately check if two GIP names match across directories
+ * Handles office tags (e.g. '(BOT)', '(PESO BAROY)'), unclosed parens,
+ * punctuation, middle initial expansion, and token reordering.
  */
-async function toggleGipStatus(id, name, module = 'contacts', event = null) {
+function areGipNamesMatching(nameA, nameB) {
+  if (!nameA || !nameB) return false;
+  const clean = (str) => {
+    return String(str)
+      .toUpperCase()
+      .replace(/\s*[\(\[].*?([\)\]]|$)/g, '') // remove parenthetical/bracketed office tags
+      .replace(/\bET\.?\s*AL\.?\b/g, '')     // remove et al.
+      .replace(/[^A-Z0-9\s]/g, ' ')           // strip commas, periods, hyphens
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  const aClean = clean(nameA);
+  const bClean = clean(nameB);
+  if (!aClean || !bClean) return false;
+  if (aClean === bClean) return true;
+
+  const aTokens = aClean.split(' ').filter(Boolean);
+  const bTokens = bClean.split(' ').filter(Boolean);
+
+  // Exact token set match regardless of word order (e.g. 'ELLA VIA LUNA C' vs 'LUNA ELLA VIA C')
+  if (aTokens.length === bTokens.length && [...aTokens].sort().join(' ') === [...bTokens].sort().join(' ')) {
+    return true;
+  }
+
+  // Token matching with initial expansion (e.g. 'CABILANDO SUSAN RECENTES' vs 'CABILANDO SUSAN R')
+  const [shorter, longer] = aTokens.length <= bTokens.length ? [aTokens, bTokens] : [bTokens, aTokens];
+  const hasCommonSurname = longer.includes(shorter[0]) || longer.includes(shorter[shorter.length - 1]);
+  if (!hasCommonSurname) return false;
+
+  let matchedCount = 0;
+  const longerUsed = new Set();
+  for (const sTok of shorter) {
+    let foundIdx = longer.findIndex((lTok, idx) => !longerUsed.has(idx) && (
+      lTok === sTok ||
+      (sTok.length === 1 && lTok.startsWith(sTok)) ||
+      (lTok.length === 1 && sTok.startsWith(lTok))
+    ));
+    if (foundIdx !== -1) {
+      matchedCount++;
+      longerUsed.add(foundIdx);
+    }
+  }
+
+  return matchedCount >= shorter.length && matchedCount >= 2;
+}
+
+/**
+ * Synchronize ONLY the status between GIP Contacts Directory and GIP Information Directory
+ * Ensures that if status is updated in either tab, the corresponding record in the other tab
+ * has ONLY its status updated (preserving all other fields like dob, age, address, beneficiary, phone, etc.).
+ *
+ * @param {string} sourceModule - 'contacts' or 'gsis'
+ * @param {string} gipName - Name of the GIP being updated
+ * @param {string} newStatus - 'active' or 'inactive'
+ * @param {string} [skipRecordId] - ID to skip (to avoid re-updating the triggering record)
+ * @returns {Promise<number>} - Count of records synced in the other directory
+ */
+async function syncGipStatusAcrossDirectories(sourceModule, gipName, newStatus, skipRecordId = null) {
+  if (!gipName || !newStatus) return 0;
+  const normalizedStatus = String(newStatus).toLowerCase() === 'inactive' ? 'inactive' : 'active';
+  const nowISO = new Date().toISOString();
+  let syncedCount = 0;
+
+  if (sourceModule === 'contacts') {
+    // Contacts updated -> Sync ONLY status to matching GIP Information records
+    if (!appState.data.gsisRecords || !Array.isArray(appState.data.gsisRecords)) return 0;
+
+    for (const gsisRec of appState.data.gsisRecords) {
+      if (skipRecordId && gsisRec.id === skipRecordId) continue;
+      if (areGipNamesMatching(gipName, gsisRec.name)) {
+        const currentSt = (gsisRec.status || 'active').toLowerCase();
+        if (currentSt !== normalizedStatus) {
+          gsisRec.status = normalizedStatus;
+          gsisRec.updatedAt = nowISO;
+          syncedCount++;
+
+          if (isSupabaseConnected && supabaseClient) {
+            try {
+              await supabaseClient.from('gip_gsis_records').upsert({
+                id: gsisRec.id,
+                status: normalizedStatus,
+                updated_at: nowISO
+              });
+            } catch (err) {
+              console.warn('Sync status to Firestore (gip_gsis_records) note:', err);
+            }
+          }
+        }
+      }
+    }
+  } else if (sourceModule === 'gsis') {
+    // GIP Information updated -> Sync ONLY status to matching Contacts records
+    if (!appState.data.contactsRecords || !Array.isArray(appState.data.contactsRecords)) return 0;
+
+    for (const cntRec of appState.data.contactsRecords) {
+      if (skipRecordId && cntRec.id === skipRecordId) continue;
+      if (areGipNamesMatching(gipName, cntRec.gipName)) {
+        const currentSt = (cntRec.status || 'active').toLowerCase();
+        if (currentSt !== normalizedStatus) {
+          cntRec.status = normalizedStatus;
+          cntRec.updatedAt = nowISO;
+          syncedCount++;
+
+          if (isSupabaseConnected && supabaseClient) {
+            try {
+              await supabaseClient.from('gip_contacts').upsert({
+                id: cntRec.id,
+                status: normalizedStatus,
+                updated_at: nowISO
+              });
+            } catch (err) {
+              console.warn('Sync status to Firestore (gip_contacts) note:', err);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return syncedCount;
+}
+
+/**
+ * Reconcile status consistency between Contacts Directory and GIP Information
+ * Ensures neither tab starts with desynchronized statuses for the same individual.
+ */
+function alignDirectoriesStatusConsistency() {
+  if (!appState.data.contactsRecords || !appState.data.gsisRecords) return;
+  let didChange = false;
+
+  appState.data.contactsRecords.forEach(cntRec => {
+    const matchingGsis = appState.data.gsisRecords.filter(g => areGipNamesMatching(cntRec.gipName, g.name));
+    matchingGsis.forEach(gsisRec => {
+      const cntSt = (cntRec.status || 'active').toLowerCase();
+      const gsisSt = (gsisRec.status || 'active').toLowerCase();
+      if (cntSt !== gsisSt) {
+        const cntTime = cntRec.updatedAt ? new Date(cntRec.updatedAt).getTime() : 0;
+        const gsisTime = gsisRec.updatedAt ? new Date(gsisRec.updatedAt).getTime() : 0;
+        const winnerStatus = cntTime > gsisTime ? cntSt : (gsisTime > cntTime ? gsisSt : (cntSt === 'inactive' || gsisSt === 'inactive' ? 'inactive' : 'active'));
+        if (cntRec.status !== winnerStatus) {
+          cntRec.status = winnerStatus;
+          didChange = true;
+        }
+        if (gsisRec.status !== winnerStatus) {
+          gsisRec.status = winnerStatus;
+          didChange = true;
+        }
+      }
+    });
+  });
+
+  if (didChange) {
+    saveToLocalStorage();
+  }
+}
+
+/**
+ * Toggle GIP deployment status (Active / Inactive) with automatic cross-directory status sync
+ */
+async function toggleGipStatus(id, name, module, event) {
   if (event && event.stopPropagation) {
     event.stopPropagation();
   }
@@ -7930,58 +8131,34 @@ async function toggleGipStatus(id, name, module = 'contacts', event = null) {
   const currentStatus = (targetRec.status || 'active').toLowerCase();
   const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
   const oldSnapshot = { ...targetRec };
+  const nowISO = new Date().toISOString();
 
-  // Update target record in state
+  // Update target record status in state
   targetRec.status = newStatus;
-  targetRec.updatedAt = new Date().toISOString();
+  targetRec.updatedAt = nowISO;
 
-  // Cross-module sync: if matching GIP name found in other directory, sync status
-  const targetNameNorm = (targetRec.gipName || targetRec.name || name || '').toUpperCase().trim();
-  let syncedOtherCount = 0;
-
-  if (isContacts && appState.data.gsisRecords) {
-    appState.data.gsisRecords.forEach(gsisRec => {
-      const gsisNameNorm = (gsisRec.name || '').toUpperCase().trim();
-      if (gsisNameNorm === targetNameNorm && (gsisRec.status || 'active') !== newStatus) {
-        gsisRec.status = newStatus;
-        gsisRec.updatedAt = new Date().toISOString();
-        syncedOtherCount++;
-        if (isSupabaseConnected && supabaseClient) {
-          supabaseClient.from('gip_gsis_records').upsert({
-            id: gsisRec.id,
-            status: newStatus,
-            updated_at: gsisRec.updatedAt
-          });
-        }
-      }
-    });
-  } else if (!isContacts && appState.data.contactsRecords) {
-    appState.data.contactsRecords.forEach(cntRec => {
-      const cntNameNorm = (cntRec.gipName || '').toUpperCase().trim();
-      if (cntNameNorm === targetNameNorm && (cntRec.status || 'active') !== newStatus) {
-        cntRec.status = newStatus;
-        cntRec.updatedAt = new Date().toISOString();
-        syncedOtherCount++;
-        if (isSupabaseConnected && supabaseClient) {
-          supabaseClient.from('gip_contacts').upsert({
-            id: cntRec.id,
-            status: newStatus,
-            updated_at: cntRec.updatedAt
-          });
-        }
-      }
-    });
-  }
-
-  // Persist updated status to Supabase
+  // Persist target record status to database
   if (isSupabaseConnected && supabaseClient) {
     const tableName = isContacts ? 'gip_contacts' : 'gip_gsis_records';
-    await supabaseClient.from(tableName).upsert({
-      id: targetRec.id,
-      status: newStatus,
-      updated_at: targetRec.updatedAt
-    });
+    try {
+      await supabaseClient.from(tableName).upsert({
+        id: targetRec.id,
+        status: newStatus,
+        updated_at: nowISO
+      });
+    } catch (err) {
+      console.warn(`Persist status to ${tableName} note:`, err);
+    }
   }
+
+  // Cross-directory synchronization: Sync ONLY status to the other directory
+  const targetName = targetRec.gipName || targetRec.name || name || '';
+  const syncedOtherCount = await syncGipStatusAcrossDirectories(
+    isContacts ? 'contacts' : 'gsis',
+    targetName,
+    newStatus,
+    targetRec.id
+  );
 
   // Log STATUS_CHANGE in system history
   await logSystemHistory({
@@ -7989,8 +8166,8 @@ async function toggleGipStatus(id, name, module = 'contacts', event = null) {
     action: 'STATUS_CHANGE',
     actionLabel: 'Status Changed',
     recordId: targetRec.id,
-    recordName: targetRec.gipName || targetRec.name || name,
-    summary: `Changed deployment status from ${currentStatus.toUpperCase()} to ${newStatus.toUpperCase()}${syncedOtherCount > 0 ? ' (Synchronized across Directory & GIP Info)' : ''}`,
+    recordName: targetName,
+    summary: `Changed status from ${currentStatus.toUpperCase()} to ${newStatus.toUpperCase()}${syncedOtherCount > 0 ? ` (Synchronized with ${isContacts ? 'GIP Information' : 'Contacts Directory'})` : ''}`,
     changes: {
       status: { old: currentStatus, new: newStatus }
     },
@@ -8002,7 +8179,8 @@ async function toggleGipStatus(id, name, module = 'contacts', event = null) {
   renderApp();
 
   const statusLabel = newStatus === 'active' ? 'ACTIVE' : 'INACTIVE';
-  showToast(`${escapeHtml(targetRec.gipName || targetRec.name || name)} MARKED AS ${statusLabel}!`, newStatus === 'active' ? 'success' : 'info');
+  const syncMsg = syncedOtherCount > 0 ? ` (SYNCED TO ${isContacts ? 'GIP INFORMATION' : 'CONTACTS DIRECTORY'})` : '';
+  showToast(`${escapeHtml(targetName)} MARKED AS ${statusLabel}${syncMsg}!`, newStatus === 'active' ? 'success' : 'info');
 }
 
 /**
@@ -8077,6 +8255,9 @@ async function restoreHistoryEntry(historyId) {
           updated_at: new Date().toISOString()
         });
       }
+      if (prevData.status) {
+        await syncGipStatusAcrossDirectories('contacts', prevData.gipName, prevData.status, targetId);
+      }
     } else if (mod === 'gsis') {
       if (!appState.data.gsisRecords) appState.data.gsisRecords = [];
       const idx = appState.data.gsisRecords.findIndex(r => r.id === targetId);
@@ -8096,6 +8277,9 @@ async function restoreHistoryEntry(historyId) {
           status: prevData.status || 'active',
           updated_at: new Date().toISOString()
         });
+      }
+      if (prevData.status) {
+        await syncGipStatusAcrossDirectories('gsis', prevData.name, prevData.status, targetId);
       }
     } else if (mod === 'salary') {
       if (!appState.data.salaryRecords) appState.data.salaryRecords = [];
