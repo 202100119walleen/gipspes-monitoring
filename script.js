@@ -319,12 +319,68 @@ function syncActiveQuincenaPeriods() {
   }
 }
 
+// Default Seed for System Change History & Audit Logs
+const DEFAULT_HISTORY_SEED = [
+  {
+    id: "hist-seed-1",
+    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+    module: "contacts",
+    moduleLabel: "GIP Contacts Directory",
+    action: "STATUS_CHANGE",
+    actionLabel: "Status Changed",
+    recordId: "cnt-1",
+    recordName: "ABBAS, EXSAN S.",
+    summary: "Deployment status initialized to Active",
+    changes: { status: { old: "inactive", new: "active" } },
+    previousData: { id: "cnt-1", gipName: "ABBAS, EXSAN S.", assignment: "LDNPFO", contactNumber: "09094708118", status: "inactive" },
+    newData: { id: "cnt-1", gipName: "ABBAS, EXSAN S.", assignment: "LDNPFO", contactNumber: "09094708118", status: "active" },
+    restored: false,
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
+  },
+  {
+    id: "hist-seed-2",
+    timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
+    module: "gsis",
+    moduleLabel: "GIP Information",
+    action: "UPDATE",
+    actionLabel: "Updated Record",
+    recordId: "gip-gsis-1",
+    recordName: "ALEGA, ANGELYN A",
+    summary: "Updated GSIS insurance profile and verified beneficiary",
+    changes: { beneficiary: { old: "ALEGA, L.", new: "ALEGA, LEONISA A." } },
+    previousData: { id: "gip-gsis-1", name: "ALEGA, ANGELYN A", dob: "8/29/2002", age: "23", address: "POB. MATUNGAO, LANAO DEL NORTE", beneficiary: "ALEGA, L.", relationship: "MOTHER", period: "JUNE 16, 2026 - DECEMBER 15, 2026", amount: "50.00", status: "active" },
+    newData: { id: "gip-gsis-1", name: "ALEGA, ANGELYN A", dob: "8/29/2002", age: "23", address: "POB. MATUNGAO, LANAO DEL NORTE", beneficiary: "ALEGA, LEONISA A.", relationship: "MOTHER", period: "JUNE 16, 2026 - DECEMBER 15, 2026", amount: "50.00", status: "active" },
+    restored: false,
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+  },
+  {
+    id: "hist-seed-3",
+    timestamp: new Date(Date.now() - 3600000 * 24).toISOString(),
+    module: "dtr",
+    moduleLabel: "GIP DTR & AR",
+    action: "CREATE",
+    actionLabel: "Created Record",
+    recordId: "dtr-seed-1",
+    recordName: "ABBAS, EXSAN S.",
+    summary: "Received DTR & Accomplishment Report for 1st Quincena",
+    changes: null,
+    previousData: null,
+    newData: { id: "dtr-seed-1", gipName: "ABBAS, EXSAN S.", month: "2026-06", quincena: "1st Quincena (1-15)", dtrArDateReceived: "2026-06-16", isPrinted: true },
+    restored: false,
+    createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
+  }
+];
+
 // Application State Object
 let appState = {
-  activeTab: 'dtr', // 'dtr' | 'transmittal' | 'trash' | 'contacts' | 'salary' | 'compiled' | 'gsis'
+  activeTab: 'dtr', // 'dtr' | 'transmittal' | 'trash' | 'contacts' | 'salary' | 'compiled' | 'gsis' | 'history'
   selectedYear: 'ALL',
   searchQuery: '',
   gsisSourceFilter: 'ALL',
+  gipStatusFilter: 'ALL', // 'ALL' | 'active' | 'inactive'
+  historyModuleFilter: 'ALL', // 'ALL' | 'dtr' | 'transmittal' | 'contacts' | 'salary' | 'compiled' | 'gsis' | 'budget'
+  historyActionFilter: 'ALL', // 'ALL' | 'CREATE' | 'UPDATE' | 'STATUS_CHANGE' | 'DELETE' | 'RESTORE'
+  selectedHistoryId: null,
   sortColumn: 'createdAt',
   sortDirection: 'desc',
   editingRecordId: null,
@@ -344,6 +400,7 @@ let appState = {
     salaryRecords: [],
     compiledRecords: [],
     gsisRecords: [],
+    historyRecords: [],
     totalBudget: 1500000,
     workProgramBudget: 300000,
     workProgramBudgets: {
@@ -646,11 +703,18 @@ function loadLocalStorageData() {
       if (!parsed.contactsRecords || parsed.contactsRecords.length === 0) {
         parsed.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
       }
+      parsed.contactsRecords = parsed.contactsRecords.map(r => ({ ...r, status: r.status || 'active' }));
+
       if (!parsed.salaryRecords || parsed.salaryRecords.length === 0) {
         parsed.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
       }
       if (!parsed.gsisRecords || parsed.gsisRecords.length === 0) {
         parsed.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED));
+      }
+      parsed.gsisRecords = parsed.gsisRecords.map(r => ({ ...r, status: r.status || 'active' }));
+
+      if (!parsed.historyRecords || !Array.isArray(parsed.historyRecords) || parsed.historyRecords.length === 0) {
+        parsed.historyRecords = JSON.parse(JSON.stringify(DEFAULT_HISTORY_SEED));
       }
       if (parsed.totalBudget !== undefined && !isNaN(parseFloat(parsed.totalBudget))) {
         parsed.totalBudget = parseFloat(parsed.totalBudget);
@@ -696,10 +760,11 @@ function loadLocalStorageData() {
     } else {
       appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
       appState.data.recycledRecords = [];
-      appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
+      appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED)).map(r => ({ ...r, status: 'active' }));
       appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
-      appState.data.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED));
+      appState.data.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED)).map(r => ({ ...r, status: 'active' }));
       appState.data.compiledRecords = [];
+      appState.data.historyRecords = JSON.parse(JSON.stringify(DEFAULT_HISTORY_SEED));
       appState.data.workProgramBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
       appState.data.workProgramBudget = 300000;
       syncActiveQuincenaPeriods();
@@ -709,10 +774,11 @@ function loadLocalStorageData() {
     console.error('Failed to load local storage:', err);
     appState.data = JSON.parse(JSON.stringify(DEFAULT_SEED_DATA));
     appState.data.recycledRecords = [];
-    appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED));
+    appState.data.contactsRecords = JSON.parse(JSON.stringify(DEFAULT_CONTACTS_SEED)).map(r => ({ ...r, status: 'active' }));
     appState.data.salaryRecords = JSON.parse(JSON.stringify(DEFAULT_SALARY_SEED));
-    appState.data.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED));
+    appState.data.gsisRecords = JSON.parse(JSON.stringify(DEFAULT_GSIS_SEED)).map(r => ({ ...r, status: 'active' }));
     appState.data.compiledRecords = [];
+    appState.data.historyRecords = JSON.parse(JSON.stringify(DEFAULT_HISTORY_SEED));
     appState.data.workProgramBudgets = { orientation: 100000, culmination: 150000, supplies: 50000 };
     appState.data.workProgramBudget = 300000;
     syncActiveQuincenaPeriods();
@@ -772,6 +838,12 @@ async function fetchRecordsFromSupabase() {
       .from('gip_gsis_records')
       .select('*')
       .order('gip_name', { ascending: true });
+
+    const { data: histData } = await supabaseClient
+      .from('system_history')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(300);
 
     // Smart Merge Helper: Preserves local records if not yet in Supabase or if updated locally
     const mergeData = (cloudList, localList) => {
@@ -836,6 +908,7 @@ async function fetchRecordsFromSupabase() {
         assignment: (r.assignment || '').toUpperCase(),
         contactNumber: r.contact_number,
         remarks: formatEtAl(r.remarks),
+        status: r.status || 'active',
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
@@ -932,10 +1005,32 @@ async function fetchRecordsFromSupabase() {
         relationship: r.relationship,
         period: r.period,
         amount: r.amount || '50.00',
+        status: r.status || 'active',
         createdAt: r.created_at,
         updatedAt: r.updated_at
       }));
       appState.data.gsisRecords = mergeData(formattedCloudGsis, appState.data.gsisRecords || []);
+    }
+
+    // 8. Process System Change History Records
+    if (histData) {
+      const formattedCloudHist = histData.map(r => ({
+        id: r.id,
+        timestamp: r.timestamp || r.created_at || new Date().toISOString(),
+        module: r.module || 'dtr',
+        moduleLabel: r.module_label || r.module,
+        action: r.action || 'UPDATE',
+        actionLabel: r.action_label || r.action,
+        recordId: r.record_id || '',
+        recordName: r.record_name || '',
+        summary: r.summary || '',
+        changes: r.changes || null,
+        previousData: r.previous_data || null,
+        newData: r.new_data || null,
+        restored: r.restored === true,
+        createdAt: r.created_at || r.timestamp
+      }));
+      appState.data.historyRecords = mergeData(formattedCloudHist, appState.data.historyRecords || []);
     }
 
     purgeExpiredRecycledRecords();
@@ -993,6 +1088,7 @@ async function pushLocalDataToSupabase() {
         assignment: r.assignment || 'LDNPFO',
         contact_number: r.contactNumber || '',
         remarks: r.remarks || '',
+        status: r.status || 'active',
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
@@ -1040,6 +1136,7 @@ async function pushLocalDataToSupabase() {
         relationship: r.relationship || '',
         period: r.period || '',
         amount: r.amount || '50.00',
+        status: r.status || 'active',
         created_at: r.createdAt || new Date().toISOString(),
         updated_at: r.updatedAt || new Date().toISOString()
       }));
@@ -1070,7 +1167,8 @@ function subscribeSupabaseRealtime() {
     'gip_contacts',
     'gip_salary_records',
     'gip_compiled_documents',
-    'gip_gsis_records'
+    'gip_gsis_records',
+    'system_history'
   ];
 
   let realtimeTimer = null;
@@ -1109,6 +1207,8 @@ function bindEvents() {
   const sideCompiled = document.getElementById('side-nav-compiled');
   if (sideCompiled) sideCompiled.addEventListener('click', () => switchTab('compiled'));
   document.getElementById('side-nav-trash').addEventListener('click', () => switchTab('trash'));
+  const sideHist = document.getElementById('side-nav-history');
+  if (sideHist) sideHist.addEventListener('click', () => switchTab('history'));
   const sideCalc = document.getElementById('side-nav-calc');
   if (sideCalc) sideCalc.addEventListener('click', openCalcModal);
   document.getElementById('side-nav-excel').addEventListener('click', openExcelExportModal);
@@ -1185,6 +1285,48 @@ function bindEvents() {
   if (statCardCompiled) { statCardCompiled.style.cursor = 'pointer'; statCardCompiled.addEventListener('click', () => switchTab('compiled')); }
   const statCardGsis = document.getElementById('stat-card-gsis');
   if (statCardGsis) { statCardGsis.style.cursor = 'pointer'; statCardGsis.addEventListener('click', () => switchTab('gsis')); }
+  const statCardHist = document.getElementById('stat-card-history');
+  if (statCardHist) { statCardHist.style.cursor = 'pointer'; statCardHist.addEventListener('click', () => switchTab('history')); }
+
+  // GIP Status and History Toolbar Filter Listeners
+  const gipStatusSelect = document.getElementById('gip-status-filter');
+  if (gipStatusSelect) {
+    gipStatusSelect.addEventListener('change', (e) => {
+      appState.gipStatusFilter = e.target.value;
+      renderTable();
+      updateCountsAndStats();
+    });
+  }
+
+  const histModSelect = document.getElementById('history-module-filter');
+  if (histModSelect) {
+    histModSelect.addEventListener('change', (e) => {
+      appState.historyModuleFilter = e.target.value;
+      renderTable();
+    });
+  }
+
+  const histActSelect = document.getElementById('history-action-filter');
+  if (histActSelect) {
+    histActSelect.addEventListener('change', (e) => {
+      appState.historyActionFilter = e.target.value;
+      renderTable();
+    });
+  }
+
+  const histModal = document.getElementById('history-details-modal');
+  if (histModal) {
+    histModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeHistoryDetailsModal();
+    });
+  }
+
+  const clearHistModal = document.getElementById('clear-history-modal');
+  if (clearHistModal) {
+    clearHistModal.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeClearHistoryModal();
+    });
+  }
 
   // Mobile Menu Toggle
   const mobileMenuBtn = document.getElementById('mobile-menu-btn');
@@ -1221,6 +1363,16 @@ function bindEvents() {
     appState.salarySortOption = 'name-asc';
     appState.salaryStatusFilter = 'ALL';
     appState.salaryQuincenaFilter = 'ALL';
+    appState.gipStatusFilter = 'ALL';
+    appState.historyModuleFilter = 'ALL';
+    appState.historyActionFilter = 'ALL';
+
+    const gipStatusSel = document.getElementById('gip-status-filter');
+    if (gipStatusSel) gipStatusSel.value = 'ALL';
+    const hModSel = document.getElementById('history-module-filter');
+    if (hModSel) hModSel.value = 'ALL';
+    const hActSel = document.getElementById('history-action-filter');
+    if (hActSel) hActSel.value = 'ALL';
 
     const sSort = document.getElementById('salary-sort-select');
     const sStat = document.getElementById('salary-status-filter');
@@ -1560,6 +1712,7 @@ function switchTab(tabName) {
   else if (tabName === 'gsis') downloadLabel = 'GIP Information';
   else if (tabName === 'compiled') downloadLabel = 'Work Program Data';
   else if (tabName === 'trash') downloadLabel = 'Recycle Bin';
+  else if (tabName === 'history') downloadLabel = 'System History';
 
   if (btnDownloadActive) {
     btnDownloadActive.innerHTML = `<i data-lucide="download"></i> Download ${downloadLabel}`;
@@ -1601,9 +1754,25 @@ function switchTab(tabName) {
     viewSubtitle.textContent = 'DELETED RECORDS STORED FOR 30 DAYS BEFORE AUTOMATIC PERMANENT DELETION';
     btnAdd.style.display = 'none';
     btnEmptyTrash.style.display = 'inline-flex';
+  } else if (tabName === 'history') {
+    viewTitle.textContent = 'SYSTEM CHANGE HISTORY & AUDIT LOG';
+    viewSubtitle.textContent = 'COMPLETE AUDIT TRAIL OF ALL DATA MODIFICATIONS, STATUS TOGGLES, AND POINT-IN-TIME RECOVERY';
+    btnAdd.style.display = 'none';
+    btnEmptyTrash.style.display = 'none';
   }
 
-  appState.sortColumn = tabName === 'trash' ? 'deletedAt' : 'createdAt';
+  // Toggle module-specific toolbar controls
+  const histControls = document.getElementById('history-toolbar-controls');
+  if (histControls) {
+    histControls.style.display = (tabName === 'history') ? 'flex' : 'none';
+  }
+
+  const gipStatusControls = document.getElementById('gip-status-toolbar-controls');
+  if (gipStatusControls) {
+    gipStatusControls.style.display = (tabName === 'contacts' || tabName === 'gsis') ? 'flex' : 'none';
+  }
+
+  appState.sortColumn = tabName === 'trash' ? 'deletedAt' : tabName === 'history' ? 'timestamp' : 'createdAt';
   appState.sortDirection = 'desc';
 
   renderApp();
@@ -1681,6 +1850,10 @@ function updateCountsAndStats() {
   if (sideCompCount) sideCompCount.textContent = compiledCount;
   const sideGsisCount = document.getElementById('side-count-gsis');
   if (sideGsisCount) sideGsisCount.textContent = gsisCount;
+  const historyList = appState.data.historyRecords || [];
+  const historyCount = historyList.length;
+  const sideHistCount = document.getElementById('side-count-history');
+  if (sideHistCount) sideHistCount.textContent = historyCount;
 
   let currentDatasetLength = 0;
   if (appState.activeTab === 'dtr') currentDatasetLength = dtrCount;
@@ -1690,6 +1863,7 @@ function updateCountsAndStats() {
   else if (appState.activeTab === 'compiled') currentDatasetLength = compiledCount;
   else if (appState.activeTab === 'gsis') currentDatasetLength = gsisCount;
   else if (appState.activeTab === 'trash') currentDatasetLength = trashCount;
+  else if (appState.activeTab === 'history') currentDatasetLength = historyCount;
 
   document.getElementById('stat-dtr-count').textContent = dtrCount;
   document.getElementById('stat-trn-count').textContent = trnCount;
@@ -1699,7 +1873,19 @@ function updateCountsAndStats() {
   if (statCompCount) statCompCount.textContent = compiledCount;
   const statGsisCount = document.getElementById('stat-gsis-count');
   if (statGsisCount) statGsisCount.textContent = gsisCount;
+  const statHistCount = document.getElementById('stat-history-count');
+  if (statHistCount) statHistCount.textContent = historyCount;
   document.getElementById('stat-active-count').textContent = currentDatasetLength;
+
+  // Calculate Active vs Inactive counts for GIP Contacts Directory and GIP Information
+  const currentGipList = appState.activeTab === 'gsis' ? gsisFiltered : contactsFiltered;
+  const activeGips = currentGipList.filter(r => (r.status || 'active') !== 'inactive').length;
+  const inactiveGips = currentGipList.filter(r => (r.status || 'active') === 'inactive').length;
+
+  const valActive = document.getElementById('val-active-count');
+  if (valActive) valActive.textContent = activeGips;
+  const valInactive = document.getElementById('val-inactive-count');
+  if (valInactive) valInactive.textContent = inactiveGips;
 
   // Calculate Grand Total Paid & Grand Total Pending Disbursed across selected year GIP Salary Records
   let grandTotalPaid = 0;
@@ -1960,6 +2146,9 @@ function getFilteredAndSortedRecords() {
   if (appState.activeTab === 'contacts') {
     let rawRecords = appState.data.contactsRecords ? [...appState.data.contactsRecords] : [];
     let records = filterRecordsByYear(rawRecords, 'contacts', selYear);
+    if (appState.gipStatusFilter && appState.gipStatusFilter !== 'ALL') {
+      records = records.filter(r => (r.status || 'active') === appState.gipStatusFilter);
+    }
     if (appState.searchQuery) {
       const q = appState.searchQuery;
       records = records.filter(r =>
@@ -2011,6 +2200,9 @@ function getFilteredAndSortedRecords() {
   if (appState.activeTab === 'gsis') {
     let rawRecords = appState.data.gsisRecords ? [...appState.data.gsisRecords] : [];
     let records = filterRecordsByYear(rawRecords, 'gsis', selYear);
+    if (appState.gipStatusFilter && appState.gipStatusFilter !== 'ALL') {
+      records = records.filter(r => (r.status || 'active') === appState.gipStatusFilter);
+    }
     if (appState.searchQuery) {
       const q = appState.searchQuery.toLowerCase();
       records = records.filter(r =>
@@ -2029,6 +2221,31 @@ function getFilteredAndSortedRecords() {
       if (valA < valB) return appState.sortDirection === 'asc' ? -1 : 1;
       if (valA > valB) return appState.sortDirection === 'asc' ? 1 : -1;
       return 0;
+    });
+    return records;
+  }
+
+  if (appState.activeTab === 'history') {
+    let records = appState.data.historyRecords ? [...appState.data.historyRecords] : [];
+    if (appState.historyModuleFilter && appState.historyModuleFilter !== 'ALL') {
+      records = records.filter(r => r.module === appState.historyModuleFilter);
+    }
+    if (appState.historyActionFilter && appState.historyActionFilter !== 'ALL') {
+      records = records.filter(r => r.action === appState.historyActionFilter);
+    }
+    if (appState.searchQuery) {
+      const q = appState.searchQuery.toLowerCase();
+      records = records.filter(r =>
+        (r.recordName || '').toLowerCase().includes(q) ||
+        (r.summary || '').toLowerCase().includes(q) ||
+        (r.moduleLabel || r.module || '').toLowerCase().includes(q) ||
+        (r.actionLabel || r.action || '').toLowerCase().includes(q)
+      );
+    }
+    records.sort((a, b) => {
+      const timeA = new Date(a.timestamp || a.createdAt || 0).getTime();
+      const timeB = new Date(b.timestamp || b.createdAt || 0).getTime();
+      return appState.sortDirection === 'asc' ? timeA - timeB : timeB - timeA;
     });
     return records;
   }
@@ -2310,6 +2527,9 @@ function renderTable() {
         <th onclick="handleSort('assignment')">
           <div class="th-content">ASSIGNMENT / OFFICE ${getSortIcon('assignment')}</div>
         </th>
+        <th onclick="handleSort('status')" style="text-align: center; width: 130px;">
+          <div class="th-content" style="justify-content: center;">STATUS ${getSortIcon('status')}</div>
+        </th>
         <th onclick="handleSort('contactNumber')">
           <div class="th-content">CONTACT NUMBER ${getSortIcon('contactNumber')}</div>
         </th>
@@ -2341,6 +2561,12 @@ function renderTable() {
               <i data-lucide="building-2" style="width: 12px; height: 12px;"></i>
               ${escapeHtml(record.assignment || 'LDNPFO')}
             </span>
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="btn-gip-status ${(record.status || 'active') === 'inactive' ? 'inactive' : 'active'}" onclick="toggleGipStatus('${record.id}', '${escapeHtml(record.gipName || 'GIP Contact').replace(/'/g, "\\'")}', 'contacts', event)" title="Click to toggle Active / Inactive status">
+              <span class="${(record.status || 'active') === 'inactive' ? '' : 'status-pulse-dot'}"></span>
+              ${(record.status || 'active') === 'inactive' ? 'Inactive' : 'Active'}
+            </button>
           </td>
           <td>
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -2392,6 +2618,9 @@ function renderTable() {
         <th onclick="handleSort('name')">
           <div class="th-content">NAME OF ASSURED ${getSortIcon('name')}</div>
         </th>
+        <th onclick="handleSort('status')" style="text-align: center; width: 130px;">
+          <div class="th-content" style="justify-content: center;">STATUS ${getSortIcon('status')}</div>
+        </th>
         <th onclick="handleSort('dob')">
           <div class="th-content">DATE OF BIRTH ${getSortIcon('dob')}</div>
         </th>
@@ -2430,6 +2659,12 @@ function renderTable() {
         <tr>
           <td style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem;">${idx + 1}</td>
           <td style="font-weight: 600; font-size: 0.925rem; color: var(--primary-navy);">${escapeHtml(record.name)}</td>
+          <td style="text-align: center;">
+            <button type="button" class="btn-gip-status ${(record.status || 'active') === 'inactive' ? 'inactive' : 'active'}" onclick="toggleGipStatus('${record.id}', '${escapeHtml(record.name || 'GIP Record').replace(/'/g, "\\'")}', 'gsis', event)" title="Click to toggle Active / Inactive status">
+              <span class="${(record.status || 'active') === 'inactive' ? '' : 'status-pulse-dot'}"></span>
+              ${(record.status || 'active') === 'inactive' ? 'Inactive' : 'Active'}
+            </button>
+          </td>
           <td style="white-space: nowrap;">${escapeHtml(record.dob || '-')}</td>
           <td><span class="badge-tag">${escapeHtml(record.age || '-')}</span></td>
           <td style="font-size: 0.85rem; max-width: 220px; color: var(--text-main);">${escapeHtml(record.address || '-')}</td>
@@ -2444,6 +2679,148 @@ function renderTable() {
               <button class="btn-action delete" onclick="openDeleteModal('${record.id}')" title="Delete GSIS Record">
                 <i data-lucide="trash-2"></i>
               </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  if (appState.activeTab === 'history') {
+    if (tableWrapper) tableWrapper.style.display = 'block';
+    if (salaryCardsGrid) salaryCardsGrid.style.display = 'none';
+
+    if (!appState.expandedHistoryRows) {
+      appState.expandedHistoryRows = new Set();
+    }
+
+    tableHead.innerHTML = `
+      <tr>
+        <th style="width: 140px;" onclick="handleSort('timestamp')">
+          <div class="th-content">TIMESTAMP ${getSortIcon('timestamp')}</div>
+        </th>
+        <th style="width: 160px;">
+          <div class="th-content">ACTION</div>
+        </th>
+        <th style="width: 195px;">MODULE</th>
+        <th style="width: 185px;">AFFECTED RECORD</th>
+        <th>CHANGE SUMMARY &amp; MODIFICATIONS</th>
+        <th style="text-align: right; width: 180px; padding-right: 20px;">RESTORE &amp; ACTIONS</th>
+      </tr>
+    `;
+
+    const records = getFilteredAndSortedRecords();
+
+    if (records.length === 0) {
+      tableBody.innerHTML = '';
+      emptyState.style.display = 'block';
+      if (emptyMsg) emptyMsg.textContent = 'No system history logs found matching current filters.';
+      return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tableBody.innerHTML = records.map(record => {
+      const actionClass = (record.action || 'UPDATE').toLowerCase();
+      const moduleClass = (record.module || 'dtr').toLowerCase();
+      const canRestore = (record.previousData && Object.keys(record.previousData).length > 0) || (record.action === 'CREATE' && record.recordId);
+      const isExpanded = appState.expandedHistoryRows && appState.expandedHistoryRows.has(record.id);
+
+      return `
+        <tr class="history-main-row ${isExpanded ? 'row-expanded' : ''}" id="hist-row-${record.id}">
+          <td style="white-space: nowrap; font-size: 0.8rem; color: var(--text-muted);">
+            <div style="font-weight: 600; color: var(--primary-navy);">${formatDate(record.timestamp)}</div>
+            <div style="font-size: 0.725rem;">${formatTime(record.timestamp)}</div>
+          </td>
+          <td>
+            <button type="button" class="btn-action-dropdown ${actionClass}" onclick="toggleHistoryDropdown('${record.id}', event)" title="Click dropdown to view all details for this change">
+              <span class="badge-action ${actionClass}">
+                ${escapeHtml(record.actionLabel || record.action)}
+                <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="action-chevron"></i>
+              </span>
+            </button>
+          </td>
+          <td>
+            <span class="badge-module ${moduleClass}">
+              ${escapeHtml(record.moduleLabel || record.module)}
+            </span>
+          </td>
+          <td style="font-weight: 700; font-size: 0.875rem; color: var(--primary-navy); word-break: break-word;">
+            ${escapeHtml(record.recordName || record.recordId || '-')}
+            ${record.restored ? `<span class="restored-tag"><i data-lucide="rotate-ccw" style="width: 10px; height: 10px;"></i> Restored</span>` : ''}
+          </td>
+          <td style="font-size: 0.825rem; color: var(--text-main); line-height: 1.45;">
+            <div style="font-weight: 500;">${escapeHtml(record.summary || '-')}</div>
+            ${renderInlineDiffPreview(record.changes)}
+          </td>
+          <td style="text-align: right; padding-right: 20px;">
+            <div class="action-buttons" style="justify-content: flex-end;">
+              ${canRestore ? `
+                <button class="btn btn-primary btn-sm" onclick="openRestoreConfirmModal('${record.id}')" style="font-size: 0.75rem; padding: 4px 10px; background: linear-gradient(135deg, #0d9488, #059669); border-color: #059669;" title="Restore this record to this previous state">
+                  <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> Restore
+                </button>
+              ` : `
+                <span style="font-size: 0.725rem; color: var(--text-muted); font-style: italic;">No Snapshot</span>
+              `}
+            </div>
+          </td>
+        </tr>
+        <tr id="hist-dropdown-${record.id}" class="history-dropdown-row ${isExpanded ? 'expanded' : ''}" style="${isExpanded ? '' : 'display: none;'}">
+          <td colspan="6" style="padding: 0; background: #f8fafc; border-bottom: 2px solid var(--border-medium);">
+            <div class="history-dropdown-panel">
+              <div class="history-dropdown-header">
+                <div class="history-dropdown-title-group">
+                  <span class="badge-action ${actionClass}">
+                    ${escapeHtml(record.actionLabel || record.action)}
+                  </span>
+                  <span class="badge-module ${moduleClass}">
+                    ${escapeHtml(record.moduleLabel || record.module)}
+                  </span>
+                  <span class="history-dropdown-record-name">
+                    <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+                    ${escapeHtml(record.recordName || record.recordId || '-')}
+                  </span>
+                  ${record.restored ? `<span class="restored-tag"><i data-lucide="rotate-ccw" style="width: 10px; height: 10px;"></i> Restored</span>` : ''}
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 0.775rem; color: var(--text-muted); font-weight: 500;">
+                    <i data-lucide="clock" style="width: 12px; height: 12px; vertical-align: middle;"></i>
+                    ${formatDate(record.timestamp)} at ${formatTime(record.timestamp)}
+                  </span>
+                  <button type="button" class="history-dropdown-close-btn" onclick="toggleHistoryDropdown('${record.id}', event)" title="Collapse Details">
+                    <i data-lucide="chevron-up" style="width: 13px; height: 13px;"></i> Collapse
+                  </button>
+                </div>
+              </div>
+
+              <!-- Change Summary -->
+              <div class="history-dropdown-summary">
+                <strong>Summary:</strong> ${escapeHtml(record.summary || 'No summary available.')}
+              </div>
+
+              <!-- Full Field-Level Diff Table (Readable, No Truncation) -->
+              ${renderDropdownDiffTable(record)}
+
+              <!-- Bottom Actions -->
+              <div class="history-dropdown-footer">
+                <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                  <i data-lucide="shield-check" style="width: 13px; height: 13px; color: #10b981;"></i>
+                  System Audit Trail Record ID: <code>${escapeHtml(record.id || '-')}</code>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="openHistoryDetailsModal('${record.id}')" style="font-size: 0.75rem; padding: 4px 10px;" title="View Complete Change Snapshot & Diff in Modal">
+                    <i data-lucide="maximize-2" style="width: 12px; height: 12px;"></i> View Full Snapshot Modal
+                  </button>
+                  ${canRestore ? `
+                    <button class="btn btn-primary btn-sm" onclick="openRestoreConfirmModal('${record.id}')" style="font-size: 0.75rem; padding: 4px 12px; background: linear-gradient(135deg, #0d9488, #059669); border-color: #059669;" title="Restore this record to this previous state">
+                      <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> Restore This Version
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
             </div>
           </td>
         </tr>
@@ -3803,6 +4180,10 @@ function openRecordModal(id = null, targetPeriodKey = null) {
     }
     currentTransmittalImageUrl = null;
     updateTransmittalModalImagePreview();
+    const cntSt = document.getElementById('contact-status');
+    if (cntSt) cntSt.value = 'active';
+    const gsisSt = document.getElementById('gsis-status');
+    if (gsisSt) gsisSt.value = 'active';
   }
 
   const remarksField = document.getElementById('record-remarks');
@@ -3915,6 +4296,17 @@ async function handleFormSubmit(e) {
         });
       }
       showToast('GIP INFORMATION RECORD UPDATED SUCCESSFULLY!', 'success');
+      logSystemHistory({
+        module: 'gsis',
+        action: 'UPDATE',
+        actionLabel: 'Updated Record',
+        recordId,
+        recordName: name,
+        summary: `Updated GIP Information & GSIS profile for ${name}`,
+        changes: computeFieldDiff(oldRec, payload),
+        previousData: oldRec,
+        newData: { id: recordId, ...payload }
+      });
     } else {
       const newId = 'gip-gsis-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
@@ -3935,6 +4327,17 @@ async function handleFormSubmit(e) {
         });
       }
       showToast('NEW GIP INFORMATION RECORD ADDED SUCCESSFULLY!', 'success');
+      logSystemHistory({
+        module: 'gsis',
+        action: 'CREATE',
+        actionLabel: 'Created Record',
+        recordId: newId,
+        recordName: name,
+        summary: `Added new GIP Information record for ${name}`,
+        changes: null,
+        previousData: null,
+        newData: newRecord
+      });
     }
 
     closeRecordModal();
@@ -4132,6 +4535,17 @@ async function handleFormSubmit(e) {
       }
 
       showToast('GIP CONTACT UPDATED SUCCESSFULLY!', 'success');
+      logSystemHistory({
+        module: 'contacts',
+        action: 'UPDATE',
+        actionLabel: 'Updated Record',
+        recordId,
+        recordName: gipName,
+        summary: `Updated contact details for ${gipName}`,
+        changes: computeFieldDiff(oldRec, payload),
+        previousData: oldRec,
+        newData: { id: recordId, ...payload }
+      });
     } else {
       const newId = 'cnt-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
@@ -4155,6 +4569,17 @@ async function handleFormSubmit(e) {
       }
 
       showToast('NEW GIP CONTACT ADDED SUCCESSFULLY!', 'success');
+      logSystemHistory({
+        module: 'contacts',
+        action: 'CREATE',
+        actionLabel: 'Created Record',
+        recordId: newId,
+        recordName: gipName,
+        summary: `Added new GIP Contact ${gipName} assigned to ${assignment}`,
+        changes: null,
+        previousData: null,
+        newData: newRecord
+      });
     }
 
     closeRecordModal();
@@ -4214,6 +4639,17 @@ async function handleFormSubmit(e) {
       }
 
       showToast('GIP RECORD UPDATED SUCCESSFULLY!', 'success');
+      logSystemHistory({
+        module: 'dtr',
+        action: 'UPDATE',
+        actionLabel: 'Updated Record',
+        recordId,
+        recordName: gipName,
+        summary: `Updated DTR & AR record for ${gipName} (${quincena})`,
+        changes: null,
+        previousData: null,
+        newData: { id: recordId, ...payload }
+      });
     } else {
       const newId = 'dtr-' + Date.now();
       const newRecord = { id: newId, ...payload, createdAt: nowISO };
@@ -4241,6 +4677,17 @@ async function handleFormSubmit(e) {
       }
 
       showToast('NEW GIP RECORD ADDED SUCCESSFULLY!', 'success');
+      logSystemHistory({
+        module: 'dtr',
+        action: 'CREATE',
+        actionLabel: 'Created Record',
+        recordId: newId,
+        recordName: gipName,
+        summary: `Logged new DTR & AR submission for ${gipName} (${quincena})`,
+        changes: null,
+        previousData: null,
+        newData: newRecord
+      });
     }
 
     closeRecordModal();
@@ -4516,6 +4963,17 @@ async function confirmDeleteRecord(e) {
   renderApp();
   updateFinancialOverview();
   showToast('RECORD MOVED TO RECYCLE BIN (AUTO-PURGES IN 30 DAYS)', 'info');
+  logSystemHistory({
+    module: type,
+    action: 'DELETE',
+    actionLabel: 'Deleted Record',
+    recordId: targetRecord.id,
+    recordName: targetRecord.gipName || targetRecord.name || targetRecord.particulars || targetRecord.documentTitle || 'Record',
+    summary: `Deleted ${type.toUpperCase()} record and archived to Recycle Bin`,
+    changes: null,
+    previousData: targetRecord,
+    newData: null
+  });
 }
 
 /**
@@ -5214,6 +5672,7 @@ function handleExcelExportFormSubmit(e) {
       const cntDataFormatted = (appState.data.contactsRecords || []).map(r => ({
         'GIP FULL NAME': (r.gipName || '').toUpperCase(),
         'ASSIGNMENT / OFFICE': (r.assignment || 'LDNPFO').toUpperCase(),
+        'STATUS': (r.status || 'ACTIVE').toUpperCase(),
         'CONTACT NUMBER': r.contactNumber || 'N/A',
         'REMARKS': (r.remarks || '').toUpperCase()
       }));
@@ -5226,6 +5685,7 @@ function handleExcelExportFormSubmit(e) {
       const gsisDataFormatted = (appState.data.gsisRecords || []).map((r, idx) => ({
         'NO.': idx + 1,
         'NAME OF ASSURED': (r.name || '').toUpperCase(),
+        'STATUS': (r.status || 'ACTIVE').toUpperCase(),
         'DATE OF BIRTH': r.dob || 'N/A',
         'AGE': r.age || 'N/A',
         'ADDRESS': (r.address || '').toUpperCase(),
@@ -5506,6 +5966,9 @@ function exportSingleModule(e, type) {
       XLSX.utils.book_append_sheet(wb, ws, 'RECYCLE BIN');
       XLSX.writeFile(wb, `Recycle_Bin_Archive_${dateStr}.xlsx`);
       showToast('RECYCLE BIN EXCEL DOWNLOADED!', 'success');
+    } else if (type === 'history') {
+      exportHistoryToExcel();
+      return;
     }
   } catch (err) {
     console.error('Error exporting single module:', err);
@@ -7295,4 +7758,855 @@ function handleYearFilterChange(newYear) {
   updateYearSelectDropdown();
   renderApp();
   showToast(newYear === 'ALL' ? 'DISPLAYING ALL YEARS DATA' : `FILTERED TO YEAR ${newYear} DATA`, 'info');
+}
+
+
+/* ==========================================================================
+   SYSTEM CHANGE HISTORY, AUDIT RESTORE & GIP STATUS ENGINE
+   ========================================================================== */
+
+/**
+ * Log a change event into System Change History (both in-memory, localStorage, and Firebase)
+ */
+async function logSystemHistory({
+  module,
+  moduleLabel = null,
+  action,
+  actionLabel = null,
+  recordId,
+  recordName,
+  summary,
+  changes = null,
+  previousData = null,
+  newData = null
+}) {
+  const moduleLabels = {
+    dtr: 'GIP DTR & AR',
+    transmittal: 'Transmittal Records',
+    contacts: 'GIP Contacts Directory',
+    salary: 'Salary & Payroll',
+    compiled: 'Work Program',
+    gsis: 'GIP Information',
+    budget: 'Budget Configuration'
+  };
+
+  const actionLabels = {
+    CREATE: 'Created Record',
+    UPDATE: 'Updated Record',
+    STATUS_CHANGE: 'Status Changed',
+    DELETE: 'Deleted Record',
+    RESTORE: 'Restored State'
+  };
+
+  const nowISO = new Date().toISOString();
+  const histEntry = {
+    id: 'hist-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    timestamp: nowISO,
+    module: module || 'dtr',
+    moduleLabel: moduleLabel || moduleLabels[module] || (module ? module.toUpperCase() : 'SYSTEM'),
+    action: action || 'UPDATE',
+    actionLabel: actionLabel || actionLabels[action] || (action ? action.toUpperCase() : 'CHANGED'),
+    recordId: String(recordId || ''),
+    recordName: String(recordName || ''),
+    summary: String(summary || ''),
+    changes: changes || null,
+    previousData: previousData ? JSON.parse(JSON.stringify(previousData)) : null,
+    newData: newData ? JSON.parse(JSON.stringify(newData)) : null,
+    restored: false,
+    createdAt: nowISO
+  };
+
+  if (!appState.data.historyRecords) appState.data.historyRecords = [];
+  appState.data.historyRecords.unshift(histEntry);
+
+  // Keep most recent 500 records
+  if (appState.data.historyRecords.length > 500) {
+    appState.data.historyRecords = appState.data.historyRecords.slice(0, 500);
+  }
+
+  saveToLocalStorage();
+
+  if (isSupabaseConnected && supabaseClient) {
+    try {
+      await supabaseClient.from('system_history').upsert({
+        id: histEntry.id,
+        timestamp: histEntry.timestamp,
+        module: histEntry.module,
+        module_label: histEntry.moduleLabel,
+        action: histEntry.action,
+        action_label: histEntry.actionLabel,
+        record_id: histEntry.recordId,
+        record_name: histEntry.recordName,
+        summary: histEntry.summary,
+        changes: histEntry.changes,
+        previous_data: histEntry.previousData,
+        new_data: histEntry.newData,
+        restored: histEntry.restored,
+        created_at: histEntry.createdAt
+      });
+    } catch (err) {
+      console.warn('System history sync note:', err.message);
+    }
+  }
+
+  updateCountsAndStats();
+}
+
+/**
+ * Compute key-by-key difference between two objects for audit presentation
+ */
+function computeFieldDiff(oldObj, newObj) {
+  if (!oldObj || !newObj) return null;
+  const diff = {};
+  const ignoredKeys = ['updatedAt', 'updated_at', 'createdAt', 'created_at', 'id'];
+
+  const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+  allKeys.forEach(key => {
+    if (ignoredKeys.includes(key)) return;
+    const oldVal = oldObj[key] !== undefined && oldObj[key] !== null ? oldObj[key] : '';
+    const newVal = newObj[key] !== undefined && newObj[key] !== null ? newObj[key] : '';
+
+    const strOld = typeof oldVal === 'object' ? JSON.stringify(oldVal) : String(oldVal).trim();
+    const strNew = typeof newVal === 'object' ? JSON.stringify(newVal) : String(newVal).trim();
+
+    if (strOld !== strNew) {
+      diff[key] = {
+        old: typeof oldVal === 'object' ? oldVal : strOld,
+        new: typeof newVal === 'object' ? newVal : strNew
+      };
+    }
+  });
+
+  return Object.keys(diff).length > 0 ? diff : null;
+}
+
+/**
+ * Renders small inline preview tags of changed fields for table view
+ */
+function renderInlineDiffPreview(changes) {
+  if (!changes || typeof changes !== 'object') return '';
+  const keys = Object.keys(changes);
+  if (keys.length === 0) return '';
+
+  return `
+    <div class="history-diff-box" style="margin-top: 5px;">
+      ${keys.slice(0, 3).map(k => {
+        const item = changes[k];
+        const oldTxt = typeof item.old === 'object' ? JSON.stringify(item.old) : String(item.old || '-');
+        const newTxt = typeof item.new === 'object' ? JSON.stringify(item.new) : String(item.new || '-');
+        return `
+          <div class="history-diff-item">
+            <span class="diff-field">${escapeHtml(k)}:</span>
+            <span class="diff-old">${escapeHtml(oldTxt.length > 20 ? oldTxt.substring(0, 20) + '...' : oldTxt)}</span>
+            <span class="diff-arrow">&rarr;</span>
+            <span class="diff-new">${escapeHtml(newTxt.length > 20 ? newTxt.substring(0, 20) + '...' : newTxt)}</span>
+          </div>
+        `;
+      }).join('')}
+      ${keys.length > 3 ? `<div style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">+ ${keys.length - 3} more field(s)</div>` : ''}
+    </div>
+  `;
+}
+
+/**
+ * Toggle Active / Inactive status of a GIP record across Contacts & Information directories
+ */
+async function toggleGipStatus(id, name, module = 'contacts', event = null) {
+  if (event && event.stopPropagation) {
+    event.stopPropagation();
+  }
+
+  const isContacts = module === 'contacts';
+  let targetRec = null;
+
+  if (isContacts) {
+    targetRec = (appState.data.contactsRecords || []).find(r => r.id === id);
+  } else {
+    targetRec = (appState.data.gsisRecords || []).find(r => r.id === id);
+  }
+
+  if (!targetRec) return;
+
+  const currentStatus = (targetRec.status || 'active').toLowerCase();
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  const oldSnapshot = { ...targetRec };
+
+  // Update target record in state
+  targetRec.status = newStatus;
+  targetRec.updatedAt = new Date().toISOString();
+
+  // Cross-module sync: if matching GIP name found in other directory, sync status
+  const targetNameNorm = (targetRec.gipName || targetRec.name || name || '').toUpperCase().trim();
+  let syncedOtherCount = 0;
+
+  if (isContacts && appState.data.gsisRecords) {
+    appState.data.gsisRecords.forEach(gsisRec => {
+      const gsisNameNorm = (gsisRec.name || '').toUpperCase().trim();
+      if (gsisNameNorm === targetNameNorm && (gsisRec.status || 'active') !== newStatus) {
+        gsisRec.status = newStatus;
+        gsisRec.updatedAt = new Date().toISOString();
+        syncedOtherCount++;
+        if (isSupabaseConnected && supabaseClient) {
+          supabaseClient.from('gip_gsis_records').upsert({
+            id: gsisRec.id,
+            status: newStatus,
+            updated_at: gsisRec.updatedAt
+          });
+        }
+      }
+    });
+  } else if (!isContacts && appState.data.contactsRecords) {
+    appState.data.contactsRecords.forEach(cntRec => {
+      const cntNameNorm = (cntRec.gipName || '').toUpperCase().trim();
+      if (cntNameNorm === targetNameNorm && (cntRec.status || 'active') !== newStatus) {
+        cntRec.status = newStatus;
+        cntRec.updatedAt = new Date().toISOString();
+        syncedOtherCount++;
+        if (isSupabaseConnected && supabaseClient) {
+          supabaseClient.from('gip_contacts').upsert({
+            id: cntRec.id,
+            status: newStatus,
+            updated_at: cntRec.updatedAt
+          });
+        }
+      }
+    });
+  }
+
+  // Persist updated status to Supabase
+  if (isSupabaseConnected && supabaseClient) {
+    const tableName = isContacts ? 'gip_contacts' : 'gip_gsis_records';
+    await supabaseClient.from(tableName).upsert({
+      id: targetRec.id,
+      status: newStatus,
+      updated_at: targetRec.updatedAt
+    });
+  }
+
+  // Log STATUS_CHANGE in system history
+  await logSystemHistory({
+    module: isContacts ? 'contacts' : 'gsis',
+    action: 'STATUS_CHANGE',
+    actionLabel: 'Status Changed',
+    recordId: targetRec.id,
+    recordName: targetRec.gipName || targetRec.name || name,
+    summary: `Changed deployment status from ${currentStatus.toUpperCase()} to ${newStatus.toUpperCase()}${syncedOtherCount > 0 ? ' (Synchronized across Directory & GIP Info)' : ''}`,
+    changes: {
+      status: { old: currentStatus, new: newStatus }
+    },
+    previousData: oldSnapshot,
+    newData: { ...targetRec }
+  });
+
+  saveToLocalStorage();
+  renderApp();
+
+  const statusLabel = newStatus === 'active' ? 'ACTIVE' : 'INACTIVE';
+  showToast(`${escapeHtml(targetRec.gipName || targetRec.name || name)} MARKED AS ${statusLabel}!`, newStatus === 'active' ? 'success' : 'info');
+}
+
+/**
+ * Revert / restore a historic state from audit logs
+ */
+async function restoreHistoryEntry(historyId) {
+  if (!appState.data.historyRecords) return;
+  const entry = appState.data.historyRecords.find(h => h.id === historyId);
+  if (!entry) {
+    showToast('HISTORY ENTRY NOT FOUND', 'danger');
+    return;
+  }
+
+  const prevData = entry.previousData;
+  const mod = entry.module;
+  const targetId = entry.recordId || (prevData && prevData.id);
+
+  if (!prevData && entry.action === 'CREATE') {
+    // Reverting a CREATE action removes the record
+    if (mod === 'dtr') {
+      appState.data.dtrRecords = (appState.data.dtrRecords || []).filter(r => r.id !== targetId);
+      if (isSupabaseConnected && supabaseClient) await supabaseClient.from('gip_dtr_ar_records').delete().eq('id', targetId);
+    } else if (mod === 'contacts') {
+      appState.data.contactsRecords = (appState.data.contactsRecords || []).filter(r => r.id !== targetId);
+      if (isSupabaseConnected && supabaseClient) await supabaseClient.from('gip_contacts').delete().eq('id', targetId);
+    } else if (mod === 'gsis') {
+      appState.data.gsisRecords = (appState.data.gsisRecords || []).filter(r => r.id !== targetId);
+      if (isSupabaseConnected && supabaseClient) await supabaseClient.from('gip_gsis_records').delete().eq('id', targetId);
+    } else if (mod === 'salary') {
+      appState.data.salaryRecords = (appState.data.salaryRecords || []).filter(r => r.id !== targetId);
+      if (isSupabaseConnected && supabaseClient) await supabaseClient.from('gip_salary_records').delete().eq('id', targetId);
+    } else if (mod === 'compiled') {
+      appState.data.compiledRecords = (appState.data.compiledRecords || []).filter(r => r.id !== targetId);
+      if (isSupabaseConnected && supabaseClient) await supabaseClient.from('gip_compiled_documents').delete().eq('id', targetId);
+    } else if (mod === 'transmittal') {
+      appState.data.transmittalRecords = (appState.data.transmittalRecords || []).filter(r => r.id !== targetId);
+      if (isSupabaseConnected && supabaseClient) await supabaseClient.from('transmittal_records').delete().eq('id', targetId);
+    }
+  } else if (prevData) {
+    // Reverting to previousData
+    if (mod === 'dtr') {
+      if (!appState.data.dtrRecords) appState.data.dtrRecords = [];
+      const idx = appState.data.dtrRecords.findIndex(r => r.id === targetId);
+      if (idx !== -1) appState.data.dtrRecords[idx] = { ...prevData };
+      else appState.data.dtrRecords.unshift({ ...prevData });
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_dtr_ar_records').upsert({
+          id: prevData.id,
+          gip_name: prevData.gipName,
+          month: prevData.month,
+          quincena: prevData.quincena,
+          dtr_ar_date_received: prevData.dtrArDateReceived,
+          transmittal_date: prevData.transmittalDate,
+          remarks: prevData.remarks,
+          is_printed: prevData.isPrinted,
+          updated_at: new Date().toISOString()
+        });
+      }
+    } else if (mod === 'contacts') {
+      if (!appState.data.contactsRecords) appState.data.contactsRecords = [];
+      const idx = appState.data.contactsRecords.findIndex(r => r.id === targetId);
+      if (idx !== -1) appState.data.contactsRecords[idx] = { ...prevData };
+      else appState.data.contactsRecords.unshift({ ...prevData });
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_contacts').upsert({
+          id: prevData.id,
+          gip_name: prevData.gipName,
+          assignment: prevData.assignment,
+          contact_number: prevData.contactNumber,
+          remarks: prevData.remarks,
+          status: prevData.status || 'active',
+          updated_at: new Date().toISOString()
+        });
+      }
+    } else if (mod === 'gsis') {
+      if (!appState.data.gsisRecords) appState.data.gsisRecords = [];
+      const idx = appState.data.gsisRecords.findIndex(r => r.id === targetId);
+      if (idx !== -1) appState.data.gsisRecords[idx] = { ...prevData };
+      else appState.data.gsisRecords.unshift({ ...prevData });
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_gsis_records').upsert({
+          id: prevData.id,
+          gip_name: prevData.name,
+          dob: prevData.dob,
+          age: prevData.age,
+          address: prevData.address,
+          beneficiary: prevData.beneficiary,
+          relationship: prevData.relationship,
+          period: prevData.period,
+          amount: prevData.amount || '50.00',
+          status: prevData.status || 'active',
+          updated_at: new Date().toISOString()
+        });
+      }
+    } else if (mod === 'salary') {
+      if (!appState.data.salaryRecords) appState.data.salaryRecords = [];
+      const idx = appState.data.salaryRecords.findIndex(r => r.id === targetId);
+      if (idx !== -1) appState.data.salaryRecords[idx] = { ...prevData };
+      else appState.data.salaryRecords.unshift({ ...prevData });
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_salary_records').upsert({
+          id: prevData.id,
+          gip_name: prevData.gipName,
+          periods: prevData.periods,
+          updated_at: new Date().toISOString()
+        });
+      }
+    } else if (mod === 'compiled') {
+      if (!appState.data.compiledRecords) appState.data.compiledRecords = [];
+      const idx = appState.data.compiledRecords.findIndex(r => r.id === targetId);
+      if (idx !== -1) appState.data.compiledRecords[idx] = { ...prevData };
+      else appState.data.compiledRecords.unshift({ ...prevData });
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('gip_compiled_documents').upsert({
+          id: prevData.id,
+          category: prevData.category,
+          particulars: prevData.particulars || prevData.documentTitle,
+          document_title: prevData.particulars || prevData.documentTitle,
+          amount: prevData.amount,
+          date_received: prevData.dateReceived || prevData.dateExpense,
+          remarks: prevData.remarks,
+          updated_at: new Date().toISOString()
+        });
+      }
+    } else if (mod === 'transmittal') {
+      if (!appState.data.transmittalRecords) appState.data.transmittalRecords = [];
+      const idx = appState.data.transmittalRecords.findIndex(r => r.id === targetId);
+      if (idx !== -1) appState.data.transmittalRecords[idx] = { ...prevData };
+      else appState.data.transmittalRecords.unshift({ ...prevData });
+      if (isSupabaseConnected && supabaseClient) {
+        await supabaseClient.from('transmittal_records').upsert({
+          id: prevData.id,
+          program: prevData.program || '',
+          particulars: prevData.particulars,
+          date_transmitted: prevData.dateTransmitted || '',
+          regional_date_received: prevData.regionalDateReceived || '',
+          remarks: prevData.remarks || '',
+          image_url: prevData.imageUrl || null,
+          updated_at: new Date().toISOString()
+        });
+      }
+    }
+  } else {
+    showToast('NO PREVIOUS SNAPSHOT DATA AVAILABLE TO RESTORE', 'warning');
+    return;
+  }
+
+  // Flag entry as restored
+  entry.restored = true;
+
+  // Log the restore event
+  await logSystemHistory({
+    module: mod,
+    action: 'RESTORE',
+    actionLabel: 'Restored State',
+    recordId: targetId,
+    recordName: entry.recordName,
+    summary: `Restored version of "${entry.recordName}" from ${formatDate(entry.timestamp)} ${formatTime(entry.timestamp)}`,
+    changes: null,
+    previousData: entry.newData,
+    newData: entry.previousData
+  });
+
+  closeHistoryDetailsModal();
+  saveToLocalStorage();
+  renderApp();
+  showToast(`SUCCESSFULLY RESTORED "${entry.recordName}"!`, 'success');
+}
+
+/**
+ * Toggle individual History Row Dropdown Details
+ */
+function toggleHistoryDropdown(historyId, event) {
+  if (event && event.stopPropagation) {
+    event.stopPropagation();
+  }
+  if (!appState.expandedHistoryRows) {
+    appState.expandedHistoryRows = new Set();
+  }
+
+  const dropdownRow = document.getElementById(`hist-dropdown-${historyId}`);
+  const mainRow = document.getElementById(`hist-row-${historyId}`);
+
+  if (appState.expandedHistoryRows.has(historyId)) {
+    appState.expandedHistoryRows.delete(historyId);
+    if (dropdownRow) dropdownRow.style.display = 'none';
+    if (dropdownRow) dropdownRow.classList.remove('expanded');
+    if (mainRow) mainRow.classList.remove('row-expanded');
+    // Update chevrons
+    const btnChevron = mainRow ? mainRow.querySelector('.action-chevron') : null;
+    if (btnChevron) {
+      btnChevron.setAttribute('data-lucide', 'chevron-down');
+    }
+  } else {
+    appState.expandedHistoryRows.add(historyId);
+    if (dropdownRow) dropdownRow.style.display = 'table-row';
+    if (dropdownRow) dropdownRow.classList.add('expanded');
+    if (mainRow) mainRow.classList.add('row-expanded');
+    // Update chevrons
+    const btnChevron = mainRow ? mainRow.querySelector('.action-chevron') : null;
+    if (btnChevron) {
+      btnChevron.setAttribute('data-lucide', 'chevron-up');
+    }
+  }
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+/**
+ * Toggle Expand All / Collapse All History Row Dropdowns
+ */
+function toggleAllHistoryDropdowns() {
+  if (!appState.expandedHistoryRows) {
+    appState.expandedHistoryRows = new Set();
+  }
+  const records = getFilteredAndSortedRecords();
+  if (records.length === 0) return;
+
+  const btn = document.getElementById('btn-toggle-all-history');
+  if (appState.expandedHistoryRows.size >= records.length) {
+    appState.expandedHistoryRows.clear();
+    if (btn) btn.innerHTML = `<i data-lucide="chevrons-up-down" style="width: 14px; height: 14px; color: var(--brand-accent);"></i> Expand All Details`;
+  } else {
+    records.forEach(r => appState.expandedHistoryRows.add(r.id));
+    if (btn) btn.innerHTML = `<i data-lucide="chevrons-up-down" style="width: 14px; height: 14px; color: var(--brand-accent);"></i> Collapse All Details`;
+  }
+  renderTable();
+}
+
+/**
+ * Format field key into readable display title
+ */
+function formatFieldLabel(key) {
+  if (!key) return '-';
+  const labelsMap = {
+    gipName: 'GIP Name',
+    name: 'Assured Name',
+    dob: 'Date of Birth',
+    contactNumber: 'Contact Number',
+    officeAssignment: 'Office Assignment',
+    beneficiary: 'Designated Beneficiary',
+    relationship: 'Relationship',
+    deploymentStatus: 'Deployment Status',
+    status: 'Status',
+    regionalDateReceived: 'Regional Date Received',
+    dateTransmitted: 'Date Transmitted',
+    transmittalNumber: 'Transmittal No.',
+    inclusiveDates: 'Period Covered',
+    remarks: 'Remarks / Notes',
+    totalBudget: 'Total Program Budget'
+  };
+  if (labelsMap[key]) return labelsMap[key];
+
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/[_-]+/g, ' ')
+    .replace(/^\w/, c => c.toUpperCase())
+    .trim();
+}
+
+/**
+ * Render complete field-by-field modifications for dropdown row
+ */
+function renderDropdownDiffTable(record) {
+  let changes = record.changes;
+  if (!changes && record.previousData && record.newData) {
+    changes = computeFieldDiff(record.previousData, record.newData);
+  }
+
+  if (changes && Object.keys(changes).length > 0) {
+    const keys = Object.keys(changes);
+    return `
+      <div class="history-dropdown-diff-wrapper">
+        <div class="history-dropdown-diff-title">
+          <i data-lucide="git-compare" style="width: 14px; height: 14px; color: var(--brand-accent);"></i>
+          <span>Field-by-Field Modifications (${keys.length} field${keys.length > 1 ? 's' : ''} modified):</span>
+        </div>
+        <table class="history-dropdown-diff-table">
+          <thead>
+            <tr>
+              <th style="width: 26%;">MODIFIED FIELD</th>
+              <th style="width: 37%;">PREVIOUS / ORIGINAL VALUE</th>
+              <th style="width: 37%;">NEW / UPDATED VALUE</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${keys.map(field => {
+              const ch = changes[field];
+              const oldVal = typeof ch.old === 'object' ? JSON.stringify(ch.old, null, 2) : String(ch.old !== undefined && ch.old !== null ? ch.old : '');
+              const newVal = typeof ch.new === 'object' ? JSON.stringify(ch.new, null, 2) : String(ch.new !== undefined && ch.new !== null ? ch.new : '');
+              return `
+                <tr>
+                  <td class="diff-field-cell">${escapeHtml(formatFieldLabel(field))}</td>
+                  <td>
+                    <span class="diff-val-old">${escapeHtml(oldVal || '(empty / none)')}</span>
+                  </td>
+                  <td>
+                    <span class="diff-val-new">${escapeHtml(newVal || '(empty / none)')}</span>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } else if (record.action === 'CREATE') {
+    return `
+      <div class="history-dropdown-empty-state create">
+        <i data-lucide="plus-circle" style="width: 16px; height: 16px; color: #16a34a; flex-shrink: 0;"></i>
+        <span><strong>Record Initialized:</strong> This entry was newly registered in the system with initial data attributes.</span>
+      </div>
+    `;
+  } else if (record.action === 'DELETE') {
+    return `
+      <div class="history-dropdown-empty-state delete">
+        <i data-lucide="trash-2" style="width: 16px; height: 16px; color: #dc2626; flex-shrink: 0;"></i>
+        <span><strong>Record Removed:</strong> This record was archived to the 30-Day Recycle Bin and may be restored anytime before auto-purge.</span>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="history-dropdown-empty-state info">
+        <i data-lucide="info" style="width: 16px; height: 16px; color: #0284c7; flex-shrink: 0;"></i>
+        <span>System transaction verified and recorded in the audit trail.</span>
+      </div>
+    `;
+  }
+}
+
+/**
+ * Open System Change History Details Modal with full diff & JSON snapshots
+ */
+function openHistoryDetailsModal(historyId) {
+  const entry = (appState.data.historyRecords || []).find(h => h.id === historyId);
+  if (!entry) return;
+
+  appState.selectedHistoryId = historyId;
+
+  const actionBadge = document.getElementById('hist-detail-action-badge');
+  const modBadge = document.getElementById('hist-detail-module-badge');
+  const timeElem = document.getElementById('hist-detail-time');
+  const titleElem = document.getElementById('hist-detail-title');
+  const summaryElem = document.getElementById('hist-detail-summary');
+  const diffContainer = document.getElementById('hist-detail-diff-container');
+  const prevJsonElem = document.getElementById('hist-detail-prev-json');
+  const newJsonElem = document.getElementById('hist-detail-new-json');
+  const restoreBtn = document.getElementById('btn-modal-restore-history');
+
+  const actionClass = (entry.action || 'update').toLowerCase();
+  const modClass = (entry.module || 'dtr').toLowerCase();
+
+  if (actionBadge) {
+    actionBadge.className = `badge-action ${actionClass}`;
+    actionBadge.textContent = entry.actionLabel || entry.action;
+  }
+  if (modBadge) {
+    modBadge.className = `badge-module ${modClass}`;
+    modBadge.textContent = entry.moduleLabel || entry.module;
+  }
+  if (timeElem) {
+    timeElem.textContent = `${formatDate(entry.timestamp)} at ${formatTime(entry.timestamp)}`;
+  }
+  if (titleElem) {
+    titleElem.textContent = entry.recordName || entry.recordId || 'Change Record';
+  }
+  if (summaryElem) {
+    summaryElem.textContent = entry.summary || 'No summary available.';
+  }
+
+  // Populate Field Level Diff
+  let changes = entry.changes;
+  if (!changes && entry.previousData && entry.newData) {
+    changes = computeFieldDiff(entry.previousData, entry.newData);
+  }
+
+  if (diffContainer) {
+    if (changes && Object.keys(changes).length > 0) {
+      diffContainer.innerHTML = `
+        <table class="history-diff-table">
+          <thead>
+            <tr>
+              <th style="width: 25%;">Field</th>
+              <th style="width: 37%;">Original / Old Value</th>
+              <th style="width: 38%;">New / Updated Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Object.keys(changes).map(field => {
+              const ch = changes[field];
+              const oldVal = typeof ch.old === 'object' ? JSON.stringify(ch.old, null, 2) : String(ch.old || '-');
+              const newVal = typeof ch.new === 'object' ? JSON.stringify(ch.new, null, 2) : String(ch.new || '-');
+              return `
+                <tr>
+                  <td style="font-weight: 700; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">${escapeHtml(field)}</td>
+                  <td><span class="diff-old" style="display: inline-block; max-width: 100%; word-break: break-all;">${escapeHtml(oldVal)}</span></td>
+                  <td><span class="diff-new" style="display: inline-block; max-width: 100%; word-break: break-all;">${escapeHtml(newVal)}</span></td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    } else if (entry.action === 'CREATE') {
+      diffContainer.innerHTML = `<div style="padding: 12px; font-size: 0.825rem; color: #16a34a; font-weight: 600;"><i data-lucide="check-circle" style="width: 14px; height: 14px; vertical-align: middle;"></i> Record was newly created with initial properties.</div>`;
+    } else if (entry.action === 'DELETE') {
+      diffContainer.innerHTML = `<div style="padding: 12px; font-size: 0.825rem; color: #dc2626; font-weight: 600;"><i data-lucide="trash-2" style="width: 14px; height: 14px; vertical-align: middle;"></i> Record was removed and archived to the 30-Day Recycle Bin.</div>`;
+    } else {
+      diffContainer.innerHTML = `<div style="padding: 12px; font-size: 0.825rem; color: var(--text-muted); font-style: italic;">No specific field changes recorded for this operation.</div>`;
+    }
+  }
+
+  // Populate Raw JSON preview
+  if (prevJsonElem) {
+    prevJsonElem.textContent = entry.previousData ? JSON.stringify(entry.previousData, null, 2) : 'null (Newly created record)';
+  }
+  if (newJsonElem) {
+    newJsonElem.textContent = entry.newData ? JSON.stringify(entry.newData, null, 2) : 'null (Deleted record)';
+  }
+
+  // Setup restore button
+  if (restoreBtn) {
+    const canRestore = (entry.previousData && Object.keys(entry.previousData).length > 0) || (entry.action === 'CREATE' && entry.recordId);
+    if (canRestore) {
+      restoreBtn.style.display = 'inline-flex';
+      restoreBtn.onclick = () => openRestoreConfirmModal(historyId);
+    } else {
+      restoreBtn.style.display = 'none';
+    }
+  }
+
+  const modal = document.getElementById('history-details-modal');
+  if (modal) modal.classList.add('active');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeHistoryDetailsModal() {
+  const modal = document.getElementById('history-details-modal');
+  if (modal) modal.classList.remove('active');
+  appState.selectedHistoryId = null;
+}
+
+/**
+ * Open Confirmation Modal before restoring a historical state
+ */
+function openRestoreConfirmModal(historyId) {
+  if (!appState.data.historyRecords) return;
+  const entry = appState.data.historyRecords.find(h => h.id === historyId);
+  if (!entry) {
+    showToast('HISTORY ENTRY NOT FOUND', 'danger');
+    return;
+  }
+
+  appState.pendingRestoreHistoryId = historyId;
+
+  const modalName = document.getElementById('restore-confirm-name');
+  const modalModule = document.getElementById('restore-confirm-module');
+  const modalTime = document.getElementById('restore-confirm-time');
+  const modalSummary = document.getElementById('restore-confirm-summary');
+
+  const modClass = (entry.module || 'dtr').toLowerCase();
+
+  if (modalName) {
+    modalName.textContent = entry.recordName || entry.recordId || 'Unknown Record';
+  }
+  if (modalModule) {
+    modalModule.className = `badge-module ${modClass}`;
+    modalModule.textContent = entry.moduleLabel || entry.module || 'System';
+  }
+  if (modalTime) {
+    modalTime.textContent = `${formatDate(entry.timestamp)} at ${formatTime(entry.timestamp)}`;
+  }
+  if (modalSummary) {
+    modalSummary.textContent = entry.summary ? `Modifications: ${entry.summary}` : 'Point-in-time snapshot restore';
+  }
+
+  const modal = document.getElementById('restore-confirm-modal');
+  if (modal) modal.classList.add('active');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeRestoreConfirmModal() {
+  const modal = document.getElementById('restore-confirm-modal');
+  if (modal) modal.classList.remove('active');
+  appState.pendingRestoreHistoryId = null;
+}
+
+async function confirmExecuteRestore() {
+  const historyId = appState.pendingRestoreHistoryId;
+  if (!historyId) {
+    closeRestoreConfirmModal();
+    return;
+  }
+
+  const btn = document.getElementById('btn-execute-restore');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader" class="spin"></i> Restoring...`;
+  }
+
+  try {
+    closeRestoreConfirmModal();
+    await restoreHistoryEntry(historyId);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="rotate-ccw"></i> Yes, Restore Record`;
+    }
+  }
+}
+
+/**
+ * Clear History Modal Handlers
+ */
+function handleClearHistory() {
+  const modal = document.getElementById('clear-history-modal');
+  const pwdInput = document.getElementById('clear-history-password');
+  if (pwdInput) {
+    pwdInput.value = '';
+    pwdInput.style.borderColor = '';
+  }
+  if (modal) modal.classList.add('active');
+  setTimeout(() => { if (pwdInput) pwdInput.focus(); }, 100);
+}
+
+function closeClearHistoryModal() {
+  const modal = document.getElementById('clear-history-modal');
+  if (modal) modal.classList.remove('active');
+  const pwdInput = document.getElementById('clear-history-password');
+  if (pwdInput) {
+    pwdInput.value = '';
+    pwdInput.style.borderColor = '';
+  }
+}
+
+async function confirmClearHistory() {
+  const pwdInput = document.getElementById('clear-history-password');
+  const pwd = pwdInput ? pwdInput.value.trim() : '';
+
+  if (pwd !== SYSTEM_MODULE_PASSWORD) {
+    showToast('INCORRECT PASSWORD! HISTORY CLEAR CANCELLED.', 'danger');
+    if (pwdInput) {
+      pwdInput.style.borderColor = '#ef4444';
+      pwdInput.select();
+      setTimeout(() => { pwdInput.style.borderColor = ''; }, 2000);
+    }
+    return;
+  }
+
+  appState.data.historyRecords = [];
+  saveToLocalStorage();
+
+  if (isSupabaseConnected && firestoreDb) {
+    try {
+      const snap = await firestoreDb.collection('system_history').get();
+      if (!snap.empty) {
+        const batch = firestoreDb.batch();
+        snap.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+    } catch (err) {
+      console.warn('Clear history Firestore note:', err.message);
+    }
+  }
+
+  closeClearHistoryModal();
+  renderApp();
+  showToast('SYSTEM AUDIT HISTORY CLEARED SUCCESSFULLY!', 'success');
+}
+
+/**
+ * Export System Change History to Excel Spreadsheet
+ */
+function exportHistoryToExcel() {
+  const historyList = appState.data.historyRecords || [];
+  if (historyList.length === 0) {
+    showToast('NO CHANGE HISTORY LOGS AVAILABLE TO EXPORT', 'warning');
+    return;
+  }
+
+  if (typeof XLSX === 'undefined') {
+    showToast('EXCEL EXPORT ENGINE NOT READY', 'danger');
+    return;
+  }
+
+  const rows = historyList.map(h => ({
+    'Timestamp': `${formatDate(h.timestamp)} ${formatTime(h.timestamp)}`,
+    'ISO Time': h.timestamp || '',
+    'Module': h.moduleLabel || h.module,
+    'Action': h.actionLabel || h.action,
+    'Affected Record': h.recordName || h.recordId || '',
+    'Summary': h.summary || '',
+    'Field Changes': h.changes ? JSON.stringify(h.changes) : '',
+    'Restored': h.restored ? 'YES' : 'NO'
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'System_Change_History');
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
+  XLSX.writeFile(workbook, `DOLE_GIP_System_Audit_History_${dateStr}.xlsx`);
+  showToast('SYSTEM AUDIT HISTORY EXPORTED TO EXCEL SUCCESSFULLY!', 'success');
 }

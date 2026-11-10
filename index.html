@@ -128,6 +128,14 @@
           <span class="sidebar-badge danger" id="side-count-trash">0</span>
         </button>
 
+        <button class="sidebar-item" id="side-nav-history" data-tab="history">
+          <div class="sidebar-item-content">
+            <i data-lucide="history"></i>
+            <span>System History</span>
+          </div>
+          <span class="sidebar-badge" id="side-count-history" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;">0</span>
+        </button>
+
         <div class="nav-section-title">System Tools</div>
         <button class="sidebar-item" id="side-nav-calc" title="Calculate Working Hours & Net Pay">
           <div class="sidebar-item-content">
@@ -244,6 +252,15 @@
             <i data-lucide="trash-2"></i>
           </div>
         </div>
+        <div class="stat-card" id="stat-card-history" style="cursor: pointer;">
+          <div class="stat-info">
+            <div class="stat-label">System Change History</div>
+            <div class="stat-value" id="stat-history-count">0</div>
+          </div>
+          <div class="stat-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+            <i data-lucide="history"></i>
+          </div>
+        </div>
       </section>
 
       <!-- Toolbar: Search and Action Buttons -->
@@ -262,6 +279,73 @@
               <option value="2024">Year: 2024</option>
             </select>
           </div>
+          <!-- GIP Active/Inactive Status Filter Controls (for Contacts Directory and GIP Information) -->
+          <div id="gip-status-toolbar-controls" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <select id="gip-status-filter" class="form-control"
+              style="font-size: 0.825rem; padding: 6px 12px; width: auto; background: var(--card-bg); font-weight: 700; color: #0284c7; border-color: rgba(2, 132, 199, 0.35);"
+              title="Filter GIP records by Active / Inactive status">
+              <option value="ALL">Status: All GIPs (Active &amp; Inactive)</option>
+              <option value="active">Status: Active Only (Deployed)</option>
+              <option value="inactive">Status: Inactive Only</option>
+            </select>
+            <div class="status-summary-pills" id="gip-status-summary-pills" style="display: flex; gap: 6px; align-items: center;">
+              <span class="status-count-pill active" id="pill-active-count" title="Total Active GIPs">
+                <span class="status-pulse-dot"></span> <strong id="val-active-count">0</strong> Active
+              </span>
+              <span class="status-count-pill inactive" id="pill-inactive-count" title="Total Inactive GIPs">
+                <i data-lucide="circle-slash" style="width: 11px; height: 11px;"></i> <strong id="val-inactive-count">0</strong> Inactive
+              </span>
+            </div>
+          </div>
+
+          <!-- History Audit & Restore Toolbar Controls -->
+          <div id="history-toolbar-controls" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <select id="history-module-filter" class="form-control"
+              style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;"
+              title="Filter history by Module">
+              <option value="ALL">Module: All Modules</option>
+              <option value="dtr">GIP DTR &amp; AR</option>
+              <option value="transmittal">Transmittal Monitoring</option>
+              <option value="contacts">GIP Contacts Directory</option>
+              <option value="salary">Salary &amp; Payroll</option>
+              <option value="compiled">Work Program</option>
+              <option value="gsis">GIP Information</option>
+              <option value="budget">System Budget</option>
+            </select>
+
+            <select id="history-action-filter" class="form-control"
+              style="font-size: 0.825rem; padding: 6px 10px; width: auto; background: var(--card-bg); font-weight: 600;"
+              title="Filter history by Action Type">
+              <option value="ALL">Action: All Actions</option>
+              <option value="CREATE">Created Record</option>
+              <option value="UPDATE">Updated / Edited</option>
+              <option value="STATUS_CHANGE">Status Changed</option>
+              <option value="DELETE">Deleted Record</option>
+              <option value="RESTORE">Restored State</option>
+            </select>
+
+            <button type="button" class="btn btn-secondary btn-icon" id="btn-toggle-all-history"
+              onclick="toggleAllHistoryDropdowns()"
+              style="font-size: 0.825rem; padding: 7px 12px; color: var(--primary-navy); border-color: var(--border-medium); font-weight: 600;"
+              title="Expand or Collapse All Change Details">
+              <i data-lucide="chevrons-up-down" style="width: 14px; height: 14px; color: var(--brand-accent);"></i> Expand All Details
+            </button>
+
+            <button type="button" class="btn btn-secondary btn-icon" id="btn-export-history"
+              onclick="exportHistoryToExcel()"
+              style="font-size: 0.825rem; padding: 7px 12px; color: #10b981; border-color: #10b981;"
+              title="Export Full System Change History to Excel">
+              <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px;"></i> Export History
+            </button>
+
+            <button type="button" class="btn btn-danger btn-icon" id="btn-clear-history"
+              onclick="handleClearHistory()"
+              style="font-size: 0.825rem; padding: 7px 12px;"
+              title="Clear Change History (Requires System Password)">
+              <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Clear History
+            </button>
+          </div>
+
           <!-- Salary Specific Filter & Sort Controls -->
           <div id="salary-toolbar-controls" style="display: none; align-items: center; gap: 8px; flex-wrap: wrap;">
             <select id="salary-sort-select" class="form-control"
@@ -699,6 +783,13 @@
                 <input type="tel" id="contact-number" class="form-control" placeholder="e.g. 09094708118">
               </div>
             </div>
+            <div class="form-group">
+              <label for="contact-status">Deployment Status <span class="required">*</span></label>
+              <select id="contact-status" class="form-control" style="font-weight: 600;">
+                <option value="active" selected>Active (Currently Deployed / Working)</option>
+                <option value="inactive">Inactive (End of Contract / Resigned / Completed)</option>
+              </select>
+            </div>
           </div>
 
           <!-- Fields for GIP Salary & Payroll Tracking Module -->
@@ -797,6 +888,13 @@
               <label for="gsis-period">Period of Employment</label>
               <input type="text" id="gsis-period" class="form-control"
                 placeholder="e.g. JUNE 16, 2026 - DECEMBER 15, 2026">
+            </div>
+            <div class="form-group">
+              <label for="gsis-status">GIP Status <span class="required">*</span></label>
+              <select id="gsis-status" class="form-control" style="font-weight: 600;">
+                <option value="active" selected>Active (Currently Deployed / Working)</option>
+                <option value="inactive">Inactive (End of Contract / Resigned / Completed)</option>
+              </select>
             </div>
           </div>
 
@@ -1663,6 +1761,123 @@
           <i data-lucide="copy"></i> Copy Net Pay
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- System Change History Details & Snapshot Modal -->
+  <div class="modal-backdrop" id="history-details-modal">
+    <div class="modal-container" style="max-width: 650px; max-height: 90vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="history" style="width: 20px; height: 20px; color: #6366f1;"></i> Change Details &amp; Snapshot
+        </h2>
+        <button class="modal-close" onclick="closeHistoryDetailsModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 22px; overflow-y: auto; flex: 1;">
+        <!-- Header meta summary -->
+        <div style="background: var(--bg-page); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <span id="hist-detail-action-badge"></span>
+            <span id="hist-detail-module-badge"></span>
+            <span id="hist-detail-time" style="font-size: 0.775rem; color: var(--text-muted); font-weight: 500;"></span>
+          </div>
+          <h3 id="hist-detail-title" style="font-size: 1.05rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 4px;">-</h3>
+          <p id="hist-detail-summary" style="font-size: 0.825rem; color: var(--text-main); margin: 0;"></p>
+        </div>
+
+        <!-- Field-by-Field Diff Comparison -->
+        <div style="margin-bottom: 16px;">
+          <h4 style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="git-compare" style="width: 14px; height: 14px; color: var(--brand-accent);"></i> Field Level Modifications
+          </h4>
+          <div id="hist-detail-diff-container" style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden;">
+            <!-- Dynamically populated table -->
+          </div>
+        </div>
+
+        <!-- Raw Snapshot Data Preview (Collapsible) -->
+        <details style="margin-top: 14px; border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 14px; background: #ffffff;">
+          <summary style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); cursor: pointer; user-select: none;">
+            View Raw State Snapshot (JSON)
+          </summary>
+          <div style="margin-top: 10px;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #ef4444; margin-bottom: 4px;">Previous State:</div>
+            <pre id="hist-detail-prev-json" class="snapshot-json-box" style="margin-bottom: 12px;"></pre>
+            <div style="font-size: 0.75rem; font-weight: 700; color: #10b981; margin-bottom: 4px;">New State:</div>
+            <pre id="hist-detail-new-json" class="snapshot-json-box"></pre>
+          </div>
+        </details>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-secondary" onclick="closeHistoryDetailsModal()">Close</button>
+        <button type="button" class="btn btn-primary" id="btn-modal-restore-history" style="background: linear-gradient(135deg, #0d9488, #059669); border-color: #059669;">
+          <i data-lucide="rotate-ccw"></i> Restore This Version
+        </button>
+      </div>
+    </div>
+  <!-- Confirm Restore Modal -->
+  <div class="modal-backdrop" id="restore-confirm-modal">
+    <div class="modal-container" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="rotate-ccw" style="width: 20px; height: 20px; color: #0d9488;"></i> Confirm Record Restore
+        </h2>
+        <button class="modal-close" onclick="closeRestoreConfirmModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 18px 22px;">
+        <p style="font-size: 0.875rem; color: var(--text-main); margin-bottom: 12px; line-height: 1.5;">
+          Are you sure you want to restore this record to its previous state? Active data will be reverted to this point-in-time version.
+        </p>
+        <div style="background: var(--bg-page); border: 1px solid var(--border-light); border-left: 4px solid #0d9488; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+            <span id="restore-confirm-module" class="badge-module" style="font-size: 0.725rem;"></span>
+            <span id="restore-confirm-time" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;"></span>
+          </div>
+          <div id="restore-confirm-name" style="font-size: 0.95rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 4px;"></div>
+          <div id="restore-confirm-summary" style="font-size: 0.8rem; color: var(--text-muted);"></div>
+        </div>
+        <div style="font-size: 0.775rem; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; padding: 8px 12px; border-radius: 6px; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="alert-triangle" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
+          <span>This action will update live data and record a new audit log.</span>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn btn-secondary" onclick="closeRestoreConfirmModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-execute-restore" onclick="confirmExecuteRestore()" style="background: linear-gradient(135deg, #0d9488, #059669); border-color: #059669;">
+          <i data-lucide="rotate-ccw"></i> Yes, Restore Record
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clear History Password Confirmation Modal -->
+  <div class="modal-backdrop" id="clear-history-modal">
+    <div class="modal-container" style="max-width: 440px;">
+      <div class="modal-header">
+        <h2 style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="trash-2" style="width: 20px; height: 20px; color: #ef4444;"></i> Clear System History
+        </h2>
+        <button class="modal-close" onclick="closeClearHistoryModal()">&times;</button>
+      </div>
+      <form id="clear-history-form" onsubmit="event.preventDefault(); confirmClearHistory();">
+        <div class="modal-body">
+          <p style="font-size: 0.875rem; color: var(--text-main); margin-bottom: 8px;">
+            Are you sure you want to clear the audit history? All change logs will be permanently deleted.
+          </p>
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="clear-history-password" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-navy);">
+              <i data-lucide="lock" style="width: 13px; height: 13px; vertical-align: middle; color: var(--brand-accent);"></i> Security Password Required <span class="required">*</span>
+            </label>
+            <input type="password" id="clear-history-password" class="form-control" placeholder="Enter security password to clear history..." required autocomplete="off">
+          </div>
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+          <button type="button" class="btn btn-secondary" onclick="closeClearHistoryModal()">Cancel</button>
+          <button type="submit" class="btn btn-danger">
+            <i data-lucide="trash-2"></i> Clear History
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

@@ -124,6 +124,8 @@ ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS assignment TEXT;
 ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS contact_number TEXT;
 ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS remarks TEXT;
 
+ALTER TABLE gip_contacts ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
+
 ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS gip_name TEXT;
 ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS periods JSONB;
 ALTER TABLE gip_salary_records ADD COLUMN IF NOT EXISTS remarks TEXT;
@@ -137,8 +139,27 @@ ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS beneficiary TEXT;
 ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS relationship TEXT;
 ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS period TEXT;
 ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS amount TEXT;
+ALTER TABLE gip_gsis_records ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'active';
 
--- 8. Enable Row Level Security (RLS)
+-- 8. Create System Change History & Audit Table
+CREATE TABLE IF NOT EXISTS system_history (
+  id TEXT PRIMARY KEY,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  module TEXT NOT NULL,
+  module_label TEXT,
+  action TEXT NOT NULL,
+  action_label TEXT,
+  record_id TEXT,
+  record_name TEXT,
+  summary TEXT,
+  changes JSONB,
+  previous_data JSONB,
+  new_data JSONB,
+  restored BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Enable Row Level Security (RLS)
 ALTER TABLE gip_dtr_ar_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transmittal_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recycled_records ENABLE ROW LEVEL SECURITY;
@@ -146,8 +167,9 @@ ALTER TABLE gip_contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_salary_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_compiled_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gip_gsis_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_history ENABLE ROW LEVEL SECURITY;
 
--- 9. Enable Public Read & Write Access Policies
+-- 10. Enable Public Read & Write Access Policies
 DROP POLICY IF EXISTS "Public full access on gip_dtr_ar_records" ON gip_dtr_ar_records;
 CREATE POLICY "Public full access on gip_dtr_ar_records" 
   ON gip_dtr_ar_records FOR ALL 
@@ -183,9 +205,14 @@ CREATE POLICY "Public full access on gip_gsis_records"
   ON gip_gsis_records FOR ALL 
   USING (true) WITH CHECK (true);
 
--- 10. Enable Realtime Publications for Realtime Multi-device Sync
+DROP POLICY IF EXISTS "Public full access on system_history" ON system_history;
+CREATE POLICY "Public full access on system_history" 
+  ON system_history FOR ALL 
+  USING (true) WITH CHECK (true);
+
+-- 11. Enable Realtime Publications for Realtime Multi-device Sync
 BEGIN;
   DROP PUBLICATION IF EXISTS supabase_realtime;
-  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts, gip_salary_records, gip_compiled_documents, gip_gsis_records;
+  CREATE PUBLICATION supabase_realtime FOR TABLE gip_dtr_ar_records, transmittal_records, recycled_records, gip_contacts, gip_salary_records, gip_compiled_documents, gip_gsis_records, system_history;
 COMMIT;
 
